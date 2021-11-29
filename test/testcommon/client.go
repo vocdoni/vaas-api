@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
@@ -54,7 +55,7 @@ func NewHTTPapiConnection(addr string, tb testing.TB) (*APIConnection, error) {
 }
 
 // Request makes a request to the previously connected endpoint
-func (r *APIConnection) Request(req types.MetaRequest, signer *ethereum.SignKeys) *types.MetaResponse {
+func (r *APIConnection) Request(req types.MetaRequest, signer *ethereum.SignKeys) *api.APIresponse {
 	r.tb.Helper()
 	method := req.Method
 
@@ -114,7 +115,7 @@ func (r *APIConnection) Request(req types.MetaRequest, signer *ethereum.SignKeys
 	if len(respOuter.Signature) == 0 {
 		r.tb.Fatalf("%s: empty signature in response: %s", method, message)
 	}
-	var respInner types.MetaResponse
+	var respInner api.APIresponse
 	if err := json.Unmarshal(respOuter.MetaResponse, &respInner); err != nil {
 		r.tb.Fatalf("%s: %v", method, err)
 	}

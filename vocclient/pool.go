@@ -39,7 +39,7 @@ func (pool *GatewayPool) shift() {
 	log.Info(*pool)
 }
 
-func (pool *GatewayPool) Request(req api.MetaRequest, signer *ethereum.SignKeys) (resp *api.MetaResponse, err error) {
+func (pool *GatewayPool) Request(req api.APIrequest, signer *ethereum.SignKeys) (resp *api.APIresponse, err error) {
 	errorCount := 0
 	// allow for 10 retries, shifting gateways each time
 	for errorCount < 10 {

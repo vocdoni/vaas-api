@@ -37,7 +37,7 @@ func sortGateways(gateways []*client.Client) (GatewayPool, error) {
 	for i, gateway := range gateways {
 		wg.Add(1)
 		go func(gw *client.Client, index int) {
-			resp, err := gw.Request(api.MetaRequest{Method: "getInfo"}, nil)
+			resp, err := gw.Request(api.APIrequest{Method: "getInfo"}, nil)
 			mtx.Lock()
 			if err != nil {
 				log.Warnf("could not get info for %s: %v", gw.Addr, err)

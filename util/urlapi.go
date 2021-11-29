@@ -35,7 +35,8 @@ func RetrieveSignaturePubKey(ctx *httprouter.HTTPContext) (signaturePubKey []byt
 	return signaturePubKey, err
 }
 
-func RetrieveEntityID(ctx *httprouter.HTTPContext) (entityID []byte, signaturePubKey []byte, err error) {
+func RetrieveEntityID(ctx *httprouter.HTTPContext) (
+	entityID []byte, signaturePubKey []byte, err error) {
 	// check public key length
 	if signaturePubKey, err = RetrieveSignaturePubKey(ctx); err != nil {
 		return []byte{}, []byte{}, err
@@ -43,7 +44,8 @@ func RetrieveEntityID(ctx *httprouter.HTTPContext) (entityID []byte, signaturePu
 	// retrieve entity ID
 	entityID, err = PubKeyToEntityID(signaturePubKey)
 	if err != nil {
-		return []byte{}, signaturePubKey, fmt.Errorf("cannot recover %x entityID from pubKey: (%v)", signaturePubKey, err)
+		return []byte{}, signaturePubKey,
+			fmt.Errorf("cannot recover %x entityID from pubKey: (%v)", signaturePubKey, err)
 	}
 	return entityID, signaturePubKey, nil
 }

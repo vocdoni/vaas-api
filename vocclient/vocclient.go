@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/rand"
 
-	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
+	"go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
@@ -45,7 +45,7 @@ func (c *VocClient) ActiveEndpoint() string {
 // FETCHING INFO APIS
 
 func (c *VocClient) GetCurrentBlock() (blockHeight uint32, _ error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 	req.Method = "getBlockHeight"
 	resp, err := c.pool.Request(req, nil)
 	if err != nil {
@@ -58,7 +58,7 @@ func (c *VocClient) GetCurrentBlock() (blockHeight uint32, _ error) {
 }
 
 func (c *VocClient) GetProcess(pid []byte) (*indexertypes.Process, error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 	req.Method = "getProcessInfo"
 	req.ProcessID = pid
 	resp, err := c.pool.Request(req, c.signingKey)
@@ -69,7 +69,7 @@ func (c *VocClient) GetProcess(pid []byte) (*indexertypes.Process, error) {
 }
 
 func (c *VocClient) GetProcessList(entityId []byte, searchTerm string, namespace uint32, status string, withResults bool, srcNetId string, from, listSize int) (processList []string, _ error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 	req.Method = "getProcessList"
 	req.EntityId = entityId
 	req.SearchTerm = searchTerm
@@ -92,7 +92,7 @@ func (c *VocClient) GetProcessList(entityId []byte, searchTerm string, namespace
 // FILE APIS
 
 func (c *VocClient) AddFile(content []byte, contentType, name string) (URI string, _ error) {
-	resp, err := c.pool.Request(api.MetaRequest{
+	resp, err := c.pool.Request(api.APIrequest{
 		Method:  "addFile",
 		Content: content,
 		Type:    contentType,
@@ -107,7 +107,7 @@ func (c *VocClient) AddFile(content []byte, contentType, name string) (URI strin
 // CENSUS APIS
 
 func (c *VocClient) AddCensus() (CensusID string, _ error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 
 	// Create census
 	log.Infof("Create census")
@@ -123,7 +123,7 @@ func (c *VocClient) AddCensus() (CensusID string, _ error) {
 }
 
 func (c *VocClient) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string, censusValue []byte) (root types.HexBytes, _ error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 	var hexpub string
 	req.Method = "addClaim"
 	req.Digested = false
@@ -146,8 +146,8 @@ func (c *VocClient) AddClaim(censusID string, censusSigner *ethereum.SignKeys, c
 	return resp.Root, nil
 }
 
-func (c *VocClient) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string, censusValues [][]byte) (root types.HexBytes, invalidClaims []int, _ error) {
-	var req api.MetaRequest
+func (c *VocClient) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string, censusValues []*types.BigInt) (root types.HexBytes, invalidClaims []int, _ error) {
+	var req api.APIrequest
 	req.CensusID = censusID
 	censusSize := 0
 	if censusSigners != nil {
@@ -164,7 +164,7 @@ func (c *VocClient) AddClaimBulk(censusID string, censusSigners []*ethereum.Sign
 	var hexpub string
 	for currentSize > 0 {
 		claims := [][]byte{}
-		values := [][]byte{}
+		values := []*types.BigInt{}
 		for j := 0; j < 100; j++ {
 			if currentSize < 1 {
 				break
@@ -179,11 +179,13 @@ func (c *VocClient) AddClaimBulk(censusID string, censusSigners []*ethereum.Sign
 				return types.HexBytes{}, []int{}, err
 			}
 			claims = append(claims, pub)
-			values = append(values, censusValues[currentSize-1])
+			if len(censusValues) > 0 {
+				values = append(values, censusValues[currentSize-1])
+			}
 			currentSize--
 		}
 		req.CensusKeys = claims
-		req.CensusValues = values
+		req.Weights = values
 		resp, err := c.pool.Request(req, c.signingKey)
 		if err != nil {
 			return types.HexBytes{}, []int{}, err
@@ -197,7 +199,7 @@ func (c *VocClient) AddClaimBulk(censusID string, censusSigners []*ethereum.Sign
 }
 
 func (c *VocClient) PublishCensus(censusID string, rootHash types.HexBytes) (uri string, _ error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 	req.Method = "publish"
 	req.CensusID = censusID
 	req.RootHash = rootHash
@@ -213,7 +215,7 @@ func (c *VocClient) PublishCensus(censusID string, rootHash types.HexBytes) (uri
 }
 
 func (c *VocClient) GetRoot(censusID string) (root types.HexBytes, _ error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 	req.Method = "getRoot"
 	req.CensusID = censusID
 	resp, err := c.pool.Request(req, c.signingKey)
@@ -232,7 +234,7 @@ func (c *VocClient) CreateProcess(
 	envelopeType *models.EnvelopeType,
 	censusOrigin models.CensusOrigin,
 	duration int) (blockHeight uint32, _ error) {
-	var req api.MetaRequest
+	var req api.APIrequest
 	req.Method = "submitRawTx"
 	block, err := c.GetCurrentBlock()
 	if err != nil {

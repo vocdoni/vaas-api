@@ -586,7 +586,7 @@ func (m *VotingService) UpdateCensus(msg *bearerstdapi.BearerStandardAPIdata, ct
 		return err
 	}
 
-	if invalidClaims != nil && len(invalidClaims) > 0 {
+	if len(invalidClaims) > 0 {
 		return fmt.Errorf("invalid claims: %v", invalidClaims)
 	}
 

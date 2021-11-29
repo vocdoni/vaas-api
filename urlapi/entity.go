@@ -81,6 +81,14 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
+		"/priv/censuses/#censusId/keys/#publicKey",
+		"DELETE",
+		bearerstdapi.MethodAccessTypeAdmin,
+		u.deletePublicKeyHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
 		"/priv/censuses/#censusId/import/*",
 		"POST",
 		bearerstdapi.MethodAccessTypeAdmin,
