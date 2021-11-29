@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	"go.vocdoni.io/api/manager"
+	"go.vocdoni.io/api/notify"
+	"go.vocdoni.io/api/registry"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/metrics"
-	"go.vocdoni.io/manager/manager"
-	"go.vocdoni.io/manager/notify"
-	"go.vocdoni.io/manager/registry"
 )
 
 type URLAPI struct {

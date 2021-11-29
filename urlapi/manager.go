@@ -3,8 +3,8 @@ package urlapi
 import (
 	"fmt"
 
+	"go.vocdoni.io/api/manager"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
-	"go.vocdoni.io/manager/manager"
 )
 
 func (u *URLAPI) EnableManagerHandlers(m *manager.Manager) error {

@@ -1,8 +1,8 @@
 package urlapi
 
 import (
+	"go.vocdoni.io/api/tokenapi"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
-	"go.vocdoni.io/manager/tokenapi"
 )
 
 func (u *URLAPI) EnableTokenAPIMethods(t *tokenapi.TokenAPI) error {

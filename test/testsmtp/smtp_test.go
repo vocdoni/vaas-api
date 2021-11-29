@@ -12,10 +12,10 @@ import (
 
 	"github.com/google/uuid"
 	email "github.com/knadh/smtppool"
+	"go.vocdoni.io/api/config"
+	"go.vocdoni.io/api/smtpclient"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/util"
-	"go.vocdoni.io/manager/config"
-	"go.vocdoni.io/manager/smtpclient"
-	"go.vocdoni.io/manager/types"
 )
 
 var s *smtpclient.SMTP

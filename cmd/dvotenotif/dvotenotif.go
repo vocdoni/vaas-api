@@ -12,6 +12,11 @@ import (
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
+	"go.vocdoni.io/api/config"
+	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/database/pgsql"
+	"go.vocdoni.io/api/notify"
+	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	chain "go.vocdoni.io/dvote/ethereum"
 	"go.vocdoni.io/dvote/ethereum/ethevents"
@@ -19,11 +24,6 @@ import (
 	log "go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/metrics"
 	"go.vocdoni.io/dvote/service"
-	"go.vocdoni.io/manager/config"
-	"go.vocdoni.io/manager/database"
-	"go.vocdoni.io/manager/database/pgsql"
-	"go.vocdoni.io/manager/notify"
-	"go.vocdoni.io/manager/urlapi"
 )
 
 func newConfig() (*config.Notify, config.Error) {

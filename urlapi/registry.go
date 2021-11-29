@@ -3,8 +3,8 @@ package urlapi
 import (
 	"fmt"
 
+	"go.vocdoni.io/api/registry"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
-	"go.vocdoni.io/manager/registry"
 )
 
 func (u *URLAPI) EnableRegistryHandlers(r *registry.Registry) error {

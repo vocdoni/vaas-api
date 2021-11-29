@@ -15,11 +15,11 @@ import (
 
 	qt "github.com/frankban/quicktest"
 	"github.com/google/uuid"
+	"go.vocdoni.io/api/config"
+	"go.vocdoni.io/api/test/testcommon"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/util"
-	"go.vocdoni.io/manager/config"
-	"go.vocdoni.io/manager/test/testcommon"
-	"go.vocdoni.io/manager/types"
 )
 
 var api testcommon.TestAPI

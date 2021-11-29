@@ -9,8 +9,8 @@ import (
 	"time"
 
 	qt "github.com/frankban/quicktest"
+	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	"go.vocdoni.io/manager/vocclient"
 )
 
 var testUrls = []string{"https://gw1.dev.vocdoni.net/dvote", "https://gw2.dev.vocdoni.net/dvote", "https://gw3.dev.vocdoni.net/dvote"}

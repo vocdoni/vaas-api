@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	migrate "github.com/rubenv/sql-migrate"
-	"go.vocdoni.io/manager/types"
+	"go.vocdoni.io/api/types"
 )
 
 var Signers = []struct {

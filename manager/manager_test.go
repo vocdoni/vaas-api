@@ -7,14 +7,14 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"go.vocdoni.io/api/database/testdb"
+	"go.vocdoni.io/api/manager"
+	"go.vocdoni.io/api/router"
+	"go.vocdoni.io/api/test/testcommon"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/multirpc/transports"
 	"go.vocdoni.io/dvote/multirpc/transports/mhttp"
-	"go.vocdoni.io/manager/database/testdb"
-	"go.vocdoni.io/manager/manager"
-	"go.vocdoni.io/manager/router"
-	"go.vocdoni.io/manager/test/testcommon"
-	"go.vocdoni.io/manager/types"
 )
 
 var api testcommon.TestAPI

@@ -23,9 +23,9 @@ import (
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
 
-	"go.vocdoni.io/manager/config"
-	"go.vocdoni.io/manager/types"
-	"go.vocdoni.io/manager/util"
+	"go.vocdoni.io/api/config"
+	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/util"
 )
 
 const connectionRetries = 5

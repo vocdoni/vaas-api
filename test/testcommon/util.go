@@ -7,8 +7,8 @@ import (
 
 	randomdata "github.com/Pallinder/go-randomdata"
 
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	"go.vocdoni.io/manager/types"
 )
 
 // CreateEntities a given number of random entities

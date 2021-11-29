@@ -1,4 +1,4 @@
-module go.vocdoni.io/manager
+module go.vocdoni.io/api
 
 go 1.16
 
@@ -19,13 +19,12 @@ require (
 	github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351
 	github.com/shirou/gopsutil v3.21.8+incompatible
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.7.1
-	github.com/vocdoni/arbo v0.0.0-20210702170846-df896f6e961a // indirect
-	go.vocdoni.io/dvote v1.0.4-0.20210705151626-5b292fc7e743
-	go.vocdoni.io/proto v1.0.4-0.20210705140049-b1513a5b3223
-	google.golang.org/api v0.36.0
-	google.golang.org/protobuf v1.25.0
-	nhooyr.io/websocket v1.8.6
+	github.com/spf13/viper v1.8.1
+	go.vocdoni.io/dvote v1.0.4-0.20211129162153-47f7ce591624
+	go.vocdoni.io/proto v1.13.3-0.20211126083500-46ba146eff3f
+	google.golang.org/api v0.44.0
+	google.golang.org/protobuf v1.27.1
+	nhooyr.io/websocket v1.8.7
 )
 
 // Newer versions of the fuse module removed support for MacOS.

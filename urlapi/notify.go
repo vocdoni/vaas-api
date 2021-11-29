@@ -3,8 +3,8 @@ package urlapi
 import (
 	"fmt"
 
+	"go.vocdoni.io/api/notify"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
-	"go.vocdoni.io/manager/notify"
 )
 
 func (u *URLAPI) EnableNotifyHandlers(notif *notify.API) error {

@@ -16,9 +16,9 @@ import (
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
 
-	"go.vocdoni.io/manager/database"
-	"go.vocdoni.io/manager/types"
-	"go.vocdoni.io/manager/util"
+	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/util"
 )
 
 type Registry struct {

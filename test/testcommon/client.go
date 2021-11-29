@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
-	"go.vocdoni.io/manager/types"
 	"nhooyr.io/websocket"
 )
 

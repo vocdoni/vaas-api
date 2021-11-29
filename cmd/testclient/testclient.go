@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
 	dvotetypes "go.vocdoni.io/dvote/types"
-	"go.vocdoni.io/manager/types"
 	"nhooyr.io/websocket"
 )
 

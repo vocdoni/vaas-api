@@ -14,16 +14,16 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
-	"go.vocdoni.io/manager/ethclient"
+	"go.vocdoni.io/api/ethclient"
 
+	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/database/pgsql"
+	"go.vocdoni.io/api/smtpclient"
+	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
-	"go.vocdoni.io/manager/database"
-	"go.vocdoni.io/manager/database/pgsql"
-	"go.vocdoni.io/manager/smtpclient"
-	"go.vocdoni.io/manager/types"
-	"go.vocdoni.io/manager/util"
 )
 
 type Manager struct {

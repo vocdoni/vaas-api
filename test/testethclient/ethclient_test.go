@@ -9,9 +9,9 @@ import (
 	"time"
 
 	qt "github.com/frankban/quicktest"
+	"go.vocdoni.io/api/config"
+	"go.vocdoni.io/api/ethclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	"go.vocdoni.io/manager/config"
-	"go.vocdoni.io/manager/ethclient"
 )
 
 var signer *ethereum.SignKeys

@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
 	dvoteutil "go.vocdoni.io/dvote/util"
-	"go.vocdoni.io/manager/types"
 )
 
 func DecodeJsonMessage(object interface{}, key string, ctx *httprouter.HTTPContext) error {

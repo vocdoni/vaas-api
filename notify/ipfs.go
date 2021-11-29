@@ -15,10 +15,10 @@ import (
 	"go.vocdoni.io/dvote/data"
 	ethereumhandler "go.vocdoni.io/dvote/ethereum/handler"
 
+	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/metrics"
-	"go.vocdoni.io/manager/database"
-	"go.vocdoni.io/manager/types"
 )
 
 // The IPFSFileTracker is in charge of tracking IPFS files and

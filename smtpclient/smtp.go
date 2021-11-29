@@ -13,9 +13,9 @@ import (
 	"time"
 
 	email "github.com/knadh/smtppool"
+	"go.vocdoni.io/api/config"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/log"
-	"go.vocdoni.io/manager/config"
-	"go.vocdoni.io/manager/types"
 )
 
 // SMTP struct maintains the SMTP config and conncection objects

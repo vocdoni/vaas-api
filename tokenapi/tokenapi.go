@@ -8,14 +8,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
 	dvoteutil "go.vocdoni.io/dvote/util"
-	"go.vocdoni.io/manager/database"
-	"go.vocdoni.io/manager/types"
-	"go.vocdoni.io/manager/util"
 )
 
 // AuthWindowSeconds is the time window (in seconds) that the tokenapi Auth tolerates
