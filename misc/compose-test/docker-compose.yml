@@ -1,10 +1,10 @@
 version: "3.5"
 
 services:
-  dvotemanager:
+  vaasapi:
     build:
       context: ../..
-    image: "vocdoni/manager-backend:${MANAGER_BUILD_TAG:-latest}"
+    image: "vocdoni/vaas-api:${VAAS_BUILD_TAG:-latest}"
     env_file:
       - .env
     volumes:
@@ -30,13 +30,13 @@ services:
     restart: unless-stopped
 
   test:
-    image: "manager-backend-test:${MANAGER_BUILD_TAG:-latest}"
+    image: "vaas-api-test:${VAAS_BUILD_TAG:-latest}"
     build:
       context: ../..
       target: builder
     command: "true"
     links:
-      - dvotemanager
+      - vaasapi
 
 volumes:
   postgres:

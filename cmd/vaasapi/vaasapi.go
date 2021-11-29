@@ -11,23 +11,14 @@ import (
 
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"go.vocdoni.io/api/database"
-	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/ethclient"
-	"go.vocdoni.io/api/manager"
-	"go.vocdoni.io/api/registry"
-	endpoint "go.vocdoni.io/api/services/api-endpoint"
-	"go.vocdoni.io/api/smtpclient"
-	"go.vocdoni.io/api/tokenapi"
-	"go.vocdoni.io/api/types"
-	"go.vocdoni.io/api/urlapi"
-	"go.vocdoni.io/api/vocclient"
-
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/manager"
-	"go.vocdoni.io/api/smtpclient"
+	"go.vocdoni.io/api/ethclient"
+	"go.vocdoni.io/api/service"
+	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/urlapi"
+	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	chain "go.vocdoni.io/dvote/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
@@ -35,10 +26,10 @@ import (
 	"go.vocdoni.io/dvote/metrics"
 )
 
-func newConfig() (*config.Manager, config.Error) {
+func newConfig() (*config.Vaas, config.Error) {
 	var err error
 	var cfgError config.Error
-	cfg := config.NewManagerConfig()
+	cfg := config.NewVaasConfig()
 	home, err := os.UserHomeDir()
 	if err != nil {
 		cfgError = config.Error{
@@ -48,13 +39,7 @@ func newConfig() (*config.Manager, config.Error) {
 		return nil, cfgError
 	}
 	// flags
-	flag.StringVar(&cfg.DataDir, "dataDir", home+"/.dvotemanager", "directory where data is stored")
-	cfg.Mode = *flag.String("mode", "all", fmt.Sprintf("operation mode: %s", func() (modes []string) {
-		for m := range config.Modes {
-			modes = append(modes, m)
-		}
-		return
-	}()))
+	flag.StringVar(&cfg.DataDir, "dataDir", home+"/.vaasapi", "directory where data is stored")
 	cfg.LogLevel = *flag.String("logLevel", "info", "Log level (debug, info, warn, error, fatal)")
 	cfg.LogOutput = *flag.String("logOutput", "stdout", "Log output (stdout, stderr or filepath)")
 	cfg.LogErrorFile = *flag.String("logErrorFile", "", "Log errors and warnings to a file")
@@ -72,17 +57,6 @@ func newConfig() (*config.Manager, config.Error) {
 	cfg.DB.Dbname = *flag.String("dbName", "database", "DB database name")
 	cfg.DB.Sslmode = *flag.String("dbSslmode", "prefer", "DB postgres sslmode")
 	cfg.Migrate.Action = *flag.String("migrateAction", "", "Migration action (up,down,status)")
-	cfg.SMTP.Host = *flag.String("smtpHost", "127.0.0.1", "SMTP server host")
-	cfg.SMTP.Port = *flag.Int("smtpPort", 587, "SMTP server port")
-	cfg.SMTP.User = *flag.String("smtpUser", "user", "SMTP Username")
-	cfg.SMTP.Password = *flag.String("smtpPassword", "password", "SMTP password")
-	cfg.SMTP.PoolSize = *flag.Int("smtpPoolSize", 4, "SMTP connection pool size")
-	cfg.SMTP.Timeout = *flag.Int("smtpTimeout", 30, "SMTP send timout in seconds")
-	cfg.SMTP.ValidationURL = *flag.String("smtpValidationURL", "https://vocdoni.link/validation", "URL prefix of the token validation service")
-	cfg.SMTP.WebpollURL = *flag.String("smtpWebpollURL", "https://manager.vocdoni.net/processes/vote/#", "URL prefix of the token validation service")
-	cfg.SMTP.Sender = *flag.String("smtpSender", "validation@bender.vocdoni.io", "SMTP Sender address")
-	cfg.SMTP.SenderName = *flag.String("smtpSenderName", "Vocdoni", "Name that appears as sender identity in emails")
-	cfg.SMTP.Contact = *flag.String("smtpContact", "contact@vocdoni.io", "Fallback contact email address in emails")
 	cfg.EthNetwork.Name = *flag.String("ethNetworkName", "goerli", fmt.Sprintf("Ethereum blockchain to use: %s", chain.AvailableChains))
 	cfg.EthNetwork.Provider = *flag.String("ethNetworkProvider", "", "Ethereum network gateway")
 	cfg.EthNetwork.GasLimit = *flag.Uint64("ethNetworkGasLimit", 0, "Gas limit for sending an EVM transaction in units")
@@ -98,7 +72,7 @@ func newConfig() (*config.Manager, config.Error) {
 	// setting up viper
 	viper := viper.New()
 	viper.AddConfigPath(cfg.DataDir)
-	viper.SetConfigName("dvotemanager")
+	viper.SetConfigName("vaasapi")
 	viper.SetConfigType("yml")
 	viper.SetEnvPrefix("DVOTE")
 	viper.AutomaticEnv()
@@ -125,17 +99,6 @@ func newConfig() (*config.Manager, config.Error) {
 	viper.BindPFlag("db.dbName", flag.Lookup("dbName"))
 	viper.BindPFlag("db.sslMode", flag.Lookup("dbSslmode"))
 	viper.BindPFlag("migrate.action", flag.Lookup("migrateAction"))
-	viper.BindPFlag("smtp.host", flag.Lookup("smtpHost"))
-	viper.BindPFlag("smtp.port", flag.Lookup("smtpPort"))
-	viper.BindPFlag("smtp.user", flag.Lookup("smtpUser"))
-	viper.BindPFlag("smtp.password", flag.Lookup("smtpPassword"))
-	viper.BindPFlag("smtp.poolSize", flag.Lookup("smtpPoolSize"))
-	viper.BindPFlag("smtp.timeOut", flag.Lookup("smtpTimeout"))
-	viper.BindPFlag("smtp.validationURL", flag.Lookup("smtpValidationURL"))
-	viper.BindPFlag("smtp.webpollURL", flag.Lookup("smtpWebpollURL"))
-	viper.BindPFlag("smtp.sender", flag.Lookup("smtpSender"))
-	viper.BindPFlag("smtp.senderName", flag.Lookup("smtpSenderName"))
-	viper.BindPFlag("smtp.contact", flag.Lookup("smtpContact"))
 	viper.BindPFlag("ethnetwork.name", flag.Lookup("ethNetworkName"))
 	viper.BindPFlag("ethnetwork.provider", flag.Lookup("ethNetworkProvider"))
 	viper.BindPFlag("ethnetwork.gasLimit", flag.Lookup("ethNetworkGasLimit"))
@@ -146,7 +109,7 @@ func newConfig() (*config.Manager, config.Error) {
 	viper.BindPFlag("metrics.refreshInterval", flag.Lookup("metricsRefreshInterval"))
 
 	// check if config file exists
-	_, err = os.Stat(cfg.DataDir + "/dvotemanager.yml")
+	_, err = os.Stat(cfg.DataDir + "/vaasapi.yml")
 	if os.IsNotExist(err) {
 		cfgError = config.Error{
 			Message: fmt.Sprintf("creating new config file in %s", cfg.DataDir),
@@ -226,9 +189,6 @@ func main() {
 		}
 	}
 	log.Debugf("initializing config: %s", cfg.String())
-	if !cfg.ValidMode() {
-		log.Fatalf("invalid mode %s", cfg.Mode)
-	}
 
 	// Signer
 	signer := ethereum.NewSignKeys()
@@ -257,12 +217,6 @@ func main() {
 	}
 	log.Infof("Connected to %s at block height %d", client.ActiveEndpoint(), blockHeight)
 
-	// WS Endpoint and Router
-	ep, err := endpoint.NewEndpoint(cfg, signer)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	ctx := context.Background()
 	// Database Interface
 	var db database.Database
@@ -287,13 +241,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Generate SMTP config object
-	smtp := smtpclient.New(cfg.SMTP)
-	if err := smtp.StartPool(); err != nil {
-		log.Fatal(err)
-	}
-	defer smtp.ClosePool()
-
 	// Router
 	var httpRouter httprouter.HTTProuter
 	httpRouter.TLSdomain = cfg.API.Ssl.Domain
@@ -315,7 +262,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Manager
+	// Vaas api
 	signers := make([]*ethclient.Signer, len(cfg.SigningKeys))
 	privs := make([]string, len(cfg.SigningKeys))
 	for idx, key := range cfg.SigningKeys {
@@ -344,30 +291,10 @@ func main() {
 		log.Infof("my %s balance is %s", cfg.EthNetwork.Name, balance.String())
 	}
 
-	if cfg.Mode == "manager" || cfg.Mode == "all" {
-		log.Infof("enabling Manager API methods")
-		mgr := manager.NewManager(db, smtp, ethClient)
-		if err := urlApi.EnableManagerHandlers(mgr); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// External token API
-	if cfg.Mode == "token" || cfg.Mode == "all" {
-		log.Infof("enabling Token API methods")
-		tok := tokenapi.NewTokenAPI(db)
-		if err := urlApi.EnableTokenAPIMethods(tok); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// User registry
-	if cfg.Mode == "registry" || cfg.Mode == "all" {
-		log.Infof("enabling Registry API methods")
-		reg := registry.NewRegistry(db)
-		if err := urlApi.EnableRegistryHandlers(reg); err != nil {
-			log.Fatal(err)
-		}
+	log.Infof("enabling VaaS API methods")
+	votingService := service.NewVotingService(db, ethClient)
+	if err := urlApi.EnableVotingServiceHandlers(votingService); err != nil {
+		log.Fatal(err)
 	}
 
 	// Only start routing once we have registered all methods. Otherwise we

@@ -7,7 +7,7 @@ import (
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 )
 
-func (u *URLAPI) EnableEntityHandlers() error {
+func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/entities/#entityId/metadata",
 		"PUT",

@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"go.vocdoni.io/api/manager"
-	"go.vocdoni.io/api/notify"
-	"go.vocdoni.io/api/registry"
+	"go.vocdoni.io/api/service"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/metrics"
@@ -20,9 +18,7 @@ type URLAPI struct {
 	router       *httprouter.HTTProuter
 	api          *bearerstdapi.BearerStandardAPI
 	metricsagent *metrics.Agent
-	manager      *manager.Manager
-	registry     *registry.Registry
-	notif        *notify.API
+	service      *service.VotingService
 }
 
 func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *metrics.Agent) (*URLAPI, error) {

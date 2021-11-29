@@ -170,7 +170,7 @@ func processLine(input []byte) types.MetaRequest {
 }
 
 func main() {
-	host := flag.String("host", "http://127.0.0.1:9000/api/manager", "host to connect to")
+	host := flag.String("host", "http://127.0.0.1:9000/api/service", "host to connect to")
 	logLevel := flag.String("logLevel", "error", "log level <debug, info, warn, error>")
 	privKey := flag.String("key", "", "private key for signature (leave blank for auto-generate)")
 	flag.Parse()

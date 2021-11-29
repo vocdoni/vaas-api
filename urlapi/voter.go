@@ -7,7 +7,7 @@ import (
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 )
 
-func (u *URLAPI) EnableVoterHandlers() error {
+func (u *URLAPI) enableVoterHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/pub/censuses/#censusId/token",
 		"POST",

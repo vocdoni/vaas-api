@@ -7,7 +7,7 @@ import (
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 )
 
-func (u *URLAPI) EnableSuperadminHandlers() error {
+func (u *URLAPI) enableSuperadminHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/admin/accounts",
 		"POST",

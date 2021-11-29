@@ -5,21 +5,46 @@ import (
 	"time"
 )
 
-var Modes = map[string]bool{
-	"registry":      true,
-	"manager":       true,
-	"token":         true,
-	"notifications": true,
-	"all":           true,
+type DB struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Dbname   string
+	Sslmode  string
 }
 
-type Manager struct {
+type API struct {
+	// Route is the URL router where the API will be served
+	Route string
+	// ListenPort port where the API server will listen on
+	ListenPort int
+	// ListenHost host where the API server will listen on
+	ListenHost string
+	// Ssl tls related config options
+	Ssl struct {
+		Domain  string
+		DirCert string
+	}
+}
+
+type Error struct {
+	// Critical indicates if the error encountered is critical and the app must be stopped
+	Critical bool
+	// Message error message
+	Message string
+}
+
+// MetricsCfg initializes the metrics config
+type MetricsCfg struct {
+	Enabled         bool
+	RefreshInterval int
+}
+type Vaas struct {
 	// API api config options
 	API *API
 	// Database connection options
 	DB *DB
-	// SMTP options
-	SMTP *SMTP
 	// LogLevel logging level
 	LogLevel string
 	// LogOutput logging output
@@ -28,8 +53,6 @@ type Manager struct {
 	LogErrorFile string
 	// Metrics config options
 	Metrics *MetricsCfg
-	// Mode is the main operation mode
-	Mode string
 	// DataDir path where the gateway files will be stored
 	DataDir string
 	// SaveConfig overwrites the config file with the CLI provided flags
@@ -44,39 +67,20 @@ type Manager struct {
 	EthNetwork *EthNetwork
 }
 
-func (m *Manager) String() string {
-	return fmt.Sprintf("API: %+v,  DB: %+v, SMTP: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, Mode: %s, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, SMTP: %v, Migrate: %+v, Eth: %v",
-		*m.API, *m.DB, *m.SMTP, m.LogLevel, m.LogOutput, m.LogErrorFile, *m.Metrics, m.Mode, m.DataDir, m.SaveConfig, m.SigningKeys, m.GatewayUrls, *m.SMTP, *m.Migrate, *m.EthNetwork)
+func (v *Vaas) String() string {
+	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, Migrate: %+v, Eth: %v",
+		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKeys, v.GatewayUrls, *v.Migrate, *v.EthNetwork)
 }
 
-func (m *Manager) ValidMode() bool {
-	return Modes[m.Mode]
-}
-
-// NewManagerConfig initializes the fields in the config stuct
-func NewManagerConfig() *Manager {
-	return &Manager{
+// NewVaasConfig initializes the fields in the config stuct
+func NewVaasConfig() *Vaas {
+	return &Vaas{
 		API:        new(API),
 		DB:         new(DB),
 		Migrate:    new(Migrate),
-		SMTP:       new(SMTP),
 		Metrics:    new(MetricsCfg),
 		EthNetwork: new(EthNetwork),
 	}
-}
-
-type SMTP struct {
-	Host          string
-	Port          int
-	User          string
-	Password      string
-	PoolSize      int
-	Timeout       int
-	ValidationURL string
-	Sender        string
-	SenderName    string
-	Contact       string
-	WebpollURL    string
 }
 
 type Migrate struct {

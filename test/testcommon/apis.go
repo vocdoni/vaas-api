@@ -5,19 +5,15 @@ import (
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
 	"go.vocdoni.io/api/database/testdb"
-	"go.vocdoni.io/api/manager"
 	"go.vocdoni.io/api/registry"
 	"go.vocdoni.io/api/smtpclient"
 	"go.vocdoni.io/api/tokenapi"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
-
-	endpoint "go.vocdoni.io/api/services/api-endpoint"
 )
 
 type TestAPI struct {
 	DB     database.Database
-	EP     *endpoint.EndPoint
 	Port   int
 	Signer *ethereum.SignKeys
 }
@@ -33,17 +29,12 @@ func (t *TestAPI) Start(dbc *config.DB, route string) error {
 		t.Signer = ethereum.NewSignKeys()
 		t.Signer.Generate()
 
-		cfg := &config.Manager{
+		cfg := &config.Vaas{
 			API: &config.API{
 				Route:      route,
 				ListenPort: t.Port,
 				ListenHost: "127.0.0.1",
 			},
-		}
-
-		// WS Endpoint and Router
-		if t.EP, err = endpoint.NewEndpoint(cfg, t.Signer); err != nil {
-			return err
 		}
 	}
 	if dbc != nil {
@@ -90,7 +81,6 @@ func (t *TestAPI) Start(dbc *config.DB, route string) error {
 		}
 		// Only start routing once we have registered all methods. Otherwise we
 		// have a data race.
-		go t.EP.Router.Route()
 	}
 	return nil
 }

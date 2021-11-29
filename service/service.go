@@ -1,4 +1,4 @@
-package manager
+package service
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"math/rand"
-	"sync"
 
 	"fmt"
 	"reflect"
@@ -18,7 +17,6 @@ import (
 
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/smtpclient"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
@@ -26,22 +24,21 @@ import (
 	"go.vocdoni.io/dvote/log"
 )
 
-type Manager struct {
-	db   database.Database
-	smtp *smtpclient.SMTP
-	eth  *ethclient.Eth
+type VotingService struct {
+	db  database.Database
+	eth *ethclient.Eth
 }
 
-// NewManager creates a new registry handler for the Router
-func NewManager(d database.Database, s *smtpclient.SMTP, ethclient *ethclient.Eth) *Manager {
-	return &Manager{db: d, smtp: s, eth: ethclient}
+// NewVotingService creates a new registry handler for the Router
+func NewVotingService(d database.Database, ethclient *ethclient.Eth) *VotingService {
+	return &VotingService{db: d, eth: ethclient}
 }
 
-func (m *Manager) HasEthClient() bool {
+func (m *VotingService) HasEthClient() bool {
 	return m.eth != nil
 }
 
-func (m *Manager) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var entityInfo *types.EntityInfo
@@ -94,7 +91,7 @@ func (m *Manager) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *httproute
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) GetEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) GetEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
 	var response types.MetaResponse
@@ -113,7 +110,7 @@ func (m *Manager) GetEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpro
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) UpdateEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) UpdateEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
 	var response types.MetaResponse
@@ -154,7 +151,7 @@ func (m *Manager) UpdateEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) ListMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) ListMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
@@ -186,7 +183,7 @@ func (m *Manager) ListMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *http
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) GetMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) GetMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var memberID uuid.UUID
@@ -227,7 +224,7 @@ func (m *Manager) GetMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpro
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) UpdateMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) UpdateMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var member *types.Member
@@ -251,7 +248,7 @@ func (m *Manager) UpdateMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) DeleteMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) DeleteMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var memberIDs []uuid.UUID
 	var err error
@@ -272,7 +269,7 @@ func (m *Manager) DeleteMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *ht
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) CountMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) CountMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
@@ -290,7 +287,7 @@ func (m *Manager) CountMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) GenerateTokens(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) GenerateTokens(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var amount int
@@ -320,7 +317,7 @@ func (m *Manager) GenerateTokens(msg *bearerstdapi.BearerStandardAPIdata, ctx *h
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) ExportTokens(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) ExportTokens(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var members []types.Member
@@ -346,7 +343,7 @@ func (m *Manager) ExportTokens(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) ImportMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) ImportMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var membersInfo []types.MemberInfo
@@ -376,7 +373,7 @@ func (m *Manager) ImportMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx *ht
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) CountTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) CountTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
@@ -394,7 +391,7 @@ func (m *Manager) CountTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) ListTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) ListTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var listOptions *types.ListOptions
@@ -426,7 +423,7 @@ func (m *Manager) ListTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx *http
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) GetTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) GetTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var targetID *uuid.UUID
@@ -454,7 +451,7 @@ func (m *Manager) GetTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpro
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) DumpTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) DumpTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var target *types.Target
 	var signaturePubKey []byte
 	var entityID []byte
@@ -487,7 +484,7 @@ func (m *Manager) DumpTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpr
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) DumpCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) DumpCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
 	var entityID []byte
 	var censusID []byte
@@ -518,124 +515,7 @@ func (m *Manager) DumpCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpr
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) SendVotingLinks(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var err error
-	var entityID []byte
-	var processID types.HexBytes
-	var memberID *uuid.UUID
-	var signaturePubKey []byte
-	var response types.MetaResponse
-
-	if err = util.DecodeJsonMessage(memberID, "memberID", ctx); err != nil {
-		return err
-	}
-	if err = util.DecodeJsonMessage(&processID, "processID", ctx); err != nil {
-		return err
-	}
-	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-	entity, err := m.db.Entity(entityID)
-	if err != nil {
-		return fmt.Errorf("cannot recover entity %x: (%v)", entityID, err)
-	}
-
-	censusID, err := util.DecodeCensusID(ctx.URLParam("censusID"), signaturePubKey)
-	if err != nil {
-		return fmt.Errorf("cannot decode census id %s for %x", ctx.URLParam("censusID"), entityID)
-	}
-
-	email := ctx.URLParam("email")
-	if email != "" {
-		// Individual email
-		censusMember, err := m.db.EphemeralMemberInfoByEmail(entityID, censusID, email)
-		if err != nil {
-			return fmt.Errorf("cannot retrieve ephemeral member %s of  census %x for enity %x: (%v)", email, censusID, entityID, err)
-		}
-		if err := m.smtp.SendVotingLink(censusMember, entity, processID); err != nil {
-			return fmt.Errorf("could not send voting link for member %q entity: (%v)", censusMember.ID, err)
-		}
-		log.Infof("send validation links to 1 members for Entity %x", entityID)
-		response.Count = 1
-		return util.SendResponse(response, ctx)
-	}
-
-	censusMembers, err := m.db.ListEphemeralMemberInfo(entityID, censusID)
-	if err != nil {
-		return fmt.Errorf("cannot retrieve ephemeral members of  census %x for enity %x: (%v)", censusID, entityID, err)
-	}
-
-	if len(censusMembers) == 0 {
-		response.Count = 0
-		return util.SendResponse(response, ctx)
-	}
-	// send concurrently emails
-	var wg sync.WaitGroup
-	wg.Add(len(censusMembers))
-	ec := make(chan error, len(censusMembers))
-	sc := make(chan uuid.UUID, len(censusMembers))
-	for _, member := range censusMembers {
-		go func(member types.EphemeralMemberInfo) {
-			if err := m.smtp.SendVotingLink(&member, entity, processID); err != nil {
-				log.Errorf("could not send voting link for member %q entity: (%v)", member.ID, err)
-				ec <- fmt.Errorf("member %s error  %v", member.ID, err)
-				wg.Done()
-				return
-			}
-			sc <- member.ID
-			wg.Done()
-		}(member)
-	}
-	wg.Wait()
-	close(ec)
-	close(sc)
-	// get results
-	var successUUIDs []uuid.UUID
-	for uid := range sc {
-		successUUIDs = append(successUUIDs, uid)
-	}
-	response.Count = int(len(successUUIDs))
-	var errors []error
-	for err := range ec {
-		errors = append(errors, err)
-	}
-	if len(errors)+response.Count != len(censusMembers) {
-		return fmt.Errorf("inconsistency in number of sent emails and errors")
-	}
-	if len(errors) == len(censusMembers) {
-		return fmt.Errorf("no validation email was sent %v", errors)
-	}
-	if len(errors) > 0 {
-		response.Message = fmt.Sprintf("%d where found:\n%v", len(errors), errors)
-	}
-
-	// add tag PendingValidation to sucessful members
-	tagName := "VoteEmailSent"
-	tag, err := m.db.TagByName(entityID, tagName)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			tag = &types.Tag{}
-			tag.ID, err = m.db.AddTag(entityID, tagName)
-			if err != nil {
-				log.Infof("send validation links to %d members, skipped %d invalid IDs and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), len(errors), entityID, errors)
-				return fmt.Errorf("error creating Pending tag:  %v", err)
-			}
-		} else {
-			log.Infof("send validation links to %d members, skipped %d invalid IDs and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), len(errors), entityID, errors)
-			return fmt.Errorf("error retreiving Pending tag:  %v", err)
-		}
-	}
-	_, _, err = m.db.AddTagToMembers(entityID, successUUIDs, tag.ID)
-	if err != nil {
-		log.Infof("send validation links to %d members, skipped %d invalid IDs and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), len(errors), entityID, errors)
-		return fmt.Errorf("error assinging Pending tag:  %v", err)
-	}
-
-	log.Infof("send validation links to %d members, skipped %d invalid IDs and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), len(errors), entityID, errors)
-	return util.SendResponse(response, ctx)
-}
-
-func (m *Manager) AddCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) AddCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var signaturePubKey []byte
 	var targetID *uuid.UUID
 	var entityID []byte
@@ -675,7 +555,7 @@ func (m *Manager) AddCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpro
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) UpdateCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) UpdateCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	// TODO Handle invalid claims
 	var signaturePubKey []byte
 	var entityID []byte
@@ -718,7 +598,7 @@ func (m *Manager) UpdateCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) GetCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) GetCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var signaturePubKey []byte
 	var entityID []byte
 	var censusID []byte
@@ -754,7 +634,7 @@ func (m *Manager) GetCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpro
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) CountCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) CountCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var signaturePubKey []byte
 	var entityID []byte
 	var err error
@@ -772,7 +652,7 @@ func (m *Manager) CountCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *http
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) ListCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) ListCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte
 	var listOptions *types.ListOptions
@@ -804,7 +684,7 @@ func (m *Manager) ListCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httpr
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) DeleteCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) DeleteCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var signaturePubKey []byte
 	var entityID []byte
 	var censusID []byte
@@ -831,242 +711,7 @@ func (m *Manager) DeleteCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) SendValidationLinks(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var signaturePubKey []byte
-	var memberIDs []uuid.UUID
-	var members []types.Member
-	var response types.MetaResponse
-	var err error
-
-	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-
-	entity, err := m.db.Entity(entityID)
-	if err != nil {
-		return fmt.Errorf("cannot recover %x entity: (%v)", signaturePubKey, err)
-	}
-
-	if err := util.DecodeJsonMessage(&memberIDs, "memberIDs", ctx); err != nil {
-		return err
-	}
-
-	members, response.InvalidIDs, err = m.db.Members(entityID, memberIDs)
-	if err != nil {
-		return fmt.Errorf("cannot retrieve members for entity %x: (%v)", entityID, err)
-	}
-
-	if len(members) == 0 {
-		response.Count = 0
-		return util.SendResponse(response, ctx)
-	}
-	// send concurrently emails
-	var wg sync.WaitGroup
-	wg.Add(len(members))
-	ec := make(chan error, len(members))
-	sc := make(chan uuid.UUID, len(members))
-	for _, member := range members {
-		go func(member types.Member) {
-			if member.PubKey != nil {
-				log.Errorf("member %s is already validated at  %s", member.ID.String(), member.Verified)
-				ec <- fmt.Errorf("member %s is already validated at  %s", member.ID.String(), member.Verified)
-				wg.Done()
-				return
-			}
-			if err := m.smtp.SendValidationLink(&member, entity); err != nil {
-				log.Errorf("could not send validation link for member %q entity: (%v)", member.ID, err)
-				ec <- fmt.Errorf("member %s error  %v", member.ID, err)
-				wg.Done()
-				return
-			}
-			sc <- member.ID
-			wg.Done()
-		}(member)
-	}
-	wg.Wait()
-	close(ec)
-	close(sc)
-	// get results
-	var successUUIDs []uuid.UUID
-	for uid := range sc {
-		successUUIDs = append(successUUIDs, uid)
-	}
-	response.Count = int(len(successUUIDs))
-	var errors []error
-	for err := range ec {
-		errors = append(errors, err)
-	}
-	if len(errors)+response.Count != len(members) {
-		return fmt.Errorf("inconsistency in number of sent emails and errors")
-	}
-	if len(errors) == len(members) {
-		return fmt.Errorf("no validation email was sent %v", errors)
-	}
-	if len(errors) > 0 {
-		response.Message = fmt.Sprintf("%d where found:\n%v", len(errors), errors)
-	}
-	duplicates := len(memberIDs) - len(members) - len(response.InvalidIDs)
-
-	// add tag PendingValidation to sucessful members
-	tagName := "PendingValidation"
-	tag, err := m.db.TagByName(entityID, tagName)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			tag = &types.Tag{}
-			tag.ID, err = m.db.AddTag(entityID, tagName)
-			if err != nil {
-				log.Infof("send validation links to %d members, skipped %d invalid IDs, %d duplicates and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), duplicates, len(errors), entityID, errors)
-				return fmt.Errorf("error creating Pending tag:  %v", err)
-			}
-		} else {
-			log.Infof("send validation links to %d members, skipped %d invalid IDs, %d duplicates and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), duplicates, len(errors), entityID, errors)
-			log.Errorf("error retreiving Pending tag:  %v", err)
-			return fmt.Errorf("sent emails but could not assign tag")
-		}
-	}
-	_, _, err = m.db.AddTagToMembers(entityID, successUUIDs, tag.ID)
-	if err != nil {
-		log.Infof("send validation links to %d members, skipped %d invalid IDs, %d duplicates and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), duplicates, len(errors), entityID, errors)
-		log.Errorf("error assinging Pending tag:  %v", err)
-		return fmt.Errorf("sent emails but could not assign tag")
-	}
-
-	log.Infof("send validation links to %d members, skipped %d invalid IDs, %d duplicates and %d errors , for Entity %x\nErrors: %v", response.Count, len(response.InvalidIDs), duplicates, len(errors), entityID, errors)
-	return util.SendResponse(response, ctx)
-}
-
-func (m *Manager) CreateTag(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var err error
-	var response types.MetaResponse
-
-	if ctx.URLParam("tagName") == "" {
-		log.Debug("createTag with empty tag")
-		return fmt.Errorf("invalid tag name")
-	}
-
-	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-	response.Tag = &types.Tag{
-		Name: ctx.URLParam("tagName"),
-	}
-
-	if response.Tag.ID, err = m.db.AddTag(entityID, ctx.URLParam("tagName")); err != nil {
-		return fmt.Errorf("cannot create tag '%s' for entity %x: (%v)", ctx.URLParam("tagName"), entityID, err)
-	}
-
-	log.Infof("created tag with id %d and name '%s' for Entity %x", response.Tag.ID, response.Tag.Name, entityID)
-	return util.SendResponse(response, ctx)
-}
-
-func (m *Manager) ListTags(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var err error
-	var response types.MetaResponse
-
-	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-	// Query for members
-	if response.Tags, err = m.db.ListTags(entityID); err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("no tags found")
-		}
-		return fmt.Errorf("cannot retrieve tags of %x: (%v)", entityID, err)
-	}
-
-	log.Debugf("Entity: %x list %d tags", entityID, len(response.Tags))
-	return util.SendResponse(response, ctx)
-}
-
-func (m *Manager) DeleteTag(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var tagID int32
-	var err error
-	var response types.MetaResponse
-
-	if err = util.DecodeJsonMessage(&tagID, "tagID", ctx); err != nil {
-		return err
-	}
-	if tagID == 0 {
-		log.Debug("deleteTag with empty tag")
-		return fmt.Errorf("invalid tag id")
-	}
-
-	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-	if err = m.db.DeleteTag(entityID, tagID); err != nil {
-		return fmt.Errorf("cannot delete tag %d for entity %x: (%v)", tagID, entityID, err)
-	}
-
-	log.Infof("delete tag with id %d for Entity %x", tagID, entityID)
-	return util.SendResponse(response, ctx)
-}
-
-func (m *Manager) AddTag(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var tagID int32
-	var memberIDs []uuid.UUID
-	var err error
-	var response types.MetaResponse
-
-	if err = util.DecodeJsonMessage(&tagID, "tagID", ctx); err != nil {
-		return err
-	}
-	if tagID == 0 {
-		log.Debug("deleteTag with empty tag")
-		return fmt.Errorf("invalid tag id")
-	}
-	if err := util.DecodeJsonMessage(&memberIDs, "memberIDs", ctx); err != nil {
-		return err
-	}
-
-	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-	response.Count, response.InvalidIDs, err = m.db.AddTagToMembers(entityID, memberIDs, tagID)
-	if err != nil {
-		return fmt.Errorf("cannot add tag %d to members for entity %x: (%v)", tagID, entityID, err)
-	}
-
-	log.Infof("added tag with id %d to %d, with %d invalid IDs, members of Entity %x", tagID, response.Count, len(response.InvalidIDs), entityID)
-	return util.SendResponse(response, ctx)
-}
-
-func (m *Manager) RemoveTag(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var tagID int32
-	var memberIDs []uuid.UUID
-	var err error
-	var response types.MetaResponse
-
-	if err = util.DecodeJsonMessage(&tagID, "tagID", ctx); err != nil {
-		return err
-	}
-	if tagID == 0 {
-		log.Debug("deleteTag with empty tag")
-		return fmt.Errorf("invalid tag id")
-	}
-	if err := util.DecodeJsonMessage(&memberIDs, "memberIDs", ctx); err != nil {
-		return err
-	}
-
-	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-	response.Count, response.InvalidIDs, err = m.db.RemoveTagFromMembers(entityID, memberIDs, tagID)
-	if err != nil {
-		return fmt.Errorf("cannot remove tag %d from members for entity %x: (%v)", tagID, entityID, err)
-	}
-
-	log.Infof("removed tag with id %d from %d members, with %d invalid IDs, of Entity %x", tagID, response.Count, len(response.InvalidIDs), entityID)
-	return util.SendResponse(response, ctx)
-}
-
-func (m *Manager) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var signaturePubKey []byte
 	var entityID []byte
 	var err error
@@ -1093,7 +738,7 @@ func (m *Manager) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	return util.SendResponse(response, ctx)
 }
 
-func (m *Manager) RequestGas(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (m *VotingService) RequestGas(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
 	var response types.MetaResponse
