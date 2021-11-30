@@ -37,6 +37,10 @@ func (m *VotingService) HasVocClient() bool {
 	return m.vocClient != nil
 }
 
+func (m *VotingService) CreateEntity(integratorID, entityID []byte, entityInfo *types.EntityInfo) error {
+	return m.db.CreateEntity(integratorID, entityID, entityInfo)
+}
+
 func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var signaturePubKey []byte

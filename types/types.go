@@ -23,6 +23,7 @@ type IntegratorInfo struct {
 	Name  string `json:"name" db:"name"`
 	Size  int    `json:"size" db:"size"`
 }
+
 type Entity struct {
 	CreatedUpdated
 	ID           []byte `json:"id" db:"id"`

@@ -1,10 +1,12 @@
 package urlapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"go.vocdoni.io/api/service"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/metrics"
@@ -45,4 +47,15 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 	}
 
 	return &urlapi, nil
+}
+
+func sendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {
+	data, err := json.Marshal(response)
+	if err != nil {
+		return fmt.Errorf("error marshaling JSON: %w", err)
+	}
+	if err = ctx.Send(data); err != nil {
+		return err
+	}
+	return nil
 }
