@@ -5,7 +5,9 @@ import (
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
 	"go.vocdoni.io/api/database/testdb"
+	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/log"
 )
 
@@ -18,7 +20,7 @@ type TestAPI struct {
 // Start creates a new database connection and API endpoint for testing.
 // If dbc is nill the testdb will be used.
 // If route is nill, then the websockets API won't be initialized
-func (t *TestAPI) Start(dbc *config.DB, route string) error {
+func (t *TestAPI) Start(dbc *config.DB, route string, port int) error {
 	log.Init("info", "stdout")
 	var err error
 	if route != "" {
@@ -39,7 +41,16 @@ func (t *TestAPI) Start(dbc *config.DB, route string) error {
 	}
 
 	if route != "" {
+		api, err := NewTestClient(route, port)
 		log.Infof("enabling API methods")
 	}
 	return nil
+}
+
+func NewTestClient(host string, port int) (*urlapi.URLAPI, error) {
+	var httpRouter httprouter.HTTProuter
+	if err := httpRouter.Init(host, port); err != nil {
+		log.Fatal(err)
+	}
+	return urlapi.NewURLAPI(&httpRouter, "/api", nil)
 }

@@ -1,7 +1,6 @@
 package testcommon
 
 import (
-	"encoding/json"
 	"math/rand"
 	"time"
 
@@ -20,44 +19,13 @@ func CreateEntities(size int) ([]*ethereum.SignKeys, []*types.Entity) {
 		mp[i] = &types.Entity{
 			ID: signers[i].Address().Bytes(),
 			EntityInfo: types.EntityInfo{
-				Email:                   randomdata.Email(),
-				Name:                    randomdata.FirstName(2),
-				Type:                    randomdata.Letters(5),
-				Size:                    randomdata.Number(1001),
-				CensusManagersAddresses: [][]byte{signers[i].Address().Bytes()},
-				Origins:                 []types.Origin{types.Token},
-				CallbackURL:             "",
-				CallbackSecret:          "",
+				Email: randomdata.Email(),
+				Name:  randomdata.FirstName(2),
+				Size:  randomdata.Number(1001),
 			},
 		}
 	}
 	return signers, mp
-}
-
-// CreateMembers a given number of members with its entityID set to entityID
-func CreateMembers(entityID []byte, size int) ([]*ethereum.SignKeys, []types.Member, error) {
-	signers := CreateEthRandomKeysBatch(size)
-	members := make([]types.Member, size)
-	// if membersInfo not set generate random data
-	for i := 0; i < size; i++ {
-		members[i] = types.Member{
-			EntityID: entityID,
-			PubKey:   signers[i].PublicKey(),
-			MemberInfo: types.MemberInfo{
-				DateOfBirth:   RandDate(),
-				Email:         randomdata.Email(),
-				FirstName:     randomdata.FirstName(2),
-				LastName:      randomdata.LastName(),
-				Phone:         randomdata.PhoneNumber(),
-				StreetAddress: randomdata.Address(),
-				Consented:     RandBool(),
-				// Verified:      RandDate(),
-				Origin:       types.Token,
-				CustomFields: json.RawMessage([]byte("{}")),
-			},
-		}
-	}
-	return signers, members, nil
 }
 
 // CreateEthRandomKeysBatch creates a set of eth random signing keys
