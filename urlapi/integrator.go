@@ -33,7 +33,7 @@ func (u *URLAPI) enableIntegratorHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/entities/#id/key",
+		"/priv/account/entities/{id}/key",
 		"PATCH",
 		bearerstdapi.MethodAccessTypeAdmin,
 		u.resetEntityKeyHandler,

@@ -9,7 +9,7 @@ import (
 
 func (u *URLAPI) enableVoterHandlers() error {
 	if err := u.api.RegisterMethod(
-		"/pub/censuses/#censusId/token",
+		"/pub/censuses/{censusId}/token",
 		"POST",
 		bearerstdapi.MethodAccessTypeAdmin,
 		u.registerPublicKeyHandler,
@@ -17,7 +17,7 @@ func (u *URLAPI) enableVoterHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/processes/#processId/auth/#signature",
+		"/pub/processes/{processId}/auth/{signature}",
 		"GET",
 		bearerstdapi.MethodAccessTypeAdmin,
 		u.getProcessInfoHandler,
