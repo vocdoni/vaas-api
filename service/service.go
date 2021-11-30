@@ -44,7 +44,7 @@ func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	var entityInfo *types.EntityInfo
 	var target *types.Target
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -94,7 +94,7 @@ func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 func (m *VotingService) GetEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -113,7 +113,7 @@ func (m *VotingService) GetEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 func (m *VotingService) UpdateEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -155,7 +155,7 @@ func (m *VotingService) ListMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -188,7 +188,7 @@ func (m *VotingService) GetMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var signaturePubKey []byte
 	var memberID uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if len(ctx.URLParam("memberID")) == 0 {
 		return fmt.Errorf("memberID is nil on getMember")
@@ -229,7 +229,7 @@ func (m *VotingService) UpdateMember(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var signaturePubKey []byte
 	var member *types.Member
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -252,7 +252,7 @@ func (m *VotingService) DeleteMembers(msg *bearerstdapi.BearerStandardAPIdata, c
 	var entityID []byte
 	var memberIDs []uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -273,7 +273,7 @@ func (m *VotingService) CountMembers(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -292,7 +292,7 @@ func (m *VotingService) GenerateTokens(msg *bearerstdapi.BearerStandardAPIdata, 
 	var signaturePubKey []byte
 	var amount int
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -322,7 +322,7 @@ func (m *VotingService) ExportTokens(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var signaturePubKey []byte
 	var members []types.Member
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -348,7 +348,7 @@ func (m *VotingService) ImportMembers(msg *bearerstdapi.BearerStandardAPIdata, c
 	var signaturePubKey []byte
 	var membersInfo []types.MemberInfo
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -377,7 +377,7 @@ func (m *VotingService) CountTargets(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -396,7 +396,7 @@ func (m *VotingService) ListTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx
 	var signaturePubKey []byte
 	var listOptions *types.ListOptions
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -428,7 +428,7 @@ func (m *VotingService) GetTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var signaturePubKey []byte
 	var targetID *uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -457,7 +457,7 @@ func (m *VotingService) DumpTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var entityID []byte
 	var targetID *uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -489,7 +489,7 @@ func (m *VotingService) DumpCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var entityID []byte
 	var censusID []byte
 	var signaturePubKey []byte
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -522,7 +522,7 @@ func (m *VotingService) AddCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var censusID []byte
 	var census *types.CensusInfo
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -563,7 +563,7 @@ func (m *VotingService) UpdateCensus(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var invalidClaims [][]byte
 	var census *types.CensusInfo
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -603,7 +603,7 @@ func (m *VotingService) GetCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var entityID []byte
 	var censusID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -638,7 +638,7 @@ func (m *VotingService) CountCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx
 	var signaturePubKey []byte
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -657,7 +657,7 @@ func (m *VotingService) ListCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var signaturePubKey []byte
 	var listOptions *types.ListOptions
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -689,7 +689,7 @@ func (m *VotingService) DeleteCensus(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var entityID []byte
 	var censusID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -715,7 +715,7 @@ func (m *VotingService) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata,
 	var signaturePubKey []byte
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -741,7 +741,7 @@ func (m *VotingService) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata,
 func (m *VotingService) RequestGas(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if m.eth == nil {
 		return fmt.Errorf("cannot request for tokens, ethereum client is nil")

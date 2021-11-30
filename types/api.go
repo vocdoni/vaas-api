@@ -1,20 +1,15 @@
 package types
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
 )
 
-type RequestMessage struct {
-	MetaRequest json.RawMessage `json:"request"`
-
-	ID        string   `json:"id"`
-	Signature HexBytes `json:"signature"`
-}
-
-type MetaRequest struct {
+// APIRequest contains all of the possible request fields.
+// Fields must be in alphabetical order
+// Those fields with valid zero-values (such as bool) must be pointers
+type APIRequest struct {
 	Amount   int         `json:"amount,omitempty"`
 	AuthHash string      `json:"authHash,omitempty"`
 	Census   *CensusInfo `json:"census,omitempty"`
@@ -46,18 +41,10 @@ type MetaRequest struct {
 	Topic         string       `json:"topic,omitempty"`
 }
 
-// ResponseMessage wraps an api response
-type ResponseMessage struct {
-	MetaResponse json.RawMessage `json:"response"`
-
-	ID        string   `json:"id"`
-	Signature HexBytes `json:"signature"`
-}
-
-// MetaResponse contains all of the possible request fields.
+// APIResponse contains all of the possible response fields.
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
-type MetaResponse struct {
+type APIResponse struct {
 	APIList    []string    `json:"apiList,omitempty"`
 	Census     *Census     `json:"census,omitempty"`
 	Censuses   []Census    `json:"censuses,omitempty"`
@@ -91,7 +78,7 @@ type MetaResponse struct {
 
 // SetError sets the MetaResponse's Ok field to false, and Message to a string
 // representation of v. Usually, v's type will be error or string.
-func (r *MetaResponse) SetError(v interface{}) {
+func (r *APIResponse) SetError(v interface{}) {
 	r.Ok = false
 	r.Message = fmt.Sprintf("%s", v)
 }
