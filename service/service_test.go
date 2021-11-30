@@ -1011,22 +1011,3 @@ func TestListCensus(t *testing.T) {
 		t.Fatal("should success")
 	}
 }
-
-func TestRequestGas(t *testing.T) {
-	wsc, err := testcommon.NewAPIConnection(fmt.Sprintf("ws://127.0.0.1:%d/api", api.Port), t)
-	// check connected successfully
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	s := ethereum.NewSignKeys()
-	s.AddHexKey(testdb.Signers[1].Priv)
-	var req types.APIRequest
-	req.Method = "requestGas"
-	// make request
-	resp := wsc.Request(req, s)
-	// check register went successful
-	if resp.Ok {
-		t.Fatal("should fail if no ethclient provided")
-	}
-}

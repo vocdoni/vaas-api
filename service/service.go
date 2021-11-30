@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -13,7 +12,6 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
-	"go.vocdoni.io/api/ethclient"
 
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
@@ -25,17 +23,12 @@ import (
 )
 
 type VotingService struct {
-	db  database.Database
-	eth *ethclient.Eth
+	db database.Database
 }
 
 // NewVotingService creates a new registry handler for the Router
-func NewVotingService(d database.Database, ethclient *ethclient.Eth) *VotingService {
-	return &VotingService{db: d, eth: ethclient}
-}
-
-func (m *VotingService) HasEthClient() bool {
-	return m.eth != nil
+func NewVotingService(d database.Database) *VotingService {
+	return &VotingService{db: d}
 }
 
 func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
@@ -74,18 +67,17 @@ func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	}
 
 	entityAddress := ethcommon.BytesToAddress(entityID)
-	// do not try to send tokens if ethclient is nil
-	if m.eth != nil {
-		// send the default amount of faucet tokens iff wallet balance is zero
-		sent, err := m.eth.SendTokens(context.Background(), entityAddress, 0, 0)
-		if err != nil {
-			if !strings.Contains(err.Error(), "maxAcceptedBalance") {
-				return fmt.Errorf("error sending tokens to entity %s : %v", entityAddress.String(), err)
-			}
-			log.Warnf("signUp not sending tokens to entity %s : %v", entityAddress.String(), err)
-		}
-		response.Count = int(sent.Int64())
-	}
+	// if m.eth != nil {
+	// 	// send the default amount of faucet tokens iff wallet balance is zero
+	// 	sent, err := m.eth.SendTokens(context.Background(), entityAddress, 0, 0)
+	// 	if err != nil {
+	// 		if !strings.Contains(err.Error(), "maxAcceptedBalance") {
+	// 			return fmt.Errorf("error sending tokens to entity %s : %v", entityAddress.String(), err)
+	// 		}
+	// 		log.Warnf("signUp not sending tokens to entity %s : %v", entityAddress.String(), err)
+	// 	}
+	// 	response.Count = int(sent.Int64())
+	// }
 
 	log.Debugf("Entity: %s signUp", entityAddress.String())
 	return util.SendResponse(response, ctx)
@@ -735,37 +727,6 @@ func (m *VotingService) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	log.Debugf("Entity: %x adminEntityList %d entities", signaturePubKey, len(response.Entities))
-	return util.SendResponse(response, ctx)
-}
-
-func (m *VotingService) RequestGas(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var err error
-	var response types.APIResponse
-
-	if m.eth == nil {
-		return fmt.Errorf("cannot request for tokens, ethereum client is nil")
-	}
-	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-
-	entityAddress := ethcommon.BytesToAddress(entityID)
-
-	// check entity exists
-	if _, err := m.db.Entity(entityID); err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("entity not found")
-		}
-		return fmt.Errorf("cannot retrieve details of entity %x: (%v)", entityID, err)
-	}
-
-	sent, err := m.eth.SendTokens(context.Background(), entityAddress, 0, 0)
-	if err != nil {
-		return fmt.Errorf("error sending tokens to entity %s : %v", entityAddress.String(), err)
-	}
-
-	response.Count = int(sent.Int64())
 	return util.SendResponse(response, ctx)
 }
 

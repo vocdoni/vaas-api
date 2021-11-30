@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"time"
 )
 
 type DB struct {
@@ -63,44 +62,24 @@ type Vaas struct {
 	GatewayUrls []string
 	// Migration options
 	Migrate *Migrate
-	// Web3 connection options
-	EthNetwork *EthNetwork
 }
 
 func (v *Vaas) String() string {
-	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, Migrate: %+v, Eth: %v",
-		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKeys, v.GatewayUrls, *v.Migrate, *v.EthNetwork)
+	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, Migrate: %+v",
+		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKeys, v.GatewayUrls, *v.Migrate)
 }
 
 // NewVaasConfig initializes the fields in the config stuct
 func NewVaasConfig() *Vaas {
 	return &Vaas{
-		API:        new(API),
-		DB:         new(DB),
-		Migrate:    new(Migrate),
-		Metrics:    new(MetricsCfg),
-		EthNetwork: new(EthNetwork),
+		API:     new(API),
+		DB:      new(DB),
+		Migrate: new(Migrate),
+		Metrics: new(MetricsCfg),
 	}
 }
 
 type Migrate struct {
 	// Action defines the migration action to be taken (up, down, status)
 	Action string
-}
-
-type EthNetwork struct {
-	// NetworkName is the Ethereum Network Name
-	// currently supported: "mainnet", "sokol", goerli", "xdai",
-	// more info in:
-	// https://github.com/vocdoni/vocdoni-node/blob/8b5a1fbc161603b96831fed7b0748190afff0bff/chain/blockchains.go
-	Name string
-	// Provider is the Ethereum gateway host
-	Provider string
-	// GasLimit is the deafult gas limit for sending an EVM transaction
-	GasLimit uint64
-	// FaucetAmount is the default amount of xdai/gas to send to entities
-	// 1 XDAI/ETH (as xDAI is the native token for xDAI chain)
-	FaucetAmount int
-	// Timeout applied to the ethereum transactions
-	Timeout time.Duration
 }
