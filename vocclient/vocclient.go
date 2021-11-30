@@ -15,23 +15,23 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type VocClient struct {
+type Client struct {
 	pool       GatewayPool
 	signingKey *ethereum.SignKeys
 }
 
-func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*VocClient, error) {
+func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
 	gwPool, err := discoverGateways(gatewayUrls)
 	if err != nil {
 		return nil, err
 	}
-	return &VocClient{
+	return &Client{
 		pool:       gwPool,
 		signingKey: signingKey,
 	}, nil
 }
 
-func (c *VocClient) ActiveEndpoint() string {
+func (c *Client) ActiveEndpoint() string {
 	gw, err := c.pool.activeGateway()
 	if err != nil {
 		return ""
@@ -44,7 +44,7 @@ func (c *VocClient) ActiveEndpoint() string {
 
 // FETCHING INFO APIS
 
-func (c *VocClient) GetCurrentBlock() (blockHeight uint32, _ error) {
+func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
 	var req api.APIrequest
 	req.Method = "getBlockHeight"
 	resp, err := c.pool.Request(req, nil)
@@ -57,7 +57,7 @@ func (c *VocClient) GetCurrentBlock() (blockHeight uint32, _ error) {
 	return *resp.Height, nil
 }
 
-func (c *VocClient) GetProcess(pid []byte) (*indexertypes.Process, error) {
+func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	var req api.APIrequest
 	req.Method = "getProcessInfo"
 	req.ProcessID = pid
@@ -68,7 +68,7 @@ func (c *VocClient) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	return resp.Process, nil
 }
 
-func (c *VocClient) GetProcessList(entityId []byte, searchTerm string, namespace uint32, status string, withResults bool, srcNetId string, from, listSize int) (processList []string, _ error) {
+func (c *Client) GetProcessList(entityId []byte, searchTerm string, namespace uint32, status string, withResults bool, srcNetId string, from, listSize int) (processList []string, _ error) {
 	var req api.APIrequest
 	req.Method = "getProcessList"
 	req.EntityId = entityId
@@ -91,7 +91,7 @@ func (c *VocClient) GetProcessList(entityId []byte, searchTerm string, namespace
 
 // FILE APIS
 
-func (c *VocClient) AddFile(content []byte, contentType, name string) (URI string, _ error) {
+func (c *Client) AddFile(content []byte, contentType, name string) (URI string, _ error) {
 	resp, err := c.pool.Request(api.APIrequest{
 		Method:  "addFile",
 		Content: content,
@@ -106,7 +106,7 @@ func (c *VocClient) AddFile(content []byte, contentType, name string) (URI strin
 
 // CENSUS APIS
 
-func (c *VocClient) AddCensus() (CensusID string, _ error) {
+func (c *Client) AddCensus() (CensusID string, _ error) {
 	var req api.APIrequest
 
 	// Create census
@@ -122,7 +122,7 @@ func (c *VocClient) AddCensus() (CensusID string, _ error) {
 	return resp.CensusID, nil
 }
 
-func (c *VocClient) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string, censusValue []byte) (root types.HexBytes, _ error) {
+func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string, censusValue []byte) (root types.HexBytes, _ error) {
 	var req api.APIrequest
 	var hexpub string
 	req.Method = "addClaim"
@@ -146,7 +146,7 @@ func (c *VocClient) AddClaim(censusID string, censusSigner *ethereum.SignKeys, c
 	return resp.Root, nil
 }
 
-func (c *VocClient) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string, censusValues []*types.BigInt) (root types.HexBytes, invalidClaims []int, _ error) {
+func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string, censusValues []*types.BigInt) (root types.HexBytes, invalidClaims []int, _ error) {
 	var req api.APIrequest
 	req.CensusID = censusID
 	censusSize := 0
@@ -198,7 +198,7 @@ func (c *VocClient) AddClaimBulk(censusID string, censusSigners []*ethereum.Sign
 	return root, invalidClaims, nil
 }
 
-func (c *VocClient) PublishCensus(censusID string, rootHash types.HexBytes) (uri string, _ error) {
+func (c *Client) PublishCensus(censusID string, rootHash types.HexBytes) (uri string, _ error) {
 	var req api.APIrequest
 	req.Method = "publish"
 	req.CensusID = censusID
@@ -214,7 +214,7 @@ func (c *VocClient) PublishCensus(censusID string, rootHash types.HexBytes) (uri
 	return resp.URI, nil
 }
 
-func (c *VocClient) GetRoot(censusID string) (root types.HexBytes, _ error) {
+func (c *Client) GetRoot(censusID string) (root types.HexBytes, _ error) {
 	var req api.APIrequest
 	req.Method = "getRoot"
 	req.CensusID = censusID
@@ -227,7 +227,7 @@ func (c *VocClient) GetRoot(censusID string) (root types.HexBytes, _ error) {
 
 // PROCESS APIS
 
-func (c *VocClient) CreateProcess(
+func (c *Client) CreateProcess(
 	entityID, censusRoot []byte,
 	censusURI string,
 	pid []byte,

@@ -17,18 +17,24 @@ import (
 	"go.vocdoni.io/api/database/pgsql"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
+	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
 )
 
 type VotingService struct {
-	db database.Database
+	db        database.Database
+	vocClient *vocclient.Client
 }
 
 // NewVotingService creates a new registry handler for the Router
-func NewVotingService(d database.Database) *VotingService {
-	return &VotingService{db: d}
+func NewVotingService(d database.Database, vocClient *vocclient.Client) *VotingService {
+	return &VotingService{db: d, vocClient: vocClient}
+}
+
+func (m *VotingService) HasVocClient() bool {
+	return m.vocClient != nil
 }
 
 func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {

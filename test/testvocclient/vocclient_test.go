@@ -17,7 +17,7 @@ var testUrls = []string{"https://gw1.dev.vocdoni.net/dvote", "https://gw2.dev.vo
 
 var testBadUrls = []string{"https://invalidUrl.vocdoni.net/dvote", "https://wrooooo.vocdoni.net/dvote", "https://Wroooo0ooo.vocdoni.net/dvote"}
 
-var testClient *vocclient.VocClient
+var testClient *vocclient.Client
 
 func TestMain(m *testing.M) {
 	rand.Seed(time.Now().UnixNano())

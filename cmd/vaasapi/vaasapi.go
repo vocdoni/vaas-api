@@ -249,7 +249,7 @@ func main() {
 
 	// Vaas api
 	log.Infof("enabling VaaS API methods")
-	votingService := service.NewVotingService(db)
+	votingService := service.NewVotingService(db, client)
 	if err := urlApi.EnableVotingServiceHandlers(votingService); err != nil {
 		log.Fatal(err)
 	}
