@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
@@ -13,7 +12,6 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
-	"go.vocdoni.io/api/ethclient"
 
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
@@ -25,17 +23,12 @@ import (
 )
 
 type VotingService struct {
-	db  database.Database
-	eth *ethclient.Eth
+	db database.Database
 }
 
 // NewVotingService creates a new registry handler for the Router
-func NewVotingService(d database.Database, ethclient *ethclient.Eth) *VotingService {
-	return &VotingService{db: d, eth: ethclient}
-}
-
-func (m *VotingService) HasEthClient() bool {
-	return m.eth != nil
+func NewVotingService(d database.Database) *VotingService {
+	return &VotingService{db: d}
 }
 
 func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
@@ -44,7 +37,7 @@ func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	var entityInfo *types.EntityInfo
 	var target *types.Target
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -74,18 +67,17 @@ func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 	}
 
 	entityAddress := ethcommon.BytesToAddress(entityID)
-	// do not try to send tokens if ethclient is nil
-	if m.eth != nil {
-		// send the default amount of faucet tokens iff wallet balance is zero
-		sent, err := m.eth.SendTokens(context.Background(), entityAddress, 0, 0)
-		if err != nil {
-			if !strings.Contains(err.Error(), "maxAcceptedBalance") {
-				return fmt.Errorf("error sending tokens to entity %s : %v", entityAddress.String(), err)
-			}
-			log.Warnf("signUp not sending tokens to entity %s : %v", entityAddress.String(), err)
-		}
-		response.Count = int(sent.Int64())
-	}
+	// if m.eth != nil {
+	// 	// send the default amount of faucet tokens iff wallet balance is zero
+	// 	sent, err := m.eth.SendTokens(context.Background(), entityAddress, 0, 0)
+	// 	if err != nil {
+	// 		if !strings.Contains(err.Error(), "maxAcceptedBalance") {
+	// 			return fmt.Errorf("error sending tokens to entity %s : %v", entityAddress.String(), err)
+	// 		}
+	// 		log.Warnf("signUp not sending tokens to entity %s : %v", entityAddress.String(), err)
+	// 	}
+	// 	response.Count = int(sent.Int64())
+	// }
 
 	log.Debugf("Entity: %s signUp", entityAddress.String())
 	return util.SendResponse(response, ctx)
@@ -94,7 +86,7 @@ func (m *VotingService) SignUp(msg *bearerstdapi.BearerStandardAPIdata, ctx *htt
 func (m *VotingService) GetEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -113,7 +105,7 @@ func (m *VotingService) GetEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 func (m *VotingService) UpdateEntity(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -155,7 +147,7 @@ func (m *VotingService) ListMembers(msg *bearerstdapi.BearerStandardAPIdata, ctx
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -188,7 +180,7 @@ func (m *VotingService) GetMember(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var signaturePubKey []byte
 	var memberID uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if len(ctx.URLParam("memberID")) == 0 {
 		return fmt.Errorf("memberID is nil on getMember")
@@ -229,7 +221,7 @@ func (m *VotingService) UpdateMember(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var signaturePubKey []byte
 	var member *types.Member
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -252,7 +244,7 @@ func (m *VotingService) DeleteMembers(msg *bearerstdapi.BearerStandardAPIdata, c
 	var entityID []byte
 	var memberIDs []uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -273,7 +265,7 @@ func (m *VotingService) CountMembers(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -292,7 +284,7 @@ func (m *VotingService) GenerateTokens(msg *bearerstdapi.BearerStandardAPIdata, 
 	var signaturePubKey []byte
 	var amount int
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -322,7 +314,7 @@ func (m *VotingService) ExportTokens(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var signaturePubKey []byte
 	var members []types.Member
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -348,7 +340,7 @@ func (m *VotingService) ImportMembers(msg *bearerstdapi.BearerStandardAPIdata, c
 	var signaturePubKey []byte
 	var membersInfo []types.MemberInfo
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -377,7 +369,7 @@ func (m *VotingService) CountTargets(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var entityID []byte
 	var signaturePubKey []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -396,7 +388,7 @@ func (m *VotingService) ListTargets(msg *bearerstdapi.BearerStandardAPIdata, ctx
 	var signaturePubKey []byte
 	var listOptions *types.ListOptions
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -428,7 +420,7 @@ func (m *VotingService) GetTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var signaturePubKey []byte
 	var targetID *uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -457,7 +449,7 @@ func (m *VotingService) DumpTarget(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var entityID []byte
 	var targetID *uuid.UUID
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -489,7 +481,7 @@ func (m *VotingService) DumpCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var entityID []byte
 	var censusID []byte
 	var signaturePubKey []byte
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -522,7 +514,7 @@ func (m *VotingService) AddCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var censusID []byte
 	var census *types.CensusInfo
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -563,7 +555,7 @@ func (m *VotingService) UpdateCensus(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var invalidClaims [][]byte
 	var census *types.CensusInfo
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -603,7 +595,7 @@ func (m *VotingService) GetCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx *
 	var entityID []byte
 	var censusID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -638,7 +630,7 @@ func (m *VotingService) CountCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx
 	var signaturePubKey []byte
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -657,7 +649,7 @@ func (m *VotingService) ListCensus(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var signaturePubKey []byte
 	var listOptions *types.ListOptions
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -689,7 +681,7 @@ func (m *VotingService) DeleteCensus(msg *bearerstdapi.BearerStandardAPIdata, ct
 	var entityID []byte
 	var censusID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -715,7 +707,7 @@ func (m *VotingService) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata,
 	var signaturePubKey []byte
 	var entityID []byte
 	var err error
-	var response types.MetaResponse
+	var response types.APIResponse
 
 	if entityID, signaturePubKey, err = util.RetrieveEntityID(ctx); err != nil {
 		return err
@@ -735,37 +727,6 @@ func (m *VotingService) AdminEntityList(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	log.Debugf("Entity: %x adminEntityList %d entities", signaturePubKey, len(response.Entities))
-	return util.SendResponse(response, ctx)
-}
-
-func (m *VotingService) RequestGas(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var entityID []byte
-	var err error
-	var response types.MetaResponse
-
-	if m.eth == nil {
-		return fmt.Errorf("cannot request for tokens, ethereum client is nil")
-	}
-	if entityID, _, err = util.RetrieveEntityID(ctx); err != nil {
-		return err
-	}
-
-	entityAddress := ethcommon.BytesToAddress(entityID)
-
-	// check entity exists
-	if _, err := m.db.Entity(entityID); err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("entity not found")
-		}
-		return fmt.Errorf("cannot retrieve details of entity %x: (%v)", entityID, err)
-	}
-
-	sent, err := m.eth.SendTokens(context.Background(), entityAddress, 0, 0)
-	if err != nil {
-		return fmt.Errorf("error sending tokens to entity %s : %v", entityAddress.String(), err)
-	}
-
-	response.Count = int(sent.Int64())
 	return util.SendResponse(response, ctx)
 }
 

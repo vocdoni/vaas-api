@@ -17,7 +17,7 @@ func (u *URLAPI) enableSuperadminHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/admin/accounts/#id",
+		"/admin/accounts/{id}",
 		"PUT",
 		bearerstdapi.MethodAccessTypeAdmin,
 		u.updateIntegratorAccountHandler,
@@ -25,7 +25,7 @@ func (u *URLAPI) enableSuperadminHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/admin/accounts/#id/key",
+		"/admin/accounts/{id}/key",
 		"PATCH",
 		bearerstdapi.MethodAccessTypeAdmin,
 		u.resetIntegratorKeyHandler,
@@ -33,7 +33,7 @@ func (u *URLAPI) enableSuperadminHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/admin/accounts/#id",
+		"/admin/accounts/{id}",
 		"GET",
 		bearerstdapi.MethodAccessTypeAdmin,
 		u.getIntegratorAccountHandler,
@@ -41,7 +41,7 @@ func (u *URLAPI) enableSuperadminHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/admin/accounts/#id",
+		"/admin/accounts/{id}",
 		"DELETE",
 		bearerstdapi.MethodAccessTypeAdmin,
 		u.deleteIntegratorAccountHandler,

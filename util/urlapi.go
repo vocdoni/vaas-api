@@ -50,7 +50,7 @@ func RetrieveEntityID(ctx *httprouter.HTTPContext) (
 	return entityID, signaturePubKey, nil
 }
 
-func SendResponse(response types.MetaResponse, ctx *httprouter.HTTPContext) error {
+func SendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {
 	data, err := json.Marshal(response)
 	if err != nil {
 		return fmt.Errorf("error marshaling JSON: %w", err)

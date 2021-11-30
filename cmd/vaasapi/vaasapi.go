@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -14,13 +13,10 @@ import (
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/ethclient"
 	"go.vocdoni.io/api/service"
-	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	chain "go.vocdoni.io/dvote/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
 	log "go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/metrics"
@@ -57,11 +53,6 @@ func newConfig() (*config.Vaas, config.Error) {
 	cfg.DB.Dbname = *flag.String("dbName", "database", "DB database name")
 	cfg.DB.Sslmode = *flag.String("dbSslmode", "prefer", "DB postgres sslmode")
 	cfg.Migrate.Action = *flag.String("migrateAction", "", "Migration action (up,down,status)")
-	cfg.EthNetwork.Name = *flag.String("ethNetworkName", "goerli", fmt.Sprintf("Ethereum blockchain to use: %s", chain.AvailableChains))
-	cfg.EthNetwork.Provider = *flag.String("ethNetworkProvider", "", "Ethereum network gateway")
-	cfg.EthNetwork.GasLimit = *flag.Uint64("ethNetworkGasLimit", 0, "Gas limit for sending an EVM transaction in units")
-	cfg.EthNetwork.FaucetAmount = *flag.Int("ethNetworkFaucetAmount", 0*types.Finney, "Amount of eth or similar to be provided upon an entity sign up (in milliEther)")
-	cfg.EthNetwork.Timeout = *flag.Duration("ethNetworkTimeout", 60*time.Second, "Timeout for ethereum transactions (default: 60s) ")
 	// metrics
 	cfg.Metrics.Enabled = *flag.Bool("metricsEnabled", true, "enable prometheus metrics")
 	cfg.Metrics.RefreshInterval = *flag.Int("metricsRefreshInterval", 10, "metrics refresh interval in seconds")
@@ -99,11 +90,6 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("db.dbName", flag.Lookup("dbName"))
 	viper.BindPFlag("db.sslMode", flag.Lookup("dbSslmode"))
 	viper.BindPFlag("migrate.action", flag.Lookup("migrateAction"))
-	viper.BindPFlag("ethnetwork.name", flag.Lookup("ethNetworkName"))
-	viper.BindPFlag("ethnetwork.provider", flag.Lookup("ethNetworkProvider"))
-	viper.BindPFlag("ethnetwork.gasLimit", flag.Lookup("ethNetworkGasLimit"))
-	viper.BindPFlag("ethnetwork.faucetAmount", flag.Lookup("ethNetworkFaucetAmount"))
-	viper.BindPFlag("ethnetwork.timeout", flag.Lookup("ethNetworkTimeout"))
 	// metrics
 	viper.BindPFlag("metrics.enabled", flag.Lookup("metricsEnabled"))
 	viper.BindPFlag("metrics.refreshInterval", flag.Lookup("metricsRefreshInterval"))
@@ -217,7 +203,6 @@ func main() {
 	}
 	log.Infof("Connected to %s at block height %d", client.ActiveEndpoint(), blockHeight)
 
-	ctx := context.Background()
 	// Database Interface
 	var db database.Database
 
@@ -263,36 +248,8 @@ func main() {
 	}
 
 	// Vaas api
-	signers := make([]*ethclient.Signer, len(cfg.SigningKeys))
-	privs := make([]string, len(cfg.SigningKeys))
-	for idx, key := range cfg.SigningKeys {
-		kpair := ethereum.NewSignKeys()
-		kpair.AddHexKey(key)
-		signers[idx] = &ethclient.Signer{
-			SignKeys: kpair,
-			Taken:    make(chan bool, 1),
-		}
-		_, priv := kpair.HexString()
-		privs[idx] = priv
-		log.Infof("Added signer %s for faucet", signers[idx].SignKeys.AddressString())
-	}
-	viper.Set("signingKeys", signers)
-	cfg.SaveConfig = true
-	var ethClient *ethclient.Eth
-	if len(cfg.EthNetwork.Name) != 0 {
-		ethClient, err = ethclient.New(ctx, cfg.EthNetwork, signers)
-		if err != nil {
-			log.Fatalf("cannot connect to ethereum endpoint: %w", err)
-		}
-		balance, err := ethClient.BalanceAt(context.Background(), signer.Address(), nil)
-		if err != nil {
-			log.Errorf("cannot get signer balance: (%v)", err)
-		}
-		log.Infof("my %s balance is %s", cfg.EthNetwork.Name, balance.String())
-	}
-
 	log.Infof("enabling VaaS API methods")
-	votingService := service.NewVotingService(db, ethClient)
+	votingService := service.NewVotingService(db)
 	if err := urlApi.EnableVotingServiceHandlers(votingService); err != nil {
 		log.Fatal(err)
 	}
