@@ -13,29 +13,23 @@ type CreatedUpdated struct {
 
 type Integrator struct {
 	CreatedUpdated
-	ID           []byte `json:"id" db:"id"`
-	IsAuthorized bool   `json:"isAuthorized" db:"is_authorized"`
-	IntegratorInfo
+	ID           int    `json:"id" db:"id"`
+	SecretApiKey []byte `json:"secretApiKey" db:"secret_api_key"`
+	Name         string `json:"name" db:"name"`
+	CspUrlPrefix string `json:"cspUrlPrefix" db:"csp_url_prefix"`
+	CspPubKey    []byte `json:"cspPubKey" db:"csp_pub_key"` // CSP compressed eth public key
 }
-
-type IntegratorInfo struct {
-	Email string `json:"email,omitempty" db:"email"`
-	Name  string `json:"name" db:"name"`
-	Size  int    `json:"size" db:"size"`
-}
-
 type Entity struct {
 	CreatedUpdated
-	ID           []byte `json:"id" db:"id"`
-	IntegratorID []byte `json:"integratorId" db:"integrator_id"`
-	IsAuthorized bool   `json:"isAuthorized" db:"is_authorized"`
-	EntityInfo
-}
-
-type EntityInfo struct {
-	Email string `json:"email,omitempty" db:"email"`
-	Name  string `json:"name" db:"name"`
-	Size  int    `json:"size" db:"size"`
+	ID              int    `json:"id" db:"id"`
+	IntegratorID    int    `json:"integratorId" db:"integrator_id"`
+	EthAddress      []byte `json:"ethAddress" db:"eth_address"`
+	MetadataPrivKey []byte `json:"metadata_priv_key" db:"metadata_priv_key"` // encrypted priv key for metadata
+	HeaderURI       string `json:"headerUri" db:"header_uri"`                // cURI
+	AvatarURI       string `json:"avatarUri" db:"avatar_uri"`                // cURI
+	PublicToken     string `json:"publicToken" db:"public_token"`            // Public API token
+	PlanID          int    `json:"planId" db:"plan_id"`                      // Billing plan ID
+	APIQuota        int    `json:"apiQuota" db:"api_quota"`
 }
 
 type ErrorMsg struct {

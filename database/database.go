@@ -7,20 +7,22 @@ import (
 
 type Database interface {
 	// Entity
-	CreateEntity(integratorID, entityID []byte, info *types.EntityInfo) error
-	UpdateEntity(integratorID, entityID []byte, info *types.EntityInfo) (int, error)
-	GetEntity(integratorID, entityID []byte) (*types.Entity, error)
-	DeleteEntity(integratorID, entityID []byte) error
-	AuthorizeEntity(integratorID, entityID []byte) error
-	ListEntities(integratorID []byte, filter *types.ListOptions) ([]types.Entity, error)
-	CountEntities(integratorID []byte) (int, error)
+	CreateEntity(integratorID, planID, apiQuota int, ethAddress, metadataPrivKey []byte, publicToken, headerUri, avatarUri string) (int, error)
+	UpdateEntity(id int, planID, apiQuota int, ethAddress []byte, headerUri, avatarUri string) (int, error)
+	UpdateEntityMetadataPrivKey(id int, metadataPrivKey []byte) (int, error)
+	UpdateEntityPublicToken(id int, publicToken string) (int, error)
+	GetEntity(id int, entityID []byte) (*types.Entity, error)
+	DeleteEntity(id int, entityID []byte) error
+	ListEntities(id int, filter *types.ListOptions) ([]types.Entity, error)
+	CountEntities(integratorID int) (int, error)
 	// Integrator
-	CreateIntegrator(integratorID []byte, info *types.IntegratorInfo) error
-	UpdateIntegrator(entityID []byte, info *types.IntegratorInfo) (int, error)
-	GetIntegrator(integratorID []byte) (*types.Integrator, error)
-	DeleteIntegrator(entityID []byte) error
-	AuthorizeIntegrator(integratorID []byte) error
-	CountIntegrators(integratorID []byte) (int, error)
+	CreateIntegrator(secretApiKey, cspPubKey []byte, name, cspUrlPrefix string) (int, error)
+	UpdateIntegrator(id int, cspPubKey []byte, name, cspUrlPrefix string) (int, error)
+	UpdateIntegratorApiKey(id int, secretApiKey []byte) (int, error)
+	GetIntegrator(id int) (*types.Integrator, error)
+	DeleteIntegrator(id int) error
+	CountIntegrators() (int, error)
+	//
 	// Manage DB
 	Ping() error
 	Close() error
