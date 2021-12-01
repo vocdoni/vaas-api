@@ -138,8 +138,8 @@ CREATE TABLE census_members (
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     id SERIAL NOT NULL,
     census_id  INTEGER NOT NULL,
-    public_key bytea NOT NULL,
-    redeeem_token string NOT NULL,
+    public_key BYTEA NOT NULL,
+    redeeem_token TEXT NOT NULL,
     weight INTEGER NOT NULL DEFAULT 1,
 );
 
