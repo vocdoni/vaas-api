@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	dvoteutil "go.vocdoni.io/dvote/util"
 )
 
 // PubKeyToEntityID retrieves entity ID from a public key
@@ -27,7 +28,6 @@ func HexPrefixed(s string) string {
 	return s
 }
 
-// TODO implement this method
 func GenerateBearerToken() string {
-	return ""
+	return dvoteutil.RandomHex(32)
 }

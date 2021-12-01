@@ -1,10 +1,14 @@
 package urlapi
 
 import (
+	"encoding/hex"
+	"fmt"
+
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
+	dvotetypes "go.vocdoni.io/dvote/types"
 )
 
 const (
@@ -60,13 +64,17 @@ func (u *URLAPI) enableSuperadminHandlers() error {
 // createIntegratorAccountHandler creates a new integrator account
 func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
+	var apiKey dvotetypes.HexBytes
 	var req types.APIRequest
 	var resp types.APIResponse
 	if req, err = util.UnmarshalRequest(ctx); err != nil {
 		return err
 	}
 	resp.APIKey = util.GenerateBearerToken()
-	if resp.ID, err = u.db.CreateIntegrator([]byte(resp.APIKey), req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
+	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
+		return fmt.Errorf("error generating private key: %v", err)
+	}
+	if resp.ID, err = u.db.CreateIntegrator(apiKey, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
 		return err
 	}
 	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
@@ -96,6 +104,7 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 // resetIntegratorKeyHandler resets an integrator api key
 func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
+	var apiKey dvotetypes.HexBytes
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetID(ctx); err != nil {
@@ -106,11 +115,14 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 	if err != nil {
 		return err
 	}
-	u.revokeToken(string(oldIntegrator.SecretApiKey))
+	u.revokeToken(hex.EncodeToString(oldIntegrator.SecretApiKey))
 
 	// Now generate a new api key & update integrator
 	resp.APIKey = util.GenerateBearerToken()
-	if resp.ID, err = u.db.UpdateIntegratorApiKey(id, []byte(resp.APIKey)); err != nil {
+	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
+		return fmt.Errorf("error generating private key: %v", err)
+	}
+	if _, err = u.db.UpdateIntegratorApiKey(id, apiKey); err != nil {
 		return err
 	}
 	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
