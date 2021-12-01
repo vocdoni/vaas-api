@@ -3,7 +3,6 @@ package urlapi
 import (
 	"fmt"
 
-	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
@@ -59,11 +58,6 @@ func (u *URLAPI) createEntityHandler(msg *bearerstdapi.BearerStandardAPIdata, ct
 	if err != nil {
 		return fmt.Errorf("could not retrieve EntityID: %v", err)
 	}
-	u.service.CreateEntity([]byte{}, entityID, &types.EntityInfo{
-		Email: "",
-		Name:  req.Name,
-		Size:  0,
-	})
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 

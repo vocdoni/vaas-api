@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"go.vocdoni.io/api/service"
+	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/metrics"
@@ -20,7 +21,8 @@ type URLAPI struct {
 	router       *httprouter.HTTProuter
 	api          *bearerstdapi.BearerStandardAPI
 	metricsagent *metrics.Agent
-	service      *service.VotingService
+	db           database.Database
+	vocClient    *vocclient.Client
 }
 
 func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *metrics.Agent) (*URLAPI, error) {
@@ -47,6 +49,34 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 	}
 
 	return &urlapi, nil
+}
+
+func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *vocclient.Client) error {
+	if db == nil {
+		return fmt.Errorf("database is nil")
+	}
+	if client == nil {
+		return fmt.Errorf("database is nil")
+	}
+	u.db = db
+	u.vocClient = client
+	if err := u.enableEntityHandlers(); err != nil {
+		return err
+	}
+	if err := u.enableIntegratorHandlers(); err != nil {
+		return err
+	}
+	if err := u.enableSuperadminHandlers(); err != nil {
+		return err
+	}
+	if err := u.enableVoterHandlers(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *URLAPI) registerToken(token string, requests int64) {
+	u.api.AddAuthToken(token, requests)
 }
 
 func sendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {

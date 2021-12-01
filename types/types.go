@@ -19,6 +19,7 @@ type Integrator struct {
 	CspUrlPrefix string `json:"cspUrlPrefix" db:"csp_url_prefix"`
 	CspPubKey    []byte `json:"cspPubKey" db:"csp_pub_key"` // CSP compressed eth public key
 }
+
 type Entity struct {
 	CreatedUpdated
 	ID              int    `json:"id" db:"id"`

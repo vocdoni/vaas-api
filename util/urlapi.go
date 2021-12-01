@@ -11,13 +11,13 @@ import (
 	"go.vocdoni.io/dvote/util"
 )
 
-func UnmarshalRequest(ctx *httprouter.HTTPContext) (req *types.APIRequest, err error) {
+func UnmarshalRequest(ctx *httprouter.HTTPContext) (req types.APIRequest, err error) {
 	var bytes []byte
 	bytes, err = ioutil.ReadAll(ctx.Request.Body)
 	if err != nil {
 		return
 	}
-	err = json.Unmarshal(bytes, req)
+	err = json.Unmarshal(bytes, &req)
 	return
 }
 

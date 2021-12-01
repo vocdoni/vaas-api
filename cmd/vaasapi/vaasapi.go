@@ -13,7 +13,6 @@ import (
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/service"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -249,13 +248,9 @@ func main() {
 
 	// Vaas api
 	log.Infof("enabling VaaS API methods")
-	votingService := service.NewVotingService(db, client)
-	if err := urlApi.EnableVotingServiceHandlers(votingService); err != nil {
+	if err := urlApi.EnableVotingServiceHandlers(db, client); err != nil {
 		log.Fatal(err)
 	}
-
-	// Only start routing once we have registered all methods. Otherwise we
-	// have a data race.
 
 	log.Info("startup complete")
 	// close if interrupt received

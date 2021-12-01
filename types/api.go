@@ -1,23 +1,31 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+
+	"go.vocdoni.io/dvote/types"
+)
 
 // APIRequest contains all of the possible request fields.
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIRequest struct {
-	Avatar      string `json:"avatar"`
-	Description string `json:"description"`
-	Header      string `json:"header"`
-	Name        string `json:"name"`
-	// TODO add necessary request fields for APIv1 definition
+	Avatar       string         `json:"avatar"`
+	CspPubKey    types.HexBytes `json:"cspPubKey"`
+	CspUrlPrefix string         `json:"cspUrlPrefix"`
+	Description  string         `json:"description"`
+	Header       string         `json:"header"`
+	Name         string         `json:"name"`
+	Plan         string         `json:"plan"`
+	ID           int            `json:"id"`
 }
 
 // APIResponse contains all of the possible response fields.
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIResponse struct {
-	// TODO add necessary response fields for APIv1 definition
+	APIKey  string `json:"apiKey"`
+	ID      int    `json:"id"`
 	Message string `json:"message,omitempty"`
 	Ok      bool   `json:"ok"`
 }
