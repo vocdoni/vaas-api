@@ -16,7 +16,6 @@ type APIRequest struct {
 	Description  string         `json:"description"`
 	Header       string         `json:"header"`
 	Name         string         `json:"name"`
-	Plan         string         `json:"plan"`
 	ID           int            `json:"id"`
 }
 
@@ -24,10 +23,13 @@ type APIRequest struct {
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIResponse struct {
-	APIKey  string `json:"apiKey"`
-	ID      int    `json:"id"`
-	Message string `json:"message,omitempty"`
-	Ok      bool   `json:"ok"`
+	APIKey       string         `json:"apiKey"`
+	CspPubKey    types.HexBytes `json:"cspPubKey"`
+	CspUrlPrefix string         `json:"cspUrlPrefix"`
+	ID           int            `json:"id"`
+	Message      string         `json:"message,omitempty"`
+	Name         string         `json:"name"`
+	Ok           bool           `json:"ok"`
 }
 
 // SetError sets the MetaResponse's Ok field to false, and Message to a string

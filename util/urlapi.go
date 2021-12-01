@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/httprouter"
@@ -18,12 +19,28 @@ func UnmarshalRequest(ctx *httprouter.HTTPContext) (req types.APIRequest, err er
 		return
 	}
 	err = json.Unmarshal(bytes, &req)
+	if err != nil {
+		return req, fmt.Errorf("could not decode request body: %v", err)
+	}
 	return
 }
 
 func GetEntityID(ctx *httprouter.HTTPContext) ([]byte, error) {
 	entity := ctx.URLParam("entityID")
-	return hex.DecodeString(util.TrimHex(entity))
+	entityID, err := hex.DecodeString(util.TrimHex(entity))
+	if err != nil {
+		return nil, fmt.Errorf("could not parse urlParam EntityID")
+	}
+	return entityID, nil
+}
+
+func GetID(ctx *httprouter.HTTPContext) (int, error) {
+	id := ctx.URLParam("id")
+	intID, err := strconv.Atoi(id)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse urlParam ID: %v", err)
+	}
+	return intID, nil
 }
 
 func SendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {

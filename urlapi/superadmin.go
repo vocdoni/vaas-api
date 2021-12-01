@@ -1,8 +1,6 @@
 package urlapi
 
 import (
-	"fmt"
-
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
@@ -65,7 +63,7 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var req types.APIRequest
 	var resp types.APIResponse
 	if req, err = util.UnmarshalRequest(ctx); err != nil {
-		return fmt.Errorf("could not decode request body: %v", err)
+		return err
 	}
 	resp.APIKey = util.GenerateBearerToken()
 	if resp.ID, err = u.db.CreateIntegrator([]byte(resp.APIKey), req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
@@ -81,10 +79,14 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var err error
 	var req types.APIRequest
 	var resp types.APIResponse
-	if req, err = util.UnmarshalRequest(ctx); err != nil {
-		return fmt.Errorf("could not decode request body: %v", err)
+	var id int
+	if id, err = util.GetID(ctx); err != nil {
+		return err
 	}
-	if resp.ID, err = u.db.UpdateIntegrator(req.ID, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
+	if req, err = util.UnmarshalRequest(ctx); err != nil {
+		return err
+	}
+	if resp.ID, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
 		return err
 	}
 	return util.SendResponse(resp, ctx)
@@ -93,17 +95,58 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 // PATCH https://server/v1/admin/accounts/<id>/key
 // resetIntegratorKeyHandler resets an integrator api key
 func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+	var err error
+	var resp types.APIResponse
+	var id int
+	if id, err = util.GetID(ctx); err != nil {
+		return err
+	}
+	// Before updating integrator key, fetch & revoke the old key
+	oldIntegrator, err := u.db.GetIntegrator(id)
+	if err != nil {
+		return err
+	}
+	u.revokeToken(string(oldIntegrator.SecretApiKey))
+
+	// Now generate a new api key & update integrator
+	resp.APIKey = util.GenerateBearerToken()
+	if resp.ID, err = u.db.UpdateIntegratorApiKey(id, []byte(resp.APIKey)); err != nil {
+		return err
+	}
+	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
+	return util.SendResponse(resp, ctx)
 }
 
 // GET https://server/v1/admin/accounts/<id>
 // getIntegratorAccountHandler fetches an integrator account
 func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+	var err error
+	var resp types.APIResponse
+	var integrator *types.Integrator
+	var id int
+	if id, err = util.GetID(ctx); err != nil {
+		return err
+	}
+	if integrator, err = u.db.GetIntegrator(id); err != nil {
+		return err
+	}
+	resp.Name = integrator.Name
+	resp.CspPubKey = integrator.CspPubKey
+	resp.CspUrlPrefix = integrator.CspUrlPrefix
+	return util.SendResponse(resp, ctx)
 }
 
 // DELETE https://server/v1/admin/accounts/<id>
 // deleteIntegratorAccountHandler deletes an integrator account
 func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+	var err error
+	var resp types.APIResponse
+	var id int
+	if id, err = util.GetID(ctx); err != nil {
+		return err
+	}
+	if err = u.db.DeleteIntegrator(id); err != nil {
+		return err
+	}
+	return util.SendResponse(resp, ctx)
 }

@@ -79,6 +79,10 @@ func (u *URLAPI) registerToken(token string, requests int64) {
 	u.api.AddAuthToken(token, requests)
 }
 
+func (u *URLAPI) revokeToken(token string) {
+	u.api.DelAuthToken(token)
+}
+
 func sendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {
 	data, err := json.Marshal(response)
 	if err != nil {
