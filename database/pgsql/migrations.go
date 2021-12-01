@@ -21,9 +21,7 @@ var Migrations = migrate.MemoryMigrationSource{
 
 const migration1up = `
 -- NOTES
--- 1. pgcrpyto is assumed to be enabled in public needing superuser access
---    CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
--- 2. All columns are defined as NOT NULL to ease communication with Golang
+-- 21 All columns are defined as NOT NULL to ease communication with Golang
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public;
 
@@ -37,9 +35,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public;
 CREATE TABLE integrators (
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    id bytea NOT NULL ,
-    email text NOT NULL,
-    name text NOT NULL,
+    secret_api_key bytea NOT NULL,
+    id  SERIAL NOT NULL,
+    name TEXT NOT NULL,
+    csp_url_prefix TEXT NOT NULL,
+    csp_pub_key TEXT NOT NULL
 );
 
 ALTER TABLE ONLY integrators
@@ -48,6 +48,8 @@ ALTER TABLE ONLY integrators
 ALTER TABLE ONLY integrators
     ADD CONSTRAINT integrators_email_unique UNIQUE (email);
 
+ALTER TABLE ONLY integrators
+ADD CONSTRAINT integrators_secret_api_key_unique UNIQUE (secret_api_key);
 
 --------------------------- ENTITTIES
 -- An Entity/Organization
@@ -55,23 +57,123 @@ ALTER TABLE ONLY integrators
 CREATE TABLE entities (
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    id bytea NOT NULL ,
-    integrator_id  bytea NOT NULL,
-    email text NOT NULL,
-    name text NOT NULL,
+    id SERIAL NOT NULL ,
+    integrator_id  INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    eth_address BYTEA NOT NULL,
+    metadata_priv_key BYTEA NOT NULL,
+    header_uri TEXT NOT NULL,
+    avatar_uri TEXT NOT NULL,
+    public_token  TEXT NOT NULL,
+    plan_id INTEGER NOT NULL,
+    api_quota INTEGER NOT NULL
 );
 
 ALTER TABLE ONLY entities
-    ADD CONSTRAINT entities_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT entities_pkey PRIMARY KEY (integrator_id, eth_address);
 
 ALTER TABLE ONLY entities
     ADD CONSTRAINT entities_address_unique UNIQUE (address);
+
+ALTER TABLE ONLY entities
+    ADD CONSTRAINT entities_integrator_id_fkey FOREIGN KEY (integrator_id) REFERENCES integrators(id);
+
+ALTER TABLE ONLY entities
+    ADD CONSTRAINT entities_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES plans(id);
+
+ALTER TABLE ONLY entities
+    ADD CONSTRAINT entities_integrator_id_name_unique UNIQUE (integrator_id, name);
+
+--------------------------- Election
+-- Election processes
+
+CREATE TABLE elections (
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id SERIAL NOT NULL ,
+    entity_id  INTEGER NOT NULL,
+    process_id BYTEA NOT NULL,
+    title TEXT NOT NULL,
+    census_id INTEGER NOT NULL,
+    start_block BIGINT NOT NULL,
+    end_block BIGINT NOT NULL,
+    confidential  boolean DEFAULT false NOT NULL,
+    hidden_results  boolean DEFAULT false NOT NULL
+    -- if needed the following field should be activated
+    -- metadata_priv_key BYTEA NOT NULL 
+);
+
+ALTER TABLE ONLY elections
+    ADD CONSTRAINT elections_pkey PRIMARY KEY (process_id);
+
+ALTER TABLE ONLY elections
+    ADD CONSTRAINT elections_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES entities(id);
+
+ALTER TABLE ONLY elections
+    ADD CONSTRAINT elections_census_id_fkey FOREIGN KEY (census_id) REFERENCES censuses(id);
+
+
+--------------------------- Census
+-- Censuses as defined by an integrator
+
+CREATE TABLE censuses (
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id SERIAL NOT NULL,
+    entity_id  INTEGER NOT NULL,
+    name TEXT NOT NULL
+);
+
+ALTER TABLE ONLY censuses
+    ADD CONSTRAINT censuses_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY censuses
+    ADD CONSTRAINT censuses_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES entities(id);
+
+--------------------------- Census Member
+-- Census members
+
+CREATE TABLE census_members (
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id SERIAL NOT NULL,
+    census_id  INTEGER NOT NULL,
+    public_key bytea NOT NULL,
+    redeeem_token string NOT NULL,
+    weight INTEGER NOT NULL DEFAULT 1,
+);
+
+ALTER TABLE ONLY census_members
+    ADD CONSTRAINT census_members_pkey PRIMARY KEY (census_id, public_key);
+
+ALTER TABLE ONLY census_members
+    ADD CONSTRAINT census_members_census_id_fkey FOREIGN KEY (census_id) REFERENCES census(id);
+
+
+--------------------------- Billing Plans
+-- Billing plans
+
+CREATE TABLE plans (
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    id SERIAL NOT NULL,
+    name TEXT NOT NULL,
+    max_census_size INTEGER NOT NULL,
+    max_process_count INTEGER NOT NULL
+);
+
+ALTER TABLE ONLY census_members
+    ADD CONSTRAINT census_members_pkey PRIMARY KEY (id);
 
 `
 
 const migration1down = `
 DROP TABLE integrators;
 DROP TABLE entities;
+DROP TABLE elections;
+DROP TABLE censuses;
+DROP TABLE census_members;
+DROP TABLE plans;
 DROP EXTENSION IF EXISTS pgcrypto;
 `
 
