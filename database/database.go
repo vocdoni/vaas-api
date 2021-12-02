@@ -17,11 +17,11 @@ type Database interface {
 	CountEntities(integratorID int) (int, error)
 	// Integrator
 	CreateIntegrator(secretApiKey, cspPubKey []byte, name, cspUrlPrefix string) (int32, error)
-	UpdateIntegrator(secretApiKey, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error)
-	UpdateIntegratorApiKey(secretApiKey, newSecretApiKey []byte) (int, error)
-	GetIntegrator(secretApiKey []byte) (*types.Integrator, error)
-	GetIntegratorByID(id int) (*types.Integrator, error)
-	DeleteIntegrator(secretApiKey []byte) error
+	UpdateIntegrator(id int, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error)
+	UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, error)
+	GetIntegrator(id int) (*types.Integrator, error)
+	GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, error)
+	DeleteIntegrator(id int) error
 	CountIntegrators() (int, error)
 	//
 	// Manage DB
