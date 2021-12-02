@@ -11,7 +11,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/entities/{entityId}/metadata",
 		"PUT",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.setEntityMetadataHandler,
 	); err != nil {
 		return err
@@ -19,7 +19,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/entities/{entityId}/processes/*",
 		"POST",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.createProcessHandler,
 	); err != nil {
 		return err
@@ -27,7 +27,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/entities/{entityId}/processes/*",
 		"GET",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.listProcessesHandler,
 	); err != nil {
 		return err
@@ -35,7 +35,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/processes/{processId}",
 		"GET",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.getProcessHandler,
 	); err != nil {
 		return err
@@ -43,7 +43,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/censuses",
 		"POST",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.createCensusHandler,
 	); err != nil {
 		return err
@@ -51,7 +51,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/censuses/{censusId}/tokens/*",
 		"POST",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.addCensusTokensHandler,
 	); err != nil {
 		return err
@@ -59,7 +59,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/censuses/{censusId}/tokens/{tokenId}",
 		"GET",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.getCensusTokenHandler,
 	); err != nil {
 		return err
@@ -67,7 +67,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/censuses/{censusId}/tokens/{tokenId}",
 		"DELETE",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.deleteCensusTokenHandler,
 	); err != nil {
 		return err
@@ -75,7 +75,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/censuses/{censusId}/tokens/{tokenId}",
 		"DELETE",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.deleteCensusTokenHandler,
 	); err != nil {
 		return err
@@ -83,7 +83,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/censuses/{censusId}/keys/{publicKey}",
 		"DELETE",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.deletePublicKeyHandler,
 	); err != nil {
 		return err
@@ -91,7 +91,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/censuses/{censusId}/import/*",
 		"POST",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.importPublicKeysHandler,
 	); err != nil {
 		return err
@@ -99,12 +99,11 @@ func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/processes/{processId}/status",
 		"PUT",
-		bearerstdapi.MethodAccessTypeAdmin,
+		bearerstdapi.MethodAccessTypePrivate,
 		u.setProcessStatusHandler,
 	); err != nil {
 		return err
 	}
-	// HERE STILL REGISTERING ENTITY METHODS< THEN CHECK TO MAKE SURE ALL METHODS ARE REGISTERED CORRECTLY
 	return nil
 }
 
