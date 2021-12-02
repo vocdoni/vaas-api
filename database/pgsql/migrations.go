@@ -33,9 +33,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public;
 --------------------------- Integrators
 -- An Integrtor
 CREATE TABLE integrators (
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    secret_api_key BYTES NOT NULL,
+    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    secret_api_key BYTEA NOT NULL,
     id SERIAL NOT NULL,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -53,62 +53,66 @@ ALTER TABLE ONLY integrators
 ADD CONSTRAINT integrators_secret_api_key_unique UNIQUE (secret_api_key);
 
 --------------------------- ENTITTIES
--- An Entity/Organization
+-- An Organization
 
-CREATE TABLE entities (
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+CREATE TABLE organization (
+    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     id SERIAL NOT NULL ,
     integrator_id  INTEGER NOT NULL,
+    integrator_api_key BYTEA NOT NULL,
     name TEXT NOT NULL,
-    eth_address BYTES NOT NULL,
-    metadata_priv_key BYTES NOT NULL,
+    eth_address BYTEA NOT NULL,
+    encrypted_priv_key BYTEA NOT NULL,
     header_uri TEXT NOT NULL,
     avatar_uri TEXT NOT NULL,
     public_token  TEXT NOT NULL,
-    plan_id INTEGER NOT NULL,
-    api_quota INTEGER NOT NULL
+    quota_plan_id INTEGER NOT NULL,
+    public_api_quota INTEGER NOT NULL
 );
 
-ALTER TABLE ONLY entities
-    ADD CONSTRAINT entities_pkey PRIMARY KEY (integrator_id, eth_address);
+ALTER TABLE ONLY organizations
+    ADD CONSTRAINT organizations_pkey PRIMARY KEY (integrator_id, eth_address);
 
-ALTER TABLE ONLY entities
-    ADD CONSTRAINT entities_address_unique UNIQUE (address);
+ALTER TABLE ONLY organizations
+    ADD CONSTRAINT organizations_address_unique UNIQUE (address);
 
-ALTER TABLE ONLY entities
-    ADD CONSTRAINT entities_integrator_id_fkey FOREIGN KEY (integrator_id) REFERENCES integrators(id);
+ALTER TABLE ONLY organizations
+    ADD CONSTRAINT organizations_integrator_id_fkey FOREIGN KEY (integrator_id) REFERENCES integrators(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY entities
-    ADD CONSTRAINT entities_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES plans(id);
+ALTER TABLE ONLY organizations
+    ADD CONSTRAINT organizations_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE;
 
-ALTER TABLE ONLY entities
-    ADD CONSTRAINT entities_integrator_id_name_unique UNIQUE (integrator_id, name);
+ALTER TABLE ONLY organizations
+    ADD CONSTRAINT organizations_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES plans(id);
+
+ALTER TABLE ONLY organizations
+    ADD CONSTRAINT organizations_integrator_id_name_unique UNIQUE (integrator_id, name);
 
 --------------------------- Election
 -- Election processes
 
 CREATE TABLE elections (
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     id SERIAL NOT NULL ,
-    entity_id  INTEGER NOT NULL,
-    process_id BYTES NOT NULL,
+    entity_eth_address  INTEGER NOT NULL,
+    process_id BYTEA NOT NULL,
     title TEXT NOT NULL,
     census_id INTEGER NOT NULL,
     start_block BIGINT NOT NULL,
     end_block BIGINT NOT NULL,
-    confidential  boolean DEFAULT false NOT NULL,
-    hidden_results  boolean DEFAULT false NOT NULL
+    confidential  BOOLEAN DEFAULT false NOT NULL,
+    hidden_results  BOOLEAN DEFAULT false NOT NULL
     -- if needed the following field should be activated
-    -- metadata_priv_key BYTES NOT NULL 
+    -- metadata_priv_key BYTEA NOT NULL 
 );
 
 ALTER TABLE ONLY elections
     ADD CONSTRAINT elections_pkey PRIMARY KEY (process_id);
 
 ALTER TABLE ONLY elections
-    ADD CONSTRAINT elections_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES entities(id);
+    ADD CONSTRAINT elections_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES organizations(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY elections
     ADD CONSTRAINT elections_census_id_fkey FOREIGN KEY (census_id) REFERENCES censuses(id);
@@ -118,8 +122,8 @@ ALTER TABLE ONLY elections
 -- Censuses as defined by an integrator
 
 CREATE TABLE censuses (
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     id SERIAL NOT NULL,
     entity_id  INTEGER NOT NULL,
     name TEXT NOT NULL
@@ -129,17 +133,17 @@ ALTER TABLE ONLY censuses
     ADD CONSTRAINT censuses_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY censuses
-    ADD CONSTRAINT censuses_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES entities(id);
+    ADD CONSTRAINT censuses_entity_id_fkey FOREIGN KEY (entity_id) REFERENCES organizations(id) ON DELETE CASCADE;
 
 --------------------------- Census Member
 -- Census members
 
 CREATE TABLE census_members (
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     id SERIAL NOT NULL,
     census_id  INTEGER NOT NULL,
-    public_key BYTES NOT NULL,
+    public_key BYTEA NOT NULL,
     redeeem_token TEXT NOT NULL,
     weight INTEGER NOT NULL DEFAULT 1,
 );
@@ -148,15 +152,15 @@ ALTER TABLE ONLY census_members
     ADD CONSTRAINT census_members_pkey PRIMARY KEY (census_id, public_key);
 
 ALTER TABLE ONLY census_members
-    ADD CONSTRAINT census_members_census_id_fkey FOREIGN KEY (census_id) REFERENCES census(id);
+    ADD CONSTRAINT census_members_census_id_fkey FOREIGN KEY (census_id) REFERENCES census(id)  ON DELETE CASCADE;
 
 
 --------------------------- Billing Plans
 -- Billing plans
 
 CREATE TABLE plans (
-    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     id SERIAL NOT NULL,
     name TEXT NOT NULL,
     max_census_size INTEGER NOT NULL,

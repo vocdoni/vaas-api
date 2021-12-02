@@ -19,17 +19,18 @@ type Integrator struct {
 	CspUrlPrefix string `json:"cspUrlPrefix" db:"csp_url_prefix"`
 	CspPubKey    []byte `json:"cspPubKey" db:"csp_pub_key"` // CSP compressed eth public key
 }
-type Entity struct {
+type Organization struct {
 	CreatedUpdated
-	ID              int    `json:"id" db:"id"`
-	IntegratorID    int    `json:"integratorId" db:"integrator_id"`
-	EthAddress      []byte `json:"ethAddress" db:"eth_address"`
-	MetadataPrivKey []byte `json:"metadata_priv_key" db:"metadata_priv_key"` // encrypted priv key for metadata
-	HeaderURI       string `json:"headerUri" db:"header_uri"`                // cURI
-	AvatarURI       string `json:"avatarUri" db:"avatar_uri"`                // cURI
-	PublicToken     string `json:"publicToken" db:"public_token"`            // Public API token
-	PlanID          int    `json:"planId" db:"plan_id"`                      // Billing plan ID
-	APIQuota        int    `json:"apiQuota" db:"api_quota"`
+	ID               int    `json:"id" db:"id"`
+	IntegratorID     int    `json:"integratorId" db:"integrator_id"`
+	IntegratorApiKey int    `json:"integratorApiKey" db:"integrator_api_key"`
+	EthAddress       []byte `json:"ethAddress" db:"eth_address"`
+	EncryptedPrivKey []byte `json:"encrypedPrivKey" db:"encrypted_priv_key"` // encrypted priv key for metadata
+	HeaderURI        string `json:"headerUri" db:"header_uri"`               // cURI
+	AvatarURI        string `json:"avatarUri" db:"avatar_uri"`               // cURI
+	PublicToken      string `json:"publicToken" db:"public_token"`           // Public API token
+	QuotaPlanID      int    `json:"quotaPlanId" db:"quota_plan_id"`          // Billing plan ID
+	PublicAPIQuota   int    `json:"publicApiQuota" db:"public_api_quota"`
 }
 
 type ErrorMsg struct {
