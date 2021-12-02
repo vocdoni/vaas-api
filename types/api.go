@@ -26,6 +26,7 @@ type APIResponse struct {
 	APIKey       string         `json:"apiKey"`
 	CspPubKey    types.HexBytes `json:"cspPubKey"`
 	CspUrlPrefix string         `json:"cspUrlPrefix"`
+	EntityID     types.HexBytes `json:"entityId"`
 	ID           int32          `json:"id"`
 	Message      string         `json:"message,omitempty"`
 	Name         string         `json:"name"`

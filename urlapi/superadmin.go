@@ -78,7 +78,7 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		return err
 	}
 	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
-	return util.SendResponse(resp, ctx)
+	return sendResponse(resp, ctx)
 }
 
 // PUT https://server/v1/admin/accounts/<id>
@@ -97,7 +97,7 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if _, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
 		return err
 	}
-	return util.SendResponse(resp, ctx)
+	return sendResponse(resp, ctx)
 }
 
 // PATCH https://server/v1/admin/accounts/<id>/key
@@ -126,7 +126,7 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 		return err
 	}
 	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
-	return util.SendResponse(resp, ctx)
+	return sendResponse(resp, ctx)
 }
 
 // GET https://server/v1/admin/accounts/<id>
@@ -145,7 +145,7 @@ func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPI
 	resp.Name = integrator.Name
 	resp.CspPubKey = integrator.CspPubKey
 	resp.CspUrlPrefix = integrator.CspUrlPrefix
-	return util.SendResponse(resp, ctx)
+	return sendResponse(resp, ctx)
 }
 
 // DELETE https://server/v1/admin/accounts/<id>
@@ -160,5 +160,5 @@ func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if err = u.db.DeleteIntegrator(id); err != nil {
 		return err
 	}
-	return util.SendResponse(resp, ctx)
+	return sendResponse(resp, ctx)
 }

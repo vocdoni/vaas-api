@@ -60,13 +60,10 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *voccl
 	}
 	u.db = db
 	u.vocClient = client
-	if err := u.enableEntityHandlers(); err != nil {
-		return err
-	}
-	if err := u.enableIntegratorHandlers(); err != nil {
-		return err
-	}
 	if err := u.enableSuperadminHandlers(); err != nil {
+		return err
+	}
+	if err := u.enableEntityHandlers(); err != nil {
 		return err
 	}
 	if err := u.enableVoterHandlers(); err != nil {

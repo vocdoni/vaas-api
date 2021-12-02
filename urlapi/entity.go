@@ -3,11 +3,46 @@ package urlapi
 import (
 	"fmt"
 
+	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/util"
+	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 )
 
 func (u *URLAPI) enableEntityHandlers() error {
+	if err := u.api.RegisterMethod(
+		"/priv/account/entities",
+		"POST",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.createOrganizationHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
+		"/priv/account/entities/{entityId}",
+		"GET",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.getOrganizationHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
+		"/priv/account/entities/{entityId}",
+		"DELETE",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.deleteOrganizationHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
+		"/priv/account/entities/{id}/key",
+		"PATCH",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.resetOrganizationKeyHandler,
+	); err != nil {
+		return err
+	}
 	if err := u.api.RegisterMethod(
 		"/priv/entities/{entityId}/metadata",
 		"PUT",
@@ -105,6 +140,54 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	return nil
+}
+
+// POST https://server/v1/priv/account/entities
+// createOrganizationHandler creates a new entity
+func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var err error
+	var resp types.APIResponse
+	var req types.APIRequest
+	var integratorPrivKey []byte
+	var orgApiToken string
+	// var organizationMetadataKey []byte
+	if req, err = util.UnmarshalRequest(ctx); err != nil {
+		return err
+	}
+	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+		return err
+	}
+	orgApiToken = util.GenerateBearerToken()
+	// TODO generate metadata key
+	// if organizationMetadataKey, err = metadata.GenerateKey(); err != nil {
+	// TODO create Vochain account once gateway API is available
+	ethSignKeys := ethereum.NewSignKeys()
+	if _, err = u.db.CreateOrganization(integratorPrivKey, ethSignKeys.Address().Bytes(),
+		[]byte{}, 0, 0, orgApiToken, req.Header, req.Avatar); err != nil {
+		return fmt.Errorf("could not create organization: %v", err)
+	}
+	resp.APIKey = orgApiToken
+	resp.EntityID = ethSignKeys.Address().Bytes()
+	return sendResponse(resp, ctx)
+}
+
+// GET https://server/v1/priv/account/entities/<entityId>
+// getOrganizationHandler fetches an entity
+func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+}
+
+// DELETE https://server/v1/priv/account/entities/<entityId>
+// deleteOrganizationHandler deletes an entity
+func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+}
+
+// PATCH https://server/v1/account/entities/<id>/key
+// resetOrganizationKeyHandler resets an entity's api key
+func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
 // PUT https://server/v1/priv/entities/<entityId>/metadata

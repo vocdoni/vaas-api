@@ -9,6 +9,7 @@ import (
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/httprouter"
+	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/util"
 )
 
@@ -43,13 +44,9 @@ func GetID(ctx *httprouter.HTTPContext) (int, error) {
 	return intID, nil
 }
 
-func SendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {
-	data, err := json.Marshal(response)
-	if err != nil {
-		return fmt.Errorf("error marshaling JSON: %w", err)
+func GetAuthToken(msg *bearerstdapi.BearerStandardAPIdata) (token []byte, err error) {
+	if token, err = hex.DecodeString(msg.AuthToken); err != nil {
+		return []byte{}, fmt.Errorf("could not decode auth token: %v", err)
 	}
-	if err = ctx.Send(data); err != nil {
-		return err
-	}
-	return nil
+	return token, nil
 }
