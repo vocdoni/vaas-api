@@ -2,7 +2,6 @@ package pgsql
 
 import (
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"reflect"
 	"strings"
@@ -13,8 +12,8 @@ import (
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateOrganization(integratorID, planID, apiQuota int, ethAddress, metadataPrivKey []byte, publicToken, headerUri, avatarUri string) (int32, error) {
-	entity := &types.Organization{
+func (d *Database) CreateOrganization(integratorID, planID, apiQuota int, ethAddress, metadataPrivKey []byte, publicApiToken, headerUri, avatarUri string) (int32, error) {
+	organization := &types.Organization{
 		EthAddress:   ethAddress,
 		IntegratorID: integratorID,
 		CreatedUpdated: types.CreatedUpdated{
@@ -26,7 +25,7 @@ func (d *Database) CreateOrganization(integratorID, planID, apiQuota int, ethAdd
 	insert := `INSERT INTO organizations
 			(id, integrator_id is_authorized, email, name, size, created_at, updated_at)
 			VALUES (:id, integrator_id :is_authorized, :email, :name, :size, :created_at, :updated_at)`
-	result, err := d.db.NamedQuery(insert, entity)
+	result, err := d.db.NamedQuery(insert, organization)
 	if err != nil || !result.Next() {
 		return 0, fmt.Errorf("error inserting tag: %w", err)
 	}
@@ -39,16 +38,16 @@ func (d *Database) CreateOrganization(integratorID, planID, apiQuota int, ethAdd
 }
 
 func (d *Database) GetOrganization(integratorID int, entityID []byte) (*types.Organization, error) {
-	var entity *types.Organization
+	var organization *types.Organization
 	selectEntity := `SELECT id, is_authorized, email, name, type, size, callback_url, callback_secret, census_managers_addresses as "pg_census_managers_addresses"  
 						FROM organizations WHERE id=$1`
 	row := d.db.QueryRowx(selectEntity, entityID)
-	err := row.StructScan(&entity)
+	err := row.StructScan(&organization)
 	if err != nil {
 		return nil, err
 	}
 
-	return entity, nil
+	return organization, nil
 }
 
 func (d *Database) DeleteOrganization(integratorID int, entityID []byte) error {
@@ -59,12 +58,12 @@ func (d *Database) DeleteOrganization(integratorID int, entityID []byte) error {
 	deleteQuery := `DELETE FROM organizations WHERE id = $1 AND integrator_id = $2`
 	result, err := d.db.Exec(deleteQuery, entityID, integratorID)
 	if err != nil {
-		return fmt.Errorf("error deleting entity: %w", err)
+		return fmt.Errorf("error deleting organization: %w", err)
 	}
 	// var rows int64
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("error veryfying deleted entity: %w", err)
+		return fmt.Errorf("error veryfying deleted organization: %w", err)
 	}
 	if rows != 1 {
 		return fmt.Errorf("nothing to delete")
@@ -72,31 +71,16 @@ func (d *Database) DeleteOrganization(integratorID int, entityID []byte) error {
 	return nil
 }
 
-// EntitiesID returns all the entities ID's
-func (d *Database) EntitiesID() ([]string, error) {
-	var entitiesIDs [][]byte
-	entitiesQuery := `SELECT id FROM organizations`
-	err := d.db.Select(&entitiesIDs, entitiesQuery)
-	if err != nil {
-		return nil, err
-	}
-	entities := []string{}
-	for _, e := range entitiesIDs {
-		entities = append(entities, hex.EncodeToString(e))
-	}
-	return entities, nil
-}
-
 func (d *Database) AuthorizeOrganization(integratorID int, ethAddress []byte) error {
-	entity := &types.Organization{EthAddress: ethAddress, IntegratorID: integratorID}
+	organization := &types.Organization{EthAddress: ethAddress, IntegratorID: integratorID}
 	update := `UPDATE organizations SET
 				is_authorized = COALESCE(NULLIF(:is_authorized, false), is_authorized),
 				updated_at = now()
 				WHERE (id = :id  AND integrator_id = :integrator_id)
 				AND  :is_authorized IS DISTINCT FROM is_authorized`
-	result, err := d.db.NamedExec(update, entity)
+	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
-		return fmt.Errorf("error updating entity: %w", err)
+		return fmt.Errorf("error updating organization: %w", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
@@ -110,7 +94,7 @@ func (d *Database) AuthorizeOrganization(integratorID int, ethAddress []byte) er
 }
 
 func (d *Database) UpdateOrganizationy(id int, planID, apiQuota int, ethAddress []byte, headerUri, avatarUri string) (int, error) {
-	entity := &types.Organization{ID: id, EthAddress: ethAddress}
+	organization := &types.Organization{ID: id, EthAddress: ethAddress}
 	update := `UPDATE organizations SET
 				name = COALESCE(NULLIF(:name, ''), name),
 				email = COALESCE(NULLIF(:email, ''), email),
@@ -118,9 +102,9 @@ func (d *Database) UpdateOrganizationy(id int, planID, apiQuota int, ethAddress 
 				WHERE (id = :id AND integrator_id = :integrator_id)
 				AND  (:name IS DISTINCT FROM name OR
 				:email IS DISTINCT FROM email)`
-	result, err := d.db.NamedExec(update, entity)
+	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error updating entity: %w", err)
+		return 0, fmt.Errorf("error updating organization: %w", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
@@ -132,15 +116,15 @@ func (d *Database) UpdateOrganizationy(id int, planID, apiQuota int, ethAddress 
 }
 
 func (d *Database) UpdateOrganizationEncryptedPrivKey(id int, newMetadataPrivKey []byte) (int, error) {
-	entity := &types.Organization{ID: id, EncryptedPrivKey: newMetadataPrivKey}
+	organization := &types.Organization{ID: id, EncryptedPrivKey: newMetadataPrivKey}
 	update := `UPDATE organizations SET
 				// TODO
 				updated_at = now()
 				WHERE (id = :id AND integrator_id = :integrator_id)
 				AND  (//TODO)`
-	result, err := d.db.NamedExec(update, entity)
+	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error updating entity: %w", err)
+		return 0, fmt.Errorf("error updating organization: %w", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
@@ -151,16 +135,16 @@ func (d *Database) UpdateOrganizationEncryptedPrivKey(id int, newMetadataPrivKey
 	return int(rows), nil
 }
 
-func (d *Database) UpdateOrganizationPublicToken(id int, newPublicToken string) (int, error) {
-	entity := &types.Organization{ID: id, PublicToken: newPublicToken}
+func (d *Database) UpdateOrganizationPublicToken(id int, newPublicApiToken string) (int, error) {
+	organization := &types.Organization{ID: id, PublicAPIToken: newPublicApiToken}
 	update := `UPDATE organizations SET
 				// TODO
 				updated_at = now()
 				WHERE (id = :id AND integrator_id = :integrator_id)
 				AND  (//TODO)`
-	result, err := d.db.NamedExec(update, entity)
+	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error updating entity: %w", err)
+		return 0, fmt.Errorf("error updating organization: %w", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
@@ -191,7 +175,7 @@ func (d *Database) ListOrganizations(integratorID int, filter *types.ListOptions
 	t := reflect.TypeOf(types.Organization{})
 	field, found := t.FieldByName(strings.Title("Name"))
 	if !found {
-		return nil, fmt.Errorf("entity name field not found in DB. Something is very wrong")
+		return nil, fmt.Errorf("organization name field not found in DB. Something is very wrong")
 	}
 	orderField := field.Tag.Get("db")
 	order := "ASC"

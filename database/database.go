@@ -7,14 +7,14 @@ import (
 
 type Database interface {
 	// Entity
-	CreateEntity(integratorID, planID, apiQuota int, ethAddress, metadataPrivKey []byte, publicToken, headerUri, avatarUri string) (int32, error)
-	UpdateEntity(ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error)
-	UpdateEntityMetadataPrivKey(id int, newMetadataPrivKey []byte) (int, error)
-	UpdateEntityPublicToken(id int, newPublicToken string) (int, error)
-	GetEntity(integratorID int, ethAddress []byte) (*types.Entity, error)
-	DeleteEntity(integratorID int, ethAddress []byte) error
-	ListEntities(integratorID int, filter *types.ListOptions) ([]types.Entity, error)
-	CountEntities(integratorID int) (int, error)
+	CreateOrganization(integratorID, planID, apiQuota int, ethAddress, metadataPrivKey []byte, publicApiToken, headerUri, avatarUri string) (int32, error)
+	UpdateOrganization(ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error)
+	UpdateOrganizationMetadataPrivKey(id int, newMetadataPrivKey []byte) (int, error)
+	UpdateOrganizationPublicToken(id int, newPublicApiToken string) (int, error)
+	GetOrganization(integratorID int, ethAddress []byte) (*types.Organization, error)
+	DeleteOrganization(integratorID int, ethAddress []byte) error
+	ListOrganizations(integratorID int, filter *types.ListOptions) ([]types.Organization, error)
+	CountOrganizations(integratorID int) (int, error)
 	// Integrator
 	CreateIntegrator(secretApiKey, cspPubKey []byte, name, cspUrlPrefix string) (int32, error)
 	UpdateIntegrator(id int, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error)

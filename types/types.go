@@ -26,10 +26,11 @@ type Organization struct {
 	IntegratorApiKey int    `json:"integratorApiKey" db:"integrator_api_key"`
 	EthAddress       []byte `json:"ethAddress" db:"eth_address"`
 	EncryptedPrivKey []byte `json:"encrypedPrivKey" db:"encrypted_priv_key"` // encrypted priv key for metadata
-	HeaderURI        string `json:"headerUri" db:"header_uri"`               // cURI
-	AvatarURI        string `json:"avatarUri" db:"avatar_uri"`               // cURI
-	PublicToken      string `json:"publicToken" db:"public_token"`           // Public API token
-	QuotaPlanID      int    `json:"quotaPlanId" db:"quota_plan_id"`          // Billing plan ID
+	Name             string `json:"name" db:"name"`
+	HeaderURI        string `json:"headerUri" db:"header_uri"`            // cURI
+	AvatarURI        string `json:"avatarUri" db:"avatar_uri"`            // cURI
+	PublicAPIToken   string `json:"publicApiToken" db:"public_api_token"` // Public API token
+	QuotaPlanID      int    `json:"quotaPlanId" db:"quota_plan_id"`       // Billing plan ID
 	PublicAPIQuota   int    `json:"publicApiQuota" db:"public_api_quota"`
 }
 
