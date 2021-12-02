@@ -33,22 +33,9 @@ func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, name, cspUrl
 	return id, nil
 }
 
-func (d *Database) GetIntegrator(secretApiKey []byte) (*types.Integrator, error) {
+func (d *Database) GetIntegrator(id int) (*types.Integrator, error) {
 	var integrator *types.Integrator
 	selectIntegrator := `SELECT id, name, csp_url_prefix, csp_pub_key, created_at, updated_at
-						FROM integrators WHERE secret_api_key=$1`
-	row := d.db.QueryRowx(selectIntegrator, secretApiKey)
-	err := row.StructScan(&integrator)
-	if err != nil {
-		return nil, err
-	}
-
-	return integrator, nil
-}
-
-func (d *Database) GetIntegratorByID(id int) (*types.Integrator, error) {
-	var integrator *types.Integrator
-	selectIntegrator := `SELECT secret_api_key, name, csp_url_prefix, csp_pub_key, created_at, updated_at 
 						FROM integrators WHERE id=$1`
 	row := d.db.QueryRowx(selectIntegrator, id)
 	err := row.StructScan(&integrator)
@@ -59,9 +46,22 @@ func (d *Database) GetIntegratorByID(id int) (*types.Integrator, error) {
 	return integrator, nil
 }
 
-func (d *Database) DeleteIntegrator(secretApiKey []byte) error {
-	deleteQuery := `DELETE FROM integrators WHERE secret_api_key = $1`
-	result, err := d.db.Exec(deleteQuery, secretApiKey)
+func (d *Database) GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, error) {
+	var integrator *types.Integrator
+	selectIntegrator := `SELECT secret_api_key, name, csp_url_prefix, csp_pub_key, created_at, updated_at 
+						FROM integrators WHERE secret_api_key=$1`
+	row := d.db.QueryRowx(selectIntegrator, secretApiKey)
+	err := row.StructScan(&integrator)
+	if err != nil {
+		return nil, err
+	}
+
+	return integrator, nil
+}
+
+func (d *Database) DeleteIntegrator(id int) error {
+	deleteQuery := `DELETE FROM integrators WHERE id = $1`
+	result, err := d.db.Exec(deleteQuery, id)
 	if err != nil {
 		return fmt.Errorf("error deleting entity: %w", err)
 	}
@@ -76,15 +76,15 @@ func (d *Database) DeleteIntegrator(secretApiKey []byte) error {
 	return nil
 }
 
-func (d *Database) UpdateIntegrator(secretApiKey, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error) {
-	integrator := &types.Integrator{SecretApiKey: secretApiKey, CspPubKey: newCspPubKey, Name: newName, CspUrlPrefix: newCspUrlPrefix}
+func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error) {
+	integrator := &types.Integrator{ID: id, CspPubKey: newCspPubKey, Name: newName, CspUrlPrefix: newCspUrlPrefix}
 	update := `UPDATE integrators SET
 				name = COALESCE(NULLIF(:name, ''), name),
 				csp_url_prefix = COALESCE(NULLIF(:csp_url_prefix, ''), csp_url_prefix),
 				csp_pub_key = COALESCE(NULLIF(:csp_pub_key, '' ::::bytea ),  csp_pub_key),
 				secret_api_key = COALESCE(NULLIF(:secret_api_key, '' ::::bytea ),  secret_api_key),
 				updated_at = now()
-				WHERE (secret_api_key = :secret_api_key )
+				WHERE (id = :id )
 				AND  (:name IS DISTINCT FROM name 
 					OR :csp_url_prefix IS DISTINCT FROM csp_url_prefix 					
 					OR TEXT(:csp_pub_key) IS DISTINCT FROM TEXT(csp_pub_key)
@@ -102,8 +102,8 @@ func (d *Database) UpdateIntegrator(secretApiKey, newCspPubKey []byte, newName, 
 	return int(rows), nil
 }
 
-func (d *Database) UpdateIntegratorApiKey(secretApiKey, newSecretApiKey []byte) (int, error) {
-	integrator, err := d.GetIntegrator(secretApiKey)
+func (d *Database) UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, error) {
+	integrator, err := d.GetIntegrator(id)
 	if err != nil {
 		return 0, fmt.Errorf("error updating integrator: %w", err)
 	}
