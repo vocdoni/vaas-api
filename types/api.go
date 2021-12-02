@@ -26,7 +26,7 @@ type APIResponse struct {
 	APIKey       string         `json:"apiKey"`
 	CspPubKey    types.HexBytes `json:"cspPubKey"`
 	CspUrlPrefix string         `json:"cspUrlPrefix"`
-	ID           int            `json:"id"`
+	ID           int32          `json:"id"`
 	Message      string         `json:"message,omitempty"`
 	Name         string         `json:"name"`
 	Ok           bool           `json:"ok"`

@@ -94,7 +94,7 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if req, err = util.UnmarshalRequest(ctx); err != nil {
 		return err
 	}
-	if resp.ID, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
+	if _, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
 		return err
 	}
 	return util.SendResponse(resp, ctx)
