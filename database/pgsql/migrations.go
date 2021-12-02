@@ -35,9 +35,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto SCHEMA public;
 CREATE TABLE integrators (
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    secret_api_key bytea NOT NULL,
-    id  SERIAL NOT NULL,
+    secret_api_key BYTES NOT NULL,
+    id SERIAL NOT NULL,
     name TEXT NOT NULL,
+    email TEXT NOT NULL,
     csp_url_prefix TEXT NOT NULL,
     csp_pub_key TEXT NOT NULL
 );
@@ -60,8 +61,8 @@ CREATE TABLE entities (
     id SERIAL NOT NULL ,
     integrator_id  INTEGER NOT NULL,
     name TEXT NOT NULL,
-    eth_address BYTEA NOT NULL,
-    metadata_priv_key BYTEA NOT NULL,
+    eth_address BYTES NOT NULL,
+    metadata_priv_key BYTES NOT NULL,
     header_uri TEXT NOT NULL,
     avatar_uri TEXT NOT NULL,
     public_token  TEXT NOT NULL,
@@ -92,7 +93,7 @@ CREATE TABLE elections (
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     id SERIAL NOT NULL ,
     entity_id  INTEGER NOT NULL,
-    process_id BYTEA NOT NULL,
+    process_id BYTES NOT NULL,
     title TEXT NOT NULL,
     census_id INTEGER NOT NULL,
     start_block BIGINT NOT NULL,
@@ -100,7 +101,7 @@ CREATE TABLE elections (
     confidential  boolean DEFAULT false NOT NULL,
     hidden_results  boolean DEFAULT false NOT NULL
     -- if needed the following field should be activated
-    -- metadata_priv_key BYTEA NOT NULL 
+    -- metadata_priv_key BYTES NOT NULL 
 );
 
 ALTER TABLE ONLY elections
@@ -138,7 +139,7 @@ CREATE TABLE census_members (
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     id SERIAL NOT NULL,
     census_id  INTEGER NOT NULL,
-    public_key BYTEA NOT NULL,
+    public_key BYTES NOT NULL,
     redeeem_token TEXT NOT NULL,
     weight INTEGER NOT NULL DEFAULT 1,
 );
