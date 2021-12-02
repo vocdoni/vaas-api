@@ -52,7 +52,7 @@ ALTER TABLE ONLY integrators
 ALTER TABLE ONLY integrators
 ADD CONSTRAINT integrators_secret_api_key_unique UNIQUE (secret_api_key);
 
---------------------------- ENTITTIES
+--------------------------- ORGANIZATIONS
 -- An Organization
 
 CREATE TABLE organizations (
@@ -101,8 +101,7 @@ CREATE TABLE elections (
     end_block BIGINT NOT NULL,
     confidential  BOOLEAN DEFAULT false NOT NULL,
     hidden_results  BOOLEAN DEFAULT false NOT NULL
-    -- if needed the following field should be activated
-    -- metadata_priv_key BYTEA NOT NULL 
+    metadata_priv_key BYTEA NOT NULL 
 );
 
 ALTER TABLE ONLY elections

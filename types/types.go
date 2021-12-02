@@ -1,6 +1,7 @@
 package types
 
 import (
+	"math/big"
 	"time"
 
 	"go.vocdoni.io/dvote/types"
@@ -50,16 +51,18 @@ type ProcessSummary struct {
 	EndDate   time.Time      `json:"endDate,omitempty"`
 }
 
-type Process struct {
-	Type        string     `json:"type"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Header      string     `json:"header"`
-	StreamURI   string     `json:"streamUri"`
-	Status      string     `json:"status"`
-	VoteCount   uint64     `json:"voteCount"`
-	Questions   []Question `json:"questions"`
-	Results     []Result   `json:"result"`
+type Election struct {
+	CreatedUpdated
+	ID               int     `json:"id" db:"id"`
+	OrgEthAddress    []byte  `json:"orgEthAddress" db:"organization_eth_address"`
+	IntegratorApiKey []byte  `json:"integratorApiKey" db:"integrator_api_key"`
+	ProcessID        []byte  `json:"processId" db:"process_id"`
+	Title            string  `json:"title" db:"title"`
+	CensusID         int     `json:"censusId" db:"census_id"`
+	StartBlock       big.Int `json:"startBlock" db:"start_block"`
+	EndBlock         big.Int `json:"endBlock" db:"end_block"`
+	Confidential     bool    `json:"confidential" db:"confidential"`
+	HiddenResults    bool    `json:"hiddenResults" db:"hidden_results"`
 }
 
 type Result struct {
