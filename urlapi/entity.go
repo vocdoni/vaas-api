@@ -1,6 +1,8 @@
 package urlapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"go.vocdoni.io/api/types"
@@ -159,14 +161,16 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return err
 	}
 	orgApiToken = util.GenerateBearerToken()
-	// TODO generate metadata key
-	// if organizationMetadataKey, err = metadata.GenerateKey(); err != nil {
 	// TODO create Vochain account once gateway API is available
+	// TODO encrypt private key
 	ethSignKeys := ethereum.NewSignKeys()
 	if _, err = u.db.CreateOrganization(integratorPrivKey, ethSignKeys.Address().Bytes(),
 		[]byte{}, 0, 0, orgApiToken, req.Header, req.Avatar); err != nil {
 		return fmt.Errorf("could not create organization: %v", err)
 	}
+	// TODO use correct apiQuota to register token
+	u.registerToken(orgApiToken, 0)
+
 	resp.APIKey = orgApiToken
 	resp.EntityID = ethSignKeys.Address().Bytes()
 	return sendResponse(resp, ctx)
@@ -175,7 +179,33 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 // GET https://server/v1/priv/account/entities/<entityId>
 // getOrganizationHandler fetches an entity
 func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+	var err error
+	var resp types.APIResponse
+	var organization *types.Organization
+	var integratorPrivKey []byte
+	var entityID []byte
+	if entityID, err = util.GetBytesID(ctx); err != nil {
+		return err
+	}
+	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+		return err
+	}
+	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
+		return err
+	}
+
+	// authenticate integrator has permission to edit this entity
+	if bytes.Compare(organization.IntegratorApiKey, integratorPrivKey) != 0 {
+		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	}
+
+	// TODO get metadata if needed
+
+	resp.APIKey = organization.PublicAPIToken
+	// resp.Name = organization.Name
+	resp.Avatar = organization.AvatarURI
+	resp.Header = organization.HeaderURI
+	return sendResponse(resp, ctx)
 }
 
 // DELETE https://server/v1/priv/account/entities/<entityId>
@@ -186,14 +216,93 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 // PATCH https://server/v1/account/entities/<id>/key
 // resetOrganizationKeyHandler resets an entity's api key
-func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var err error
+	var resp types.APIResponse
+	var integratorPrivKey []byte
+	var entityID []byte
+	if entityID, err = util.GetBytesID(ctx); err != nil {
+		return err
+	}
+	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+		return err
+	}
+	// Before updating entity key, fetch & revoke the old key
+	oldOrganization, err := u.db.GetOrganization(integratorPrivKey, entityID)
+	if err != nil {
+		return err
+	}
+	// authenticate integrator has permission to edit this entity
+	if bytes.Compare(oldOrganization.IntegratorApiKey, integratorPrivKey) != 0 {
+		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	}
+	u.revokeToken(oldOrganization.PublicAPIToken)
+
+	// Now generate a new api key & update integrator
+	resp.APIKey = util.GenerateBearerToken()
+	if _, err = u.db.UpdateOrganizationPublicAPIToken(
+		integratorPrivKey, entityID, resp.APIKey); err != nil {
+		return err
+	}
+	u.registerToken(resp.APIKey, int64(oldOrganization.PublicAPIQuota))
+	return sendResponse(resp, ctx)
 }
 
 // PUT https://server/v1/priv/entities/<entityId>/metadata
 // setEntityMetadataHandler sets an entity's metadata
-func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var err error
+	var resp types.APIResponse
+	var req types.APIRequest
+	var organization *types.Organization
+	var entityID []byte
+	var metaBytes []byte
+	var integratorPrivKey []byte
+	var metaURI string
+
+	var entityMetadata types.EntityMetadata
+	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+		return err
+	}
+	if req, err = util.UnmarshalRequest(ctx); err != nil {
+		return err
+	}
+	if entityID, err = util.GetBytesID(ctx); err != nil {
+		return err
+	}
+	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
+		return err
+	}
+
+	// authenticate integrator has permission to edit this entity
+	if bytes.Compare(organization.IntegratorApiKey, integratorPrivKey) != 0 {
+		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	}
+
+	entityMetadata.Avatar = req.Avatar
+	entityMetadata.Description = req.Description
+	entityMetadata.Header = req.Header
+	entityMetadata.Name = req.Name
+
+	if metaBytes, err = json.Marshal(entityMetadata); err != nil {
+		return fmt.Errorf("could not marshal entity metadata: %v", err)
+	}
+	if metaURI, err = u.vocClient.AddFile(metaBytes, "ipfs",
+		fmt.Sprintf("%X entity metadata", entityID)); err != nil {
+		return fmt.Errorf("could not post metadata to ipfs: %v", err)
+	}
+
+	// Update organization in the db to make sure it matches the metadata
+	u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
+		organization.QuotaPlanID, organization.PublicAPIQuota, req.Header, req.Avatar)
+
+	// TODO update the entity on the Vochain to reflect the new IPFS uri
+
+	resp.EntityID = entityID
+	resp.ContentURI = metaURI
+	return sendResponse(resp, ctx)
 }
 
 // POST https://server/v1/priv/entities/<entityId>/processes/signed

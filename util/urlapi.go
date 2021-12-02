@@ -26,8 +26,8 @@ func UnmarshalRequest(ctx *httprouter.HTTPContext) (req types.APIRequest, err er
 	return
 }
 
-func GetOrganizationID(ctx *httprouter.HTTPContext) ([]byte, error) {
-	organization := ctx.URLParam("entityID")
+func GetBytesID(ctx *httprouter.HTTPContext) ([]byte, error) {
+	organization := ctx.URLParam("id")
 	organizationID, err := hex.DecodeString(util.TrimHex(organization))
 	if err != nil {
 		return nil, fmt.Errorf("could not parse urlParam EntityID")
@@ -35,7 +35,7 @@ func GetOrganizationID(ctx *httprouter.HTTPContext) ([]byte, error) {
 	return organizationID, nil
 }
 
-func GetID(ctx *httprouter.HTTPContext) (int, error) {
+func GetIntID(ctx *httprouter.HTTPContext) (int, error) {
 	id := ctx.URLParam("id")
 	intID, err := strconv.Atoi(id)
 	if err != nil {
