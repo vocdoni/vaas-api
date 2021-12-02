@@ -61,7 +61,6 @@ CREATE TABLE organizations (
     id SERIAL NOT NULL ,
     integrator_id  INTEGER NOT NULL,
     integrator_api_key BYTEA NOT NULL,
-    name TEXT NOT NULL,
     eth_address BYTEA NOT NULL,
     eth_priv_key_cipher BYTEA NOT NULL,
     header_uri TEXT NOT NULL,
@@ -85,9 +84,6 @@ ALTER TABLE ONLY organizations
 
 ALTER TABLE ONLY organizations
     ADD CONSTRAINT organizations_quota_plan_id_fkey FOREIGN KEY (quota_plan_id) REFERENCES quota_plans(id);
-
-ALTER TABLE ONLY organizations
-    ADD CONSTRAINT organizations_integrator_id_name_unique UNIQUE (integrator_id, name);
 
 --------------------------- Election
 -- Election processes

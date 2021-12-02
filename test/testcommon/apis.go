@@ -4,7 +4,6 @@ import (
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/database/testdb"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
@@ -35,14 +34,14 @@ func (t *TestAPI) Start(dbc *config.DB, route string, port int) error {
 		}
 	} else {
 		// Mock database
-		if t.DB, err = testdb.New(); err != nil {
-			return err
-		}
+		// if t.DB, err = testdb.New(); err != nil {
+		// 	return err
+		// }
 	}
 
 	if route != "" {
-		api, err := NewTestClient(route, port)
-		log.Infof("enabling API methods")
+		// api, err := NewTestClient(route, port)
+		// log.Infof("enabling API methods")
 	}
 	return nil
 }

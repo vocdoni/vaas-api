@@ -38,7 +38,7 @@ func (d *Database) Close() error {
 	return nil
 }
 
-func (d *Database) Entity(entityID []byte) (*types.Entity, error) {
+func (d *Database) Entity(entityID []byte) (*types.Organization, error) {
 	if fmt.Sprintf("%x", entityID) == "09fa012e40f844b073fab7fcbd7f7a5716c1a365" {
 		return nil, fmt.Errorf("error adding entity with id: %x", entityID)
 	}
@@ -46,15 +46,15 @@ func (d *Database) Entity(entityID []byte) (*types.Entity, error) {
 		return nil, fmt.Errorf("cannot fetch entity with ID: %x", entityID)
 	}
 
-	var entity types.Entity
-	entity.ID = entityID
-	entity.Name = "test entity"
-	entity.Email = "entity@entity.org"
+	entity := types.Organization{}
+	// entity.ID = entityID
+	// entity.Name = "test entity"
+	// entity.Email = "entity@entity.org"
 
-	failEidID := hex.EncodeToString(entityID)
-	if failEidID == "ca526af2aaa0f3e9bb68ab80de4392590f7b153a" {
-		entity.ID = []byte{1}
-	}
+	// failEidID := hex.EncodeToString(entityID)
+	// if failEidID == "ca526af2aaa0f3e9bb68ab80de4392590f7b153a" {
+	// 	entity.ID = []byte{1}
+	// }
 
 	return &entity, nil
 }
@@ -63,7 +63,7 @@ func (d *Database) EntitiesID() ([]string, error) {
 	return nil, nil
 }
 
-func (d *Database) AddEntity(entityID []byte, info *types.EntityInfo) error {
+func (d *Database) AddEntity(entityID []byte) error {
 	if fmt.Sprintf("%x", entityID) == "09fa012e40f844b073fab7fcbd7f7a5716c1a365" {
 		return fmt.Errorf("error adding entity with id: %x", entityID)
 	}
@@ -77,7 +77,7 @@ func (d *Database) DeleteEntity(entityID []byte) error {
 	return nil
 }
 
-func (d *Database) UpdateEntity(entityID []byte, info *types.EntityInfo) (int, error) {
+func (d *Database) UpdateEntity(entityID []byte) (int, error) {
 	failEid := hex.EncodeToString(entityID)
 	if failEid == "09fa012e40f844b073fab7fcbd7f7a5716c1a365" {
 		return 0, fmt.Errorf("error updating entity with id: %s", failEid)

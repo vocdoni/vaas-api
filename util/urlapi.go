@@ -25,13 +25,13 @@ func UnmarshalRequest(ctx *httprouter.HTTPContext) (req types.APIRequest, err er
 	return
 }
 
-func GetEntityID(ctx *httprouter.HTTPContext) ([]byte, error) {
-	entity := ctx.URLParam("entityID")
-	entityID, err := hex.DecodeString(util.TrimHex(entity))
+func GetOrganizationID(ctx *httprouter.HTTPContext) ([]byte, error) {
+	organization := ctx.URLParam("entityID")
+	organizationID, err := hex.DecodeString(util.TrimHex(organization))
 	if err != nil {
 		return nil, fmt.Errorf("could not parse urlParam EntityID")
 	}
-	return entityID, nil
+	return organizationID, nil
 }
 
 func GetID(ctx *httprouter.HTTPContext) (int, error) {

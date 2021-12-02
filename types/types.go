@@ -16,22 +16,22 @@ type Integrator struct {
 	ID           int    `json:"id" db:"id"`
 	SecretApiKey []byte `json:"secretApiKey" db:"secret_api_key"`
 	Name         string `json:"name" db:"name"`
+	Email        string `json:"email" db:"email"`
 	CspUrlPrefix string `json:"cspUrlPrefix" db:"csp_url_prefix"`
 	CspPubKey    []byte `json:"cspPubKey" db:"csp_pub_key"` // CSP compressed eth public key
 }
 type Organization struct {
 	CreatedUpdated
-	ID               int    `json:"id" db:"id"`
-	IntegratorID     int    `json:"integratorId" db:"integrator_id"`
-	IntegratorApiKey int    `json:"integratorApiKey" db:"integrator_api_key"`
-	EthAddress       []byte `json:"ethAddress" db:"eth_address"`
-	EncryptedPrivKey []byte `json:"encrypedPrivKey" db:"encrypted_priv_key"` // encrypted priv key for metadata
-	Name             string `json:"name" db:"name"`
-	HeaderURI        string `json:"headerUri" db:"header_uri"`            // cURI
-	AvatarURI        string `json:"avatarUri" db:"avatar_uri"`            // cURI
-	PublicAPIToken   string `json:"publicApiToken" db:"public_api_token"` // Public API token
-	QuotaPlanID      int    `json:"quotaPlanId" db:"quota_plan_id"`       // Billing plan ID
-	PublicAPIQuota   int    `json:"publicApiQuota" db:"public_api_quota"`
+	ID                int    `json:"id" db:"id"`
+	IntegratorID      int    `json:"integratorId" db:"integrator_id"`
+	IntegratorApiKey  []byte `json:"integratorApiKey" db:"integrator_api_key"`
+	EthAddress        []byte `json:"ethAddress" db:"eth_address"`
+	EthPrivKeyCicpher []byte `json:"ethPrivKeyCipher" db:"eth_priv_key_cipher"` // encrypted priv key for metadata
+	HeaderURI         string `json:"headerUri" db:"header_uri"`                 // cURI
+	AvatarURI         string `json:"avatarUri" db:"avatar_uri"`                 // cURI
+	PublicAPIToken    string `json:"publicApiToken" db:"public_api_token"`      // Public API token
+	QuotaPlanID       int    `json:"quotaPlanId" db:"quota_plan_id"`            // Billing plan ID
+	PublicAPIQuota    int    `json:"publicApiQuota" db:"public_api_quota"`
 }
 
 type ErrorMsg struct {

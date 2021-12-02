@@ -10,12 +10,28 @@ import (
 	_ "github.com/jackc/pgx/stdlib"
 
 	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/dvote/log"
 )
 
-func (d *Database) CreateOrganization(integratorID, planID, apiQuota int, ethAddress, metadataPrivKey []byte, publicApiToken, headerUri, avatarUri string) (int32, error) {
+func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int32, error) {
+	integrator, err := d.GetIntegratorByKey(integratorAPIKey)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Errorf("Tried to createOrganization by uknown API Key %x", integratorAPIKey)
+			return 0, fmt.Errorf("unkown API key: %x", integratorAPIKey)
+		} else {
+			return 0, fmt.Errorf("createOrganization DB error: %w", err)
+		}
+	}
 	organization := &types.Organization{
-		EthAddress:   ethAddress,
-		IntegratorID: integratorID,
+		EthAddress:        ethAddress,
+		IntegratorID:      integrator.ID,
+		EthPrivKeyCicpher: ethPrivKeyCipher,
+		IntegratorApiKey:  integrator.SecretApiKey,
+		HeaderURI:         headerUri,
+		AvatarURI:         avatarUri,
+		PublicAPIToken:    publicApiToken,
+		PublicAPIQuota:    publiApiQuota,
 		CreatedUpdated: types.CreatedUpdated{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -23,25 +39,32 @@ func (d *Database) CreateOrganization(integratorID, planID, apiQuota int, ethAdd
 	}
 	// TODO: Calculate EntityID (consult go-dvote)
 	insert := `INSERT INTO organizations
-			(id, integrator_id is_authorized, email, name, size, created_at, updated_at)
-			VALUES (:id, integrator_id :is_authorized, :email, :name, :size, :created_at, :updated_at)`
+			( integrator_id, integrator_api_key, eth_address, eth_priv_key_cipher, 
+				header_uri, avatar_uri, public_api_token, quota_plan_id,
+				public_api_quota created_at, updated_at)
+			VALUES ( :integrator_id, :integrator_api_key, :eth_address, :eth_priv_key_cipher, 
+				:header_uri, :avatar_uri, :public_api_token, :quota_plan_id,
+				:public_api_quota, :created_at, :updated_at)
+			RETURNING id`
 	result, err := d.db.NamedQuery(insert, organization)
 	if err != nil || !result.Next() {
-		return 0, fmt.Errorf("error inserting tag: %w", err)
+		return 0, fmt.Errorf("error creating organization: %w", err)
 	}
 	var id int32
 	err = result.Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error inserting tag: %w", err)
+		return 0, fmt.Errorf("error creating organization: %w", err)
 	}
 	return id, nil
 }
 
-func (d *Database) GetOrganization(integratorID int, entityID []byte) (*types.Organization, error) {
+func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error) {
 	var organization *types.Organization
-	selectEntity := `SELECT id, is_authorized, email, name, type, size, callback_url, callback_secret, census_managers_addresses as "pg_census_managers_addresses"  
-						FROM organizations WHERE id=$1`
-	row := d.db.QueryRowx(selectEntity, entityID)
+	selectOrganization := `SELECT id , integrator_id, integrator_api_key, eth_address, eth_priv_key_cipher, 
+								header_uri, avatar_uri, public_api_token, quota_plan_id,
+								public_api_quota created_at, updated_at  
+							FROM organizations WHERE integrator_api_key=$1 AND eth_address=$2`
+	row := d.db.QueryRowx(selectOrganization, integratorAPIKey, ethAddress)
 	err := row.StructScan(&organization)
 	if err != nil {
 		return nil, err
@@ -50,13 +73,12 @@ func (d *Database) GetOrganization(integratorID int, entityID []byte) (*types.Or
 	return organization, nil
 }
 
-func (d *Database) DeleteOrganization(integratorID int, entityID []byte) error {
-	if len(entityID) == 0 {
+func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error {
+	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return fmt.Errorf("invalid arguments")
 	}
-
-	deleteQuery := `DELETE FROM organizations WHERE id = $1 AND integrator_id = $2`
-	result, err := d.db.Exec(deleteQuery, entityID, integratorID)
+	deleteQuery := `DELETE FROM organizations integrator_api_key=$1 AND eth_address=$2`
+	result, err := d.db.Exec(deleteQuery, integratorAPIKey, ethAddress)
 	if err != nil {
 		return fmt.Errorf("error deleting organization: %w", err)
 	}
@@ -71,37 +93,22 @@ func (d *Database) DeleteOrganization(integratorID int, entityID []byte) error {
 	return nil
 }
 
-func (d *Database) AuthorizeOrganization(integratorID int, ethAddress []byte) error {
-	organization := &types.Organization{EthAddress: ethAddress, IntegratorID: integratorID}
-	update := `UPDATE organizations SET
-				is_authorized = COALESCE(NULLIF(:is_authorized, false), is_authorized),
-				updated_at = now()
-				WHERE (id = :id  AND integrator_id = :integrator_id)
-				AND  :is_authorized IS DISTINCT FROM is_authorized`
-	result, err := d.db.NamedExec(update, organization)
-	if err != nil {
-		return fmt.Errorf("error updating organization: %w", err)
+func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error) {
+	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
+		return 0, fmt.Errorf("invalid arguments")
 	}
-	var rows int64
-	if rows, err = result.RowsAffected(); err != nil {
-		return fmt.Errorf("cannot get affected rows: %w", err)
-	} else if rows == 0 { /* Nothing to update? */
-		return fmt.Errorf("already authorized")
-	} else if rows != 1 { /* Nothing to update? */
-		return fmt.Errorf("could not authorize")
-	}
-	return nil
-}
-
-func (d *Database) UpdateOrganizationy(id int, planID, apiQuota int, ethAddress []byte, headerUri, avatarUri string) (int, error) {
-	organization := &types.Organization{ID: id, EthAddress: ethAddress}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress}
 	update := `UPDATE organizations SET
-				name = COALESCE(NULLIF(:name, ''), name),
-				email = COALESCE(NULLIF(:email, ''), email),
+				quota_plan_id = COALESCE(NULLIF(:quota_plan_id, 0), quota_plan_id),
+				public_api_quota = COALESCE(NULLIF(:public_api_quota, 0), public_api_quota),
+				header_uri = COALESCE(NULLIF(:header_uri, ''), header_uri),
+				avatar_uri = COALESCE(NULLIF(:avatar_uri, ''), avatar_uri),
 				updated_at = now()
-				WHERE (id = :id AND integrator_id = :integrator_id)
-				AND  (:name IS DISTINCT FROM name OR
-				:email IS DISTINCT FROM email)`
+				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:integrator_api_key)
+				AND  (:quota_plan_id IS DISTINCT FROM quota_plan_id OR
+					:public_api_quota IS DISTINCT FROM public_api_quota OR
+					:header_uri IS DISTINCT FROM header_uri OR
+					:avatar_uri IS DISTINCT FROM avatar_uri)`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
 		return 0, fmt.Errorf("error updating organization: %w", err)
@@ -115,12 +122,15 @@ func (d *Database) UpdateOrganizationy(id int, planID, apiQuota int, ethAddress 
 	return int(rows), nil
 }
 
-func (d *Database) UpdateOrganizationEncryptedPrivKey(id int, newMetadataPrivKey []byte) (int, error) {
-	organization := &types.Organization{ID: id, EncryptedPrivKey: newMetadataPrivKey}
+func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCicpher []byte) (int, error) {
+	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
+		return 0, fmt.Errorf("invalid arguments")
+	}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, EthPrivKeyCicpher: newEthPrivKeyCicpher}
 	update := `UPDATE organizations SET
-				// TODO
+				eth_priv_key_cipher = COALESCE(NULLIF(:eth_priv_key_cipher, '' ::::bytea ),  eth_priv_key_cipher),
 				updated_at = now()
-				WHERE (id = :id AND integrator_id = :integrator_id)
+				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
 				AND  (//TODO)`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
@@ -135,12 +145,15 @@ func (d *Database) UpdateOrganizationEncryptedPrivKey(id int, newMetadataPrivKey
 	return int(rows), nil
 }
 
-func (d *Database) UpdateOrganizationPublicToken(id int, newPublicApiToken string) (int, error) {
-	organization := &types.Organization{ID: id, PublicAPIToken: newPublicApiToken}
+func (d *Database) UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte, newPublicApiToken string) (int, error) {
+	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
+		return 0, fmt.Errorf("invalid arguments")
+	}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, PublicAPIToken: newPublicApiToken}
 	update := `UPDATE organizations SET
-				// TODO
+				public_api_token = COALESCE(NULLIF(:public_api_token, '' ::::bytea ),  public_api_token)
 				updated_at = now()
-				WHERE (id = :id AND integrator_id = :integrator_id)
+				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
 				AND  (//TODO)`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
@@ -155,21 +168,21 @@ func (d *Database) UpdateOrganizationPublicToken(id int, newPublicApiToken strin
 	return int(rows), nil
 }
 
-func (d *Database) CountOrganizations(integratorID int) (int, error) {
-	selectQuery := `SELECT COUNT(*) FROM organizations WHERE integrator_id=$1`
+func (d *Database) CountOrganizations(integratorAPIKey []byte) (int, error) {
+	selectQuery := `SELECT COUNT(*) FROM organizations WHERE integrator_api_key=$1`
 	var entitiesCount int
-	if err := d.db.Get(&entitiesCount, selectQuery, integratorID); err != nil {
+	if err := d.db.Get(&entitiesCount, selectQuery, integratorAPIKey); err != nil {
 		return 0, err
 	}
 	return entitiesCount, nil
 }
 
-func (d *Database) ListOrganizations(integratorID int, filter *types.ListOptions) ([]types.Organization, error) {
+func (d *Database) ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error) {
 	// TODO: Replace limit offset with better strategy, can slow down DB
 	// would nee to now last value from previous query
 	selectQuery := `SELECT
-	 				id, entity_id, public_key, email
-					FROM organizations WHERE integrator_id =$1
+	 				id
+					FROM organizations WHERE integratorAPIKey =$1
 					ORDER BY %s %s LIMIT $2 OFFSET $3`
 	// Define default values for arguments
 	t := reflect.TypeOf(types.Organization{})
@@ -216,7 +229,7 @@ func (d *Database) ListOrganizations(integratorID int, filter *types.ListOptions
 
 	query := fmt.Sprintf(selectQuery, orderField, order)
 	var entitites []types.Organization
-	err = d.db.Select(&entitites, query, integratorID, limit, offset)
+	err = d.db.Select(&entitites, query, integratorAPIKey, limit, offset)
 	if err != nil {
 		return nil, err
 	}

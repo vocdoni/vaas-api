@@ -6,6 +6,7 @@ import (
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
+	"go.vocdoni.io/dvote/log"
 )
 
 func (u *URLAPI) enableIntegratorHandlers() error {
@@ -54,10 +55,11 @@ func (u *URLAPI) createEntityHandler(msg *bearerstdapi.BearerStandardAPIdata, ct
 	if err != nil {
 		return fmt.Errorf("could not decode request body: %v", err)
 	}
-	entityID, err := util.GetEntityID(ctx)
+	organizationID, err := util.GetOrganizationID(ctx)
 	if err != nil {
 		return fmt.Errorf("could not retrieve EntityID: %v", err)
 	}
+	log.Debugf("organization %x", organizationID)
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 

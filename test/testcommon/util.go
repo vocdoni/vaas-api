@@ -4,25 +4,23 @@ import (
 	"math/rand"
 	"time"
 
-	randomdata "github.com/Pallinder/go-randomdata"
-
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 )
 
 // CreateEntities a given number of random entities
-func CreateEntities(size int) ([]*ethereum.SignKeys, []*types.Entity) {
+func CreateOrganization(size int) ([]*ethereum.SignKeys, []*types.Organization) {
 	signers := CreateEthRandomKeysBatch(size)
-	mp := make([]*types.Entity, size)
+	mp := make([]*types.Organization, size)
 	for i := 0; i < size; i++ {
 		// retrieve entity ID
-		mp[i] = &types.Entity{
-			ID: signers[i].Address().Bytes(),
-			EntityInfo: types.EntityInfo{
-				Email: randomdata.Email(),
-				Name:  randomdata.FirstName(2),
-				Size:  randomdata.Number(1001),
-			},
+		mp[i] = &types.Organization{
+			// ID: signers[i].Address().Bytes(),
+			// EntityInfo: types.EntityInfo{
+			// 	Email: randomdata.Email(),
+			// 	Name:  randomdata.FirstName(2),
+			// 	Size:  randomdata.Number(1001),
+			// },
 		}
 	}
 	return signers, mp

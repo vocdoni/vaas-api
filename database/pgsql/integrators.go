@@ -9,8 +9,12 @@ import (
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, name, cspUrlPrefix string) (int32, error) {
+func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name string) (int32, error) {
 	integrator := &types.Integrator{
+		SecretApiKey: secretApiKey,
+		CspPubKey:    cspPubKey,
+		CspUrlPrefix: cspUrlPrefix,
+		Name:         name,
 		CreatedUpdated: types.CreatedUpdated{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -23,12 +27,12 @@ func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, name, cspUrl
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, integrator)
 	if err != nil || !result.Next() {
-		return 0, fmt.Errorf("error inserting tag: %w", err)
+		return 0, fmt.Errorf("error creating integrator: %w", err)
 	}
 	var id int32
 	err = result.Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error inserting tag: %w", err)
+		return 0, fmt.Errorf("error creating integrator: %w", err)
 	}
 	return id, nil
 }
@@ -63,12 +67,12 @@ func (d *Database) DeleteIntegrator(id int) error {
 	deleteQuery := `DELETE FROM integrators WHERE id = $1`
 	result, err := d.db.Exec(deleteQuery, id)
 	if err != nil {
-		return fmt.Errorf("error deleting entity: %w", err)
+		return fmt.Errorf("error deleting integrator: %w", err)
 	}
 	// var rows int64
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("error veryfying deleted entity: %w", err)
+		return fmt.Errorf("error veryfying deleted integrator: %w", err)
 	}
 	if rows != 1 {
 		return fmt.Errorf("nothing to delete")
@@ -115,7 +119,7 @@ func (d *Database) UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, 
 				AND  (TEXT(:secret_api_key) IS DISTINCT FROM TEXT(secret_api_key))`
 	result, err := d.db.NamedExec(update, integrator)
 	if err != nil {
-		return 0, fmt.Errorf("error updating entity: %w", err)
+		return 0, fmt.Errorf("error updating integrator: %w", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
