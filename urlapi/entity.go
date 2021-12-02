@@ -195,7 +195,7 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// authenticate integrator has permission to edit this entity
-	if bytes.Compare(organization.IntegratorApiKey, integratorPrivKey) != 0 {
+	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
 		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
 	}
 
@@ -210,8 +210,33 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 // DELETE https://server/v1/priv/account/entities/<entityId>
 // deleteOrganizationHandler deletes an entity
-func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var err error
+	var resp types.APIResponse
+	var organization *types.Organization
+	var integratorPrivKey []byte
+	var entityID []byte
+	if entityID, err = util.GetBytesID(ctx); err != nil {
+		return err
+	}
+	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+		return err
+	}
+	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
+		return err
+	}
+
+	// authenticate integrator has permission to edit this entity
+	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
+		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	}
+
+	if err = u.db.DeleteOrganization(integratorPrivKey, entityID); err != nil {
+		return err
+	}
+	u.revokeToken(organization.PublicAPIToken)
+	return sendResponse(resp, ctx)
 }
 
 // PATCH https://server/v1/account/entities/<id>/key
@@ -234,7 +259,7 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 		return err
 	}
 	// authenticate integrator has permission to edit this entity
-	if bytes.Compare(oldOrganization.IntegratorApiKey, integratorPrivKey) != 0 {
+	if !bytes.Equal(oldOrganization.IntegratorApiKey, integratorPrivKey) {
 		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
 	}
 	u.revokeToken(oldOrganization.PublicAPIToken)
@@ -277,7 +302,7 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 	}
 
 	// authenticate integrator has permission to edit this entity
-	if bytes.Compare(organization.IntegratorApiKey, integratorPrivKey) != 0 {
+	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
 		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
 	}
 
