@@ -55,7 +55,7 @@ ADD CONSTRAINT integrators_secret_api_key_unique UNIQUE (secret_api_key);
 --------------------------- ENTITTIES
 -- An Organization
 
-CREATE TABLE organization (
+CREATE TABLE organizations (
     updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     id SERIAL NOT NULL ,
@@ -63,7 +63,7 @@ CREATE TABLE organization (
     integrator_api_key BYTEA NOT NULL,
     name TEXT NOT NULL,
     eth_address BYTEA NOT NULL,
-    encrypted_priv_key BYTEA NOT NULL,
+    eth_priv_key_cipher BYTEA NOT NULL,
     header_uri TEXT NOT NULL,
     avatar_uri TEXT NOT NULL,
     public_api_token  TEXT NOT NULL,
@@ -148,7 +148,7 @@ CREATE TABLE census_members (
     id SERIAL NOT NULL,
     census_id  INTEGER NOT NULL,
     public_key BYTEA NOT NULL,
-    redeeem_token TEXT NOT NULL,
+    redeem_token TEXT NOT NULL,
     weight INTEGER NOT NULL DEFAULT 1,
 );
 
@@ -182,7 +182,7 @@ DROP TABLE organizations;
 DROP TABLE elections;
 DROP TABLE censuses;
 DROP TABLE census_members;
-DROP TABLE plans;
+DROP TABLE quota_plans;
 DROP EXTENSION IF EXISTS pgcrypto;
 `
 
