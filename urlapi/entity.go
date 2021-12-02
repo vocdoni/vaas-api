@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"strings"
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
@@ -178,25 +180,14 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 // GET https://server/v1/priv/account/entities/<entityId>
 // getOrganizationHandler fetches an entity
-func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
 	var organization *types.Organization
-	var integratorPrivKey []byte
-	var entityID []byte
-	if entityID, err = util.GetBytesID(ctx); err != nil {
-		return err
-	}
-	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
-		return err
-	}
-	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return err
-	}
-
 	// authenticate integrator has permission to edit this entity
-	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
-		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+		return err
 	}
 
 	// TODO get metadata if needed
@@ -217,19 +208,9 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	var organization *types.Organization
 	var integratorPrivKey []byte
 	var entityID []byte
-	if entityID, err = util.GetBytesID(ctx); err != nil {
-		return err
-	}
-	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
-		return err
-	}
-	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return err
-	}
-
 	// authenticate integrator has permission to edit this entity
-	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
-		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	if integratorPrivKey, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+		return err
 	}
 
 	if err = u.db.DeleteOrganization(integratorPrivKey, entityID); err != nil {
@@ -247,20 +228,11 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	var resp types.APIResponse
 	var integratorPrivKey []byte
 	var entityID []byte
-	if entityID, err = util.GetBytesID(ctx); err != nil {
-		return err
-	}
-	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
-		return err
-	}
-	// Before updating entity key, fetch & revoke the old key
-	oldOrganization, err := u.db.GetOrganization(integratorPrivKey, entityID)
-	if err != nil {
-		return err
-	}
+	var oldOrganization *types.Organization
 	// authenticate integrator has permission to edit this entity
-	if !bytes.Equal(oldOrganization.IntegratorApiKey, integratorPrivKey) {
-		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	if integratorPrivKey, entityID, oldOrganization,
+		err = u.authEntityPermissions(msg, ctx); err != nil {
+		return err
 	}
 	u.revokeToken(oldOrganization.PublicAPIToken)
 
@@ -284,26 +256,12 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 	var organization *types.Organization
 	var entityID []byte
 	var metaBytes []byte
-	var integratorPrivKey []byte
 	var metaURI string
-
 	var entityMetadata types.EntityMetadata
-	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
-		return err
-	}
-	if req, err = util.UnmarshalRequest(ctx); err != nil {
-		return err
-	}
-	if entityID, err = util.GetBytesID(ctx); err != nil {
-		return err
-	}
-	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return err
-	}
 
 	// authenticate integrator has permission to edit this entity
-	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
-		return fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	if _, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+		return err
 	}
 
 	entityMetadata.Avatar = req.Avatar
@@ -333,8 +291,39 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 // POST https://server/v1/priv/entities/<entityId>/processes/signed
 // POST https://server/v1/priv/entities/<entityId>/processes/blind
 // createProcessHandler creates a process with the given metadata, either with signed or blind signature voting
-func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var err error
+	var resp types.APIResponse
+	var req types.APIRequest
+	var blind bool
+	var entityID []byte
+	var processID []byte
+	var integratorPrivKey []byte
+
+	if strings.HasSuffix(ctx.Request.URL.Path, "signed") {
+		blind = false
+	} else if strings.HasSuffix(ctx.Request.URL.Path, "blind") {
+		blind = true
+	} else {
+		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+	}
+
+	// authenticate integrator has permission to edit this entity
+	if integratorPrivKey, entityID, _, err = u.authEntityPermissions(msg, ctx); err != nil {
+		return err
+	}
+
+	if req, err = util.UnmarshalRequest(ctx); err != nil {
+		return err
+	}
+
+	// TODO create election on the vochain
+
+	u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, req.Census, big.Int{}, big.Int{}, req.Confidential, req.HiddenResults)
+
+	resp.ProcessID = processID
+	return sendResponse(resp, ctx)
 }
 
 // GET https://server/v1/priv/entities/<entityId>/processes/signed
@@ -399,4 +388,26 @@ func (u *URLAPI) importPublicKeysHandler(msg *bearerstdapi.BearerStandardAPIdata
 // setProcessStatusHandler sets the process status (READY, PAUSED, ENDED, CANCELED)
 func (u *URLAPI) setProcessStatusHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+}
+
+func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) ([]byte, []byte, *types.Organization, error) {
+	var err error
+	var entityID []byte
+	var integratorPrivKey []byte
+	var organization *types.Organization
+
+	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+		return nil, nil, nil, err
+	}
+	if entityID, err = util.GetBytesID(ctx); err != nil {
+		return nil, nil, nil, err
+	}
+	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
+		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db", entityID)
+	}
+	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
+		return nil, nil, nil, fmt.Errorf("entity %X does not belong to this integrator", entityID)
+	}
+	return integratorPrivKey, entityID, organization, nil
 }

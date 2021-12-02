@@ -10,13 +10,21 @@ import (
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIRequest struct {
-	Avatar       string         `json:"avatar"`
-	CspPubKey    types.HexBytes `json:"cspPubKey"`
-	CspUrlPrefix string         `json:"cspUrlPrefix"`
-	Description  string         `json:"description"`
-	Header       string         `json:"header"`
-	Name         string         `json:"name"`
-	ID           int            `json:"id"`
+	Avatar        string         `json:"avatar"`
+	CspPubKey     types.HexBytes `json:"cspPubKey"`
+	CspUrlPrefix  string         `json:"cspUrlPrefix"`
+	Description   string         `json:"description"`
+	Header        string         `json:"header"`
+	Name          string         `json:"name"`
+	ID            int            `json:"id"`
+	Title         string         `json:"title"`
+	StreamURI     string         `json:"streamUri"`
+	StartDate     string         `json:"startDate"`
+	EndDate       string         `json:"endDate"`
+	Questions     []Question     `json:"questions"`
+	Confidential  bool           `json:"confidential"`
+	HiddenResults bool           `json:"hiddenResults"`
+	Census        int            `json:"census"`
 }
 
 // APIResponse contains all of the possible response fields.
@@ -30,6 +38,7 @@ type APIResponse struct {
 	CspUrlPrefix string         `json:"cspUrlPrefix"`
 	ContentURI   string         `json:"contentUri"`
 	EntityID     types.HexBytes `json:"entityId"`
+	ProcessID    types.HexBytes `json:"processId"`
 	ID           int32          `json:"id"`
 	Message      string         `json:"message,omitempty"`
 	Name         string         `json:"name"`
