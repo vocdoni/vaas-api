@@ -2,14 +2,17 @@ package vocclient
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 
+	apiTypes "go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
+	dvoteutil "go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 	"google.golang.org/protobuf/proto"
@@ -47,7 +50,7 @@ func (c *Client) ActiveEndpoint() string {
 func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
 	var req api.APIrequest
 	req.Method = "getBlockHeight"
-	resp, err := c.pool.Request(req, nil)
+	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return 0, err
 	}
@@ -90,6 +93,26 @@ func (c *Client) GetProcessList(entityId []byte, searchTerm string, namespace ui
 }
 
 // FILE APIS
+
+func (c *Client) SetEntityMetadata(avatar, description, header,
+	name string, entityID []byte) (metaURI string, _ error) {
+	var metaBytes []byte
+	var err error
+	var entityMetadata apiTypes.EntityMetadata
+	entityMetadata.Avatar = avatar
+	entityMetadata.Description = description
+	entityMetadata.Header = header
+	entityMetadata.Name = name
+
+	if metaBytes, err = json.Marshal(entityMetadata); err != nil {
+		return "", fmt.Errorf("could not marshal entity metadata: %v", err)
+	}
+	if metaURI, err = c.AddFile(metaBytes, "ipfs",
+		fmt.Sprintf("%X entity metadata", entityID)); err != nil {
+		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
+	}
+	return metaURI, nil
+}
 
 func (c *Client) AddFile(content []byte, contentType, name string) (URI string, _ error) {
 	resp, err := c.pool.Request(api.APIrequest{
@@ -225,7 +248,35 @@ func (c *Client) GetRoot(censusID string) (root types.HexBytes, _ error) {
 	return resp.Root, nil
 }
 
-// PROCESS APIS
+// Transaction APIs
+
+func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
+	var tx models.Tx_SetAccountInfo
+	var req api.APIrequest
+	var err error
+	tx.SetAccountInfo = &models.SetAccountInfoTx{
+		Txtype:  models.TxType_SET_ACCOUNT_INFO,
+		Nonce:   uint32(dvoteutil.RandomInt(0, 2<<32)),
+		InfoURI: uri,
+	}
+	stx := &models.SignedTx{}
+	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &tx})
+	if err != nil {
+		return fmt.Errorf("could not marshal set account info tx")
+	}
+	stx.Signature, err = signer.Sign(stx.Tx)
+	if err != nil {
+		return fmt.Errorf("could not sign account transaction: %v", err)
+	}
+	req.Method = "submitRawTx"
+	if req.Payload, err = proto.Marshal(stx); err != nil {
+		return err
+	}
+	if _, err = c.pool.Request(req, c.signingKey); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (c *Client) CreateProcess(
 	entityID, censusRoot []byte,
@@ -270,7 +321,7 @@ func (c *Client) CreateProcess(
 		return 0, err
 	}
 
-	if _, err = c.pool.Request(req, nil); err != nil {
+	if _, err = c.pool.Request(req, c.signingKey); err != nil {
 		return 0, err
 	}
 	return p.Process.StartBlock, nil

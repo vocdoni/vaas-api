@@ -2,7 +2,7 @@ package urlapi
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -154,8 +154,12 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	var err error
 	var resp types.APIResponse
 	var req types.APIRequest
+	var entityPrivKey []byte
 	var integratorPrivKey []byte
 	var orgApiToken string
+	var orgApiKey []byte
+	var encryptedPrivKey []byte
+	var metaURI string
 	// var organizationMetadataKey []byte
 	if req, err = util.UnmarshalRequest(ctx); err != nil {
 		return err
@@ -164,18 +168,44 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return err
 	}
 	orgApiToken = util.GenerateBearerToken()
-	// TODO create Vochain account once gateway API is available
-	// TODO encrypt private key
+	if orgApiKey, err = hex.DecodeString(orgApiToken); err != nil {
+		return fmt.Errorf("could not decode org api token: %v", err)
+	}
+
 	ethSignKeys := ethereum.NewSignKeys()
+
+	// Encrypt private key to store in db
+	_, priv := ethSignKeys.HexString()
+	if entityPrivKey, err = hex.DecodeString(priv); err != nil {
+		return fmt.Errorf("could not decode entity private key: %v", err)
+	}
+
+	if encryptedPrivKey, err = util.EncryptSymmetric(entityPrivKey, orgApiKey); err != nil {
+		return fmt.Errorf("could not encrypt organization private key: %v", err)
+	}
+
+	// Post metadata to ipfs
+	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description, req.Header, req.Name, ethSignKeys.Address().Bytes()); err != nil {
+		return err
+	}
+
+	// Register organization to database
 	if _, err = u.db.CreateOrganization(integratorPrivKey, ethSignKeys.Address().Bytes(),
-		[]byte{}, 0, 0, orgApiToken, req.Header, req.Avatar); err != nil {
+		encryptedPrivKey, 0, 0, orgApiToken, req.Header, req.Avatar); err != nil {
 		return fmt.Errorf("could not create organization: %v", err)
 	}
-	// TODO use correct apiQuota to register token
 	u.registerToken(orgApiToken, 0)
+
+	// Create the new account on the Vochain
+	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
+		// TODO enable this
+		// return fmt.Errorf("could not create account on the vochain: %v", err)
+		log.Warnf("could not create account on the vochain: %v", err)
+	}
 
 	resp.APIKey = orgApiToken
 	resp.EntityID = ethSignKeys.Address().Bytes()
+
 	return sendResponse(resp, ctx)
 }
 
@@ -256,26 +286,15 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 	var req types.APIRequest
 	var organization *types.Organization
 	var entityID []byte
-	var metaBytes []byte
 	var metaURI string
-	var entityMetadata types.EntityMetadata
 
 	// authenticate integrator has permission to edit this entity
 	if _, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
 
-	entityMetadata.Avatar = req.Avatar
-	entityMetadata.Description = req.Description
-	entityMetadata.Header = req.Header
-	entityMetadata.Name = req.Name
-
-	if metaBytes, err = json.Marshal(entityMetadata); err != nil {
-		return fmt.Errorf("could not marshal entity metadata: %v", err)
-	}
-	if metaURI, err = u.vocClient.AddFile(metaBytes, "ipfs",
-		fmt.Sprintf("%X entity metadata", entityID)); err != nil {
-		return fmt.Errorf("could not post metadata to ipfs: %v", err)
+	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description, req.Header, req.Name, entityID); err != nil {
+		return err
 	}
 
 	// Update organization in the db to make sure it matches the metadata

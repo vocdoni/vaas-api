@@ -3,10 +3,8 @@ module go.vocdoni.io/api
 go 1.16
 
 require (
-	github.com/Pallinder/go-randomdata v1.2.0
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/frankban/quicktest v1.13.0
-	github.com/google/uuid v1.3.0
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
@@ -16,8 +14,9 @@ require (
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
-	go.vocdoni.io/dvote v1.0.4-0.20211202000851-2aa121df7280
-	go.vocdoni.io/proto v1.13.3-0.20211126083500-46ba146eff3f
+	go.vocdoni.io/dvote v1.0.4-0.20211202191118-8fa1a3ae4a54
+	go.vocdoni.io/proto v1.13.3-0.20211202161242-17ea8a435be6
+	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	google.golang.org/protobuf v1.27.1
 )
 
