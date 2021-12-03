@@ -64,7 +64,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.AddConfigPath(cfg.DataDir)
 	viper.SetConfigName("vaasapi")
 	viper.SetConfigType("yml")
-	viper.SetEnvPrefix("DVOTE")
+	viper.SetEnvPrefix("VAASAPI")
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
