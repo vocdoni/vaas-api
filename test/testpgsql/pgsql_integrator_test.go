@@ -1,10 +1,12 @@
 package testpgsql
 
 import (
+	"fmt"
 	"testing"
 
 	qt "github.com/frankban/quicktest"
 	"go.vocdoni.io/api/test/testcommon"
+	"go.vocdoni.io/dvote/log"
 )
 
 func TestIntegrator(t *testing.T) {
@@ -15,6 +17,14 @@ func TestIntegrator(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
 	integrators[0].ID = id
+
+	integrator, err := API.DB.GetIntegrator(integrators[0].ID)
+	log.Infof("%w", integrator)
+	c.Assert(err, qt.IsNil)
+	c.Assert(fmt.Sprintf("%x", integrator.SecretApiKey), qt.DeepEquals, fmt.Sprintf("%x", integrators[0].SecretApiKey))
+
+	keys, err := API.DB.GetIntegratorApiKeysList()
+	log.Infof("%s", keys)
 	// cleaning up
 	for _, integrator := range integrators {
 		if err := API.DB.DeleteIntegrator(integrator.ID); err != nil {

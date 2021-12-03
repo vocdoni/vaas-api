@@ -39,8 +39,8 @@ func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix
 }
 
 func (d *Database) GetIntegrator(id int) (*types.Integrator, error) {
-	var integrator *types.Integrator
-	selectIntegrator := `SELECT id, name, csp_url_prefix, csp_pub_key, created_at, updated_at
+	var integrator types.Integrator
+	selectIntegrator := `SELECT id,secret_api_key, name, csp_url_prefix, csp_pub_key, created_at, updated_at
 						FROM integrators WHERE id=$1`
 	row := d.db.QueryRowx(selectIntegrator, id)
 	err := row.StructScan(&integrator)
@@ -48,11 +48,11 @@ func (d *Database) GetIntegrator(id int) (*types.Integrator, error) {
 		return nil, err
 	}
 
-	return integrator, nil
+	return &integrator, nil
 }
 
 func (d *Database) GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, error) {
-	var integrator *types.Integrator
+	var integrator types.Integrator
 	selectIntegrator := `SELECT secret_api_key, name, csp_url_prefix, csp_pub_key, created_at, updated_at 
 						FROM integrators WHERE secret_api_key=$1`
 	row := d.db.QueryRowx(selectIntegrator, secretApiKey)
@@ -61,7 +61,7 @@ func (d *Database) GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, e
 		return nil, err
 	}
 
-	return integrator, nil
+	return &integrator, nil
 }
 
 func (d *Database) DeleteIntegrator(id int) error {

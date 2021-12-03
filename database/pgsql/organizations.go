@@ -59,7 +59,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 }
 
 func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error) {
-	var organization *types.Organization
+	var organization types.Organization
 	selectOrganization := `SELECT id , integrator_id, integrator_api_key, eth_address, eth_priv_key_cipher, 
 								header_uri, avatar_uri, public_api_token, quota_plan_id,
 								public_api_quota created_at, updated_at  
@@ -70,7 +70,7 @@ func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.
 		return nil, err
 	}
 
-	return organization, nil
+	return &organization, nil
 }
 
 func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error {
