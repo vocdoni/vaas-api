@@ -1,6 +1,7 @@
 package urlapi
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -51,7 +52,8 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 	return &urlapi, nil
 }
 
-func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *vocclient.Client, adminToken string) error {
+func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
+	client *vocclient.Client, adminToken string) error {
 	if db == nil {
 		return fmt.Errorf("database is nil")
 	}
@@ -60,6 +62,13 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *voccl
 	}
 	u.db = db
 	u.vocClient = client
+
+	// Register auth tokens from the DB
+	err := u.syncAuthTokens()
+	if err != nil {
+		return fmt.Errorf("could not sync auth tokens with db: %v", err)
+	}
+
 	if err := u.enableSuperadminHandlers(adminToken); err != nil {
 		return err
 	}
@@ -68,6 +77,29 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *voccl
 	}
 	if err := u.enableVoterHandlers(); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (u *URLAPI) syncAuthTokens() error {
+	integratorKeys, err := u.db.GetIntegratorApiKeysList()
+	if err != nil {
+		return err
+	}
+	for _, key := range integratorKeys {
+		// Register integrator key to router
+		u.api.AddAuthToken(hex.EncodeToString(key), INTEGRATOR_MAX_REQUESTS)
+
+		// Fetch integrator's organizations from the db
+		orgs, err := u.db.ListOrganizations(key, &types.ListOptions{})
+		if err != nil {
+			return err
+		}
+
+		// Register each organization's api token to the router
+		for _, org := range orgs {
+			u.api.AddAuthToken(org.PublicAPIToken, int64(org.PublicAPIQuota))
+		}
 	}
 	return nil
 }
