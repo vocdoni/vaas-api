@@ -58,6 +58,8 @@ type Vaas struct {
 	SaveConfig bool
 	// SigningKey is the ECDSA hexString private key for signing messages
 	SigningKey string
+	// AdminToken is the hexString bearer token for superadmin API methods
+	AdminToken string
 	// Urls to use for gateway api
 	GatewayUrls []string
 	// Migration options

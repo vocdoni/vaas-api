@@ -51,7 +51,7 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 	return &urlapi, nil
 }
 
-func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *vocclient.Client) error {
+func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *vocclient.Client, adminToken string) error {
 	if db == nil {
 		return fmt.Errorf("database is nil")
 	}
@@ -60,7 +60,7 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database, client *voccl
 	}
 	u.db = db
 	u.vocClient = client
-	if err := u.enableSuperadminHandlers(); err != nil {
+	if err := u.enableSuperadminHandlers(adminToken); err != nil {
 		return err
 	}
 	if err := u.enableEntityHandlers(); err != nil {

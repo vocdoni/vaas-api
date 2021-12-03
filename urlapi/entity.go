@@ -185,7 +185,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// Post metadata to ipfs
-	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description, req.Header, req.Name, ethSignKeys.Address().Bytes()); err != nil {
+	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description,
+		req.Header, req.Name, ethSignKeys.Address().Bytes()); err != nil {
 		return err
 	}
 

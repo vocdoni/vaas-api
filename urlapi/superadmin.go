@@ -16,7 +16,8 @@ const (
 	INTEGRATOR_MAX_REQUESTS = 2 << 16
 )
 
-func (u *URLAPI) enableSuperadminHandlers() error {
+func (u *URLAPI) enableSuperadminHandlers(adminToken string) error {
+	u.api.SetAdminToken(adminToken)
 	if err := u.api.RegisterMethod(
 		"/admin/accounts",
 		"POST",
