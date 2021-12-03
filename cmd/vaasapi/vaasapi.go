@@ -251,6 +251,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	integratorTokenNotifier, err := pgsql.NewNotifier(cfg.DB, "integrator_tokens_update")
+	if err != nil {
+		log.Fatal(err)
+	}
+	integratorNotifierChan := make(chan []byte, 10)
+	go integratorTokenNotifier.FetchNewTokens(integratorNotifierChan)
+
 	log.Info("startup complete")
 	// close if interrupt received
 	c := make(chan os.Signal, 1)

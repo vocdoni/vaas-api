@@ -161,7 +161,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	var encryptedPrivKey []byte
 	var metaURI string
 	// var organizationMetadataKey []byte
-	if req, err = util.UnmarshalRequest(ctx); err != nil {
+	if req, err = util.UnmarshalRequest(msg); err != nil {
 		return err
 	}
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
@@ -335,7 +335,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	if req, err = util.UnmarshalRequest(ctx); err != nil {
+	if req, err = util.UnmarshalRequest(msg); err != nil {
 		return err
 	}
 

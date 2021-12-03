@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strconv"
 
 	"go.vocdoni.io/api/types"
@@ -13,15 +12,10 @@ import (
 	"go.vocdoni.io/dvote/util"
 )
 
-func UnmarshalRequest(ctx *httprouter.HTTPContext) (req types.APIRequest, err error) {
-	var bytes []byte
-	bytes, err = ioutil.ReadAll(ctx.Request.Body)
+func UnmarshalRequest(msg *bearerstdapi.BearerStandardAPIdata) (req types.APIRequest, err error) {
+	err = json.Unmarshal(msg.Data, &req)
 	if err != nil {
-		return
-	}
-	err = json.Unmarshal(bytes, &req)
-	if err != nil {
-		return req, fmt.Errorf("could not decode request body: %v", err)
+		return req, fmt.Errorf("could not decode request body %s: %v", string(msg.Data), err)
 	}
 	return
 }

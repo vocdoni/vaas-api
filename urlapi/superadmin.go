@@ -8,6 +8,7 @@ import (
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
+	"go.vocdoni.io/dvote/log"
 	dvotetypes "go.vocdoni.io/dvote/types"
 )
 
@@ -18,6 +19,7 @@ const (
 
 func (u *URLAPI) enableSuperadminHandlers(adminToken string) error {
 	u.api.SetAdminToken(adminToken)
+	log.Infof("admin token;: %s", adminToken)
 	if err := u.api.RegisterMethod(
 		"/admin/accounts",
 		"POST",
@@ -68,16 +70,19 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var apiKey dvotetypes.HexBytes
 	var req types.APIRequest
 	var resp types.APIResponse
-	if req, err = util.UnmarshalRequest(ctx); err != nil {
+	if req, err = util.UnmarshalRequest(msg); err != nil {
 		return err
 	}
 	resp.APIKey = util.GenerateBearerToken()
 	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
 		return fmt.Errorf("error generating private key: %v", err)
 	}
-	if resp.ID, err = u.db.CreateIntegrator(apiKey, req.CspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
+	if resp.ID, err = u.db.CreateIntegrator(apiKey, []byte{}, "", req.Name, ""); err != nil {
 		return err
 	}
+	// if resp.ID, err = u.db.CreateIntegrator(apiKey, req.CspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
+	// 	return err
+	// }
 	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
 	return sendResponse(resp, ctx)
 }
@@ -92,7 +97,7 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if id, err = util.GetIntID(ctx); err != nil {
 		return err
 	}
-	if req, err = util.UnmarshalRequest(ctx); err != nil {
+	if req, err = util.UnmarshalRequest(msg); err != nil {
 		return err
 	}
 	if _, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
