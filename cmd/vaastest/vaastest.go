@@ -12,6 +12,10 @@ package main
 // 	"strings"
 // 	"time"
 
+func main() {
+
+}
+
 // 	flag "github.com/spf13/pflag"
 
 // 	"go.vocdoni.io/api/types"

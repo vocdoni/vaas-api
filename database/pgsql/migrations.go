@@ -169,6 +169,40 @@ CREATE TABLE quota_plans (
 ALTER TABLE ONLY census_members
     ADD CONSTRAINT census_members_pkey PRIMARY KEY (id);
 
+
+--------------------------- Functions
+CREATE OR REPLACE FUNCTION notify_integrator_tokens_update() RETURNS TRIGGER AS $$
+    DECLARE
+    row RECORD;
+    output TEXT;
+    
+    BEGIN
+    -- Checking the Operation Type
+    IF (TG_OP = 'DELETE') THEN
+      row = OLD;
+    ELSE
+      row = NEW;
+    END IF;
+    
+    -- Forming the Output as notification. You can choose you own notification.
+    output = 'OPERATION = ' || TG_OP || ' and KEY = ' || encode(row.integrator_api_key,'hex');
+    
+    -- Calling the pg_notify for my_table_update event with output as payload
+
+    PERFORM pg_notify('my_table_update',output);
+    
+    -- Returning null because it is an after trigger.
+    RETURN NULL;
+    END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_integrator_tokens_update
+  AFTER INSERT OR UPDATE OR DELETE
+  ON integrators
+  FOR EACH ROW
+  EXECUTE PROCEDURE notify_integrator_tokens_update();
+  -- We can not use TRUNCATE event in this trigger because it is not supported in case of FOR EACH ROW Trigger 
+
 `
 
 const migration1down = `

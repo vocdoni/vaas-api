@@ -12,6 +12,7 @@ import (
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
+	"go.vocdoni.io/dvote/log"
 )
 
 func (u *URLAPI) enableEntityHandlers() error {
@@ -321,7 +322,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// TODO create election on the vochain
 
 	u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, req.Census, big.Int{}, big.Int{}, req.Confidential, req.HiddenResults)
-
+	// TODO use correctly blind parameter
+	log.Debugf("blind %w", blind)
 	resp.ProcessID = processID
 	return sendResponse(resp, ctx)
 }
