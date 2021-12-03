@@ -6,12 +6,13 @@ on: [push, pull_request]
 jobs:
   go-tests:
     runs-on: self-hosted
+    container:
+      image: golang:1.17.1
+      options: --user 1000
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.17.4
-
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -29,19 +30,10 @@ jobs:
           curl -L https://github.com/dominikh/go-tools/releases/download/2020.2.3/staticcheck_linux_amd64.tar.gz | tar -xzf -
           ./staticcheck/staticcheck ./...
 
-      - name: Install goveralls
-        env:
-          GO111MODULE: off
-        run: go get github.com/mattn/goveralls
-      - name: Send coverage to coverall.io
-        env:
-          COVERALLS_TOKEN: ${{ secrets.github_token }}
-        run: goveralls -coverprofile=covprofile -service=github
-
   docker-release:
     runs-on: self-hosted
     needs: [go-tests]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/ci' || startsWith(github.ref, 'refs/heads/release')
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/ci' || startsWith(github.ref, 'refs/heads/release')
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
