@@ -16,6 +16,7 @@ type Database interface {
 	GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, error)
 	DeleteIntegrator(id int) error
 	CountIntegrators() (int, error)
+	GetIntegratorApiKeysList() ([][]byte, error)
 	// Entity
 	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int32, error)
 	UpdateOrganization(integratorAPIKey, ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error)

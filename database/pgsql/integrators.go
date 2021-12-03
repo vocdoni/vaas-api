@@ -138,3 +138,12 @@ func (d *Database) CountIntegrators() (int, error) {
 	}
 	return count, nil
 }
+
+func (d *Database) GetIntegratorApiKeysList() ([][]byte, error) {
+	selectQuery := `SELECT secret_api_key FROM integrators`
+	var integratorApiKeys [][]byte
+	if err := d.db.Select(&integratorApiKeys, selectQuery); err != nil {
+		return nil, err
+	}
+	return integratorApiKeys, nil
+}
