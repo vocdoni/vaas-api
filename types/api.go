@@ -16,6 +16,7 @@ type APIRequest struct {
 	Description   string         `json:"description"`
 	Header        string         `json:"header"`
 	Name          string         `json:"name"`
+	Email         string         `json:"email"`
 	ID            int            `json:"id"`
 	Title         string         `json:"title"`
 	StreamURI     string         `json:"streamUri"`
@@ -39,7 +40,7 @@ type APIResponse struct {
 	ContentURI   string         `json:"contentUri"`
 	EntityID     types.HexBytes `json:"entityId"`
 	ProcessID    types.HexBytes `json:"processId"`
-	ID           int32          `json:"id"`
+	ID           int            `json:"id"`
 	Message      string         `json:"message,omitempty"`
 	Name         string         `json:"name"`
 	Ok           bool           `json:"ok"`

@@ -74,7 +74,7 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
 		return fmt.Errorf("error generating private key: %v", err)
 	}
-	if resp.ID, err = u.db.CreateIntegrator(apiKey, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
+	if resp.ID, err = u.db.CreateIntegrator(apiKey, req.CspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
 		return err
 	}
 	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)

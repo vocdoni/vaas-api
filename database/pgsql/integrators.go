@@ -9,12 +9,13 @@ import (
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name string) (int32, error) {
+func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name, email string) (int, error) {
 	integrator := &types.Integrator{
 		SecretApiKey: secretApiKey,
 		CspPubKey:    cspPubKey,
 		CspUrlPrefix: cspUrlPrefix,
 		Name:         name,
+		Email:        email,
 		CreatedUpdated: types.CreatedUpdated{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -22,14 +23,14 @@ func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix
 	}
 	// TODO: Calculate EntityID (consult go-dvote)
 	insert := `INSERT INTO integrators
-			( secret_api_key, name, csp_pub_key, csp_url_prefix, created_at, updated_at)
-			VALUES ( :secret_api_key, :name, :csp_pub_key, :csp_url_prefix, :created_at, :updated_at)
+			( secret_api_key, name, email, csp_pub_key, csp_url_prefix, created_at, updated_at)
+			VALUES ( :secret_api_key, :name, :email, :csp_pub_key, :csp_url_prefix, :created_at, :updated_at)
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, integrator)
 	if err != nil || !result.Next() {
 		return 0, fmt.Errorf("error creating integrator: %w", err)
 	}
-	var id int32
+	var id int
 	err = result.Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("error creating integrator: %w", err)

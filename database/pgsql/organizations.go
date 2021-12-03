@@ -13,7 +13,7 @@ import (
 	"go.vocdoni.io/dvote/log"
 )
 
-func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int32, error) {
+func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error) {
 	integrator, err := d.GetIntegratorByKey(integratorAPIKey)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -50,7 +50,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 	if err != nil || !result.Next() {
 		return 0, fmt.Errorf("error creating organization: %w", err)
 	}
-	var id int32
+	var id int
 	err = result.Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("error creating organization: %w", err)

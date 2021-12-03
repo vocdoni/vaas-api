@@ -1,6 +1,7 @@
 package testcommon
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -8,22 +9,37 @@ import (
 	"go.vocdoni.io/dvote/crypto/ethereum"
 )
 
+func CreateIntegrators(size int) []*types.Integrator {
+	mp := make([]*types.Integrator, size)
+	for i := 0; i < size; i++ {
+		randomID := rand.Intn(10000000)
+		// retrieve entity ID
+		mp[i] = &types.Integrator{
+			SecretApiKey: []byte(fmt.Sprintf("%d", randomID)),
+			Name:         fmt.Sprintf("Test%d", randomID),
+			Email:        fmt.Sprintf("mail%d@mail.org", randomID),
+			CspUrlPrefix: "csp.vocdoni.net",
+			CspPubKey:    []byte("ff"),
+		}
+	}
+	return mp
+}
+
 // CreateEntities a given number of random entities
-func CreateOrganization(size int) ([]*ethereum.SignKeys, []*types.Organization) {
+func CreateOrganizations(size int) []*types.Organization {
 	signers := CreateEthRandomKeysBatch(size)
 	mp := make([]*types.Organization, size)
 	for i := 0; i < size; i++ {
 		// retrieve entity ID
 		mp[i] = &types.Organization{
-			// ID: signers[i].Address().Bytes(),
-			// EntityInfo: types.EntityInfo{
-			// 	Email: randomdata.Email(),
-			// 	Name:  randomdata.FirstName(2),
-			// 	Size:  randomdata.Number(1001),
-			// },
+			EthAddress:        signers[i].Address().Bytes(),
+			EthPrivKeyCicpher: []byte("\xff"),
+			HeaderURI:         "https://",
+			AvatarURI:         "https://",
+			PublicAPIToken:    signers[i].Address().String(),
 		}
 	}
-	return signers, mp
+	return mp
 }
 
 // CreateEthRandomKeysBatch creates a set of eth random signing keys

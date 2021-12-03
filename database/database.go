@@ -9,7 +9,7 @@ import (
 
 type Database interface {
 	// Integrator
-	CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name string) (int32, error)
+	CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name, email string) (int, error)
 	UpdateIntegrator(id int, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error)
 	UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, error)
 	GetIntegrator(id int) (*types.Integrator, error)
@@ -18,7 +18,7 @@ type Database interface {
 	CountIntegrators() (int, error)
 	GetIntegratorApiKeysList() ([][]byte, error)
 	// Entity
-	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int32, error)
+	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error)
 	UpdateOrganization(integratorAPIKey, ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error)
 	UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCicpher []byte) (int, error)
 	UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte, newPublicApiToken string) (int, error)
