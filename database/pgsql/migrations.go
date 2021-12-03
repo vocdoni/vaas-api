@@ -100,7 +100,7 @@ CREATE TABLE elections (
     start_block BIGINT NOT NULL,
     end_block BIGINT NOT NULL,
     confidential  BOOLEAN DEFAULT false NOT NULL,
-    hidden_results  BOOLEAN DEFAULT false NOT NULL
+    hidden_results  BOOLEAN DEFAULT false NOT NULL,
     metadata_priv_key BYTEA NOT NULL 
 );
 
@@ -144,7 +144,7 @@ CREATE TABLE census_members (
     census_id  INTEGER NOT NULL,
     public_key BYTEA NOT NULL,
     redeem_token TEXT NOT NULL,
-    weight INTEGER NOT NULL DEFAULT 1,
+    weight INTEGER NOT NULL DEFAULT 1
 );
 
 ALTER TABLE ONLY census_members
@@ -166,17 +166,17 @@ CREATE TABLE quota_plans (
     max_process_count INTEGER NOT NULL
 );
 
-ALTER TABLE ONLY census_members
-    ADD CONSTRAINT census_members_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY quota_plans
+    ADD CONSTRAINT quota_plans_pkey PRIMARY KEY (id);
 
 
 --------------------------- Functions
+
 CREATE OR REPLACE FUNCTION notify_integrator_tokens_update() RETURNS TRIGGER AS $$
-    DECLARE
+DECLARE
     row RECORD;
-    output TEXT;
-    
-    BEGIN
+    output TEXT;    
+BEGIN
     -- Checking the Operation Type
     IF (TG_OP = 'DELETE') THEN
       row = OLD;
@@ -189,11 +189,11 @@ CREATE OR REPLACE FUNCTION notify_integrator_tokens_update() RETURNS TRIGGER AS 
     
     -- Calling the pg_notify for my_table_update event with output as payload
 
-    PERFORM pg_notify('my_table_update',output);
+    PERFORM pg_notify('integrator_tokens_update',output);
     
     -- Returning null because it is an after trigger.
     RETURN NULL;
-    END;
+END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_integrator_tokens_update
@@ -203,6 +203,7 @@ CREATE TRIGGER trigger_integrator_tokens_update
   EXECUTE PROCEDURE notify_integrator_tokens_update();
   -- We can not use TRUNCATE event in this trigger because it is not supported in case of FOR EACH ROW Trigger 
 
+LISTEN trigger_integrator_tokens_update;
 `
 
 const migration1down = `

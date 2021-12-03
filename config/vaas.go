@@ -57,7 +57,7 @@ type Vaas struct {
 	// SaveConfig overwrites the config file with the CLI provided flags
 	SaveConfig bool
 	// SigningKey is the ECDSA hexString private key for signing messages
-	SigningKeys []string
+	SigningKey string
 	// Urls to use for gateway api
 	GatewayUrls []string
 	// Migration options
@@ -66,7 +66,7 @@ type Vaas struct {
 
 func (v *Vaas) String() string {
 	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, Migrate: %+v",
-		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKeys, v.GatewayUrls, *v.Migrate)
+		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKey, v.GatewayUrls, *v.Migrate)
 }
 
 // NewVaasConfig initializes the fields in the config stuct
