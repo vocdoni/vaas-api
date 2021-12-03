@@ -9,12 +9,12 @@ WORKDIR /src
 # COPY lines, since otherwise we do the equivalent of 'cp duktape-stub/* .'.
 COPY go.mod go.sum ./
 RUN go mod download
-RUN apt update && apt install -y ca-certificates 
+RUN apt update && apt install -y ca-certificates
 
 # Build all the binaries at once, so that the final targets don't require having
 # Go installed to build each of them.
 COPY . .
-RUN go build -o=. -ldflags='-w -s' ./cmd/vaasapi ./cmd/vaasapitest
+RUN go build -o=. -ldflags='-w -s' ./cmd/vaasapi ./cmd/vaastest
 
 FROM debian:10.8-slim as vaastest
 
@@ -23,7 +23,6 @@ COPY --from=builder /src/vaastest ./
 
 ENTRYPOINT ["/app/vaastest"]
 
-
 FROM debian:10.8-slim
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
@@ -31,4 +30,3 @@ WORKDIR /app
 COPY --from=builder /src/vaasapi ./
 
 ENTRYPOINT ["/app/vaasapi"]
-
