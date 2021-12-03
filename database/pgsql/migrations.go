@@ -44,13 +44,29 @@ CREATE TABLE integrators (
 );
 
 ALTER TABLE ONLY integrators
-    ADD CONSTRAINT integrators PRIMARY KEY (id);
+    ADD CONSTRAINT integrators_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY integrators
     ADD CONSTRAINT integrators_email_unique UNIQUE (email);
 
 ALTER TABLE ONLY integrators
 ADD CONSTRAINT integrators_secret_api_key_unique UNIQUE (secret_api_key);
+
+--------------------------- Billing Plans
+-- Billing plans
+
+CREATE TABLE quota_plans (
+    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
+    id SERIAL NOT NULL,
+    name TEXT NOT NULL,
+    max_census_size INTEGER NOT NULL,
+    max_process_count INTEGER NOT NULL
+);
+
+ALTER TABLE ONLY quota_plans
+    ADD CONSTRAINT quota_plans_pkey PRIMARY KEY (id);
+
 
 --------------------------- ORGANIZATIONS
 -- An Organization
@@ -74,7 +90,10 @@ ALTER TABLE ONLY organizations
     ADD CONSTRAINT organizations_pkey PRIMARY KEY (integrator_id, eth_address);
 
 ALTER TABLE ONLY organizations
-    ADD CONSTRAINT organizations_address_unique UNIQUE (address);
+    ADD CONSTRAINT organizations_id_unique UNIQUE (id);
+
+ALTER TABLE ONLY organizations
+    ADD CONSTRAINT organizations_address_unique UNIQUE (eth_address);
 
 ALTER TABLE ONLY organizations
     ADD CONSTRAINT organizations_integrator_id_fkey FOREIGN KEY (integrator_id) REFERENCES integrators(id) ON DELETE CASCADE;
@@ -84,38 +103,6 @@ ALTER TABLE ONLY organizations
 
 ALTER TABLE ONLY organizations
     ADD CONSTRAINT organizations_quota_plan_id_fkey FOREIGN KEY (quota_plan_id) REFERENCES quota_plans(id);
-
---------------------------- Election
--- Election processes
-
-CREATE TABLE elections (
-    updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
-    created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
-    id SERIAL NOT NULL ,
-    organization_eth_address  BYTEA NOT NULL,
-    integrator_api_key BYTEA NOT NULL,
-    process_id BYTEA NOT NULL,
-    title TEXT NOT NULL,
-    census_id INTEGER NOT NULL,
-    start_block BIGINT NOT NULL,
-    end_block BIGINT NOT NULL,
-    confidential  BOOLEAN DEFAULT false NOT NULL,
-    hidden_results  BOOLEAN DEFAULT false NOT NULL,
-    metadata_priv_key BYTEA NOT NULL 
-);
-
-ALTER TABLE ONLY elections
-    ADD CONSTRAINT elections_pkey PRIMARY KEY (process_id);
-
-ALTER TABLE ONLY elections
-    ADD CONSTRAINT elections_organization_eth_address_fkey FOREIGN KEY (organization_eth_address) REFERENCES organizations(eth_address) ON DELETE CASCADE;
-
-ALTER TABLE ONLY elections
-    ADD CONSTRAINT elections_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE;
-
-ALTER TABLE ONLY elections
-    ADD CONSTRAINT elections_census_id_fkey FOREIGN KEY (census_id) REFERENCES censuses(id);
-
 
 --------------------------- Census
 -- Censuses as defined by an integrator
@@ -151,24 +138,38 @@ ALTER TABLE ONLY census_members
     ADD CONSTRAINT census_members_pkey PRIMARY KEY (census_id, public_key);
 
 ALTER TABLE ONLY census_members
-    ADD CONSTRAINT census_members_census_id_fkey FOREIGN KEY (census_id) REFERENCES census(id)  ON DELETE CASCADE;
+    ADD CONSTRAINT census_members_census_id_fkey FOREIGN KEY (census_id) REFERENCES censuses(id)  ON DELETE CASCADE;
 
+--------------------------- Election
+-- Election processes
 
---------------------------- Billing Plans
--- Billing plans
-
-CREATE TABLE quota_plans (
+CREATE TABLE elections (
     updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
-    id SERIAL NOT NULL,
-    name TEXT NOT NULL,
-    max_census_size INTEGER NOT NULL,
-    max_process_count INTEGER NOT NULL
+    id SERIAL NOT NULL ,
+    organization_eth_address  BYTEA NOT NULL,
+    integrator_api_key BYTEA NOT NULL,
+    process_id BYTEA NOT NULL,
+    title TEXT NOT NULL,
+    census_id INTEGER NOT NULL,
+    start_block BIGINT NOT NULL,
+    end_block BIGINT NOT NULL,
+    confidential  BOOLEAN DEFAULT false NOT NULL,
+    hidden_results  BOOLEAN DEFAULT false NOT NULL,
+    metadata_priv_key BYTEA NOT NULL 
 );
 
-ALTER TABLE ONLY quota_plans
-    ADD CONSTRAINT quota_plans_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY elections
+    ADD CONSTRAINT elections_pkey PRIMARY KEY (process_id);
 
+ALTER TABLE ONLY elections
+    ADD CONSTRAINT elections_organization_eth_address_fkey FOREIGN KEY (organization_eth_address) REFERENCES organizations(eth_address) ON DELETE CASCADE;
+
+ALTER TABLE ONLY elections
+    ADD CONSTRAINT elections_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE;
+
+ALTER TABLE ONLY elections
+    ADD CONSTRAINT elections_census_id_fkey FOREIGN KEY (census_id) REFERENCES censuses(id);
 
 --------------------------- Functions
 
@@ -185,7 +186,7 @@ BEGIN
     END IF;
     
     -- Forming the Output as notification. You can choose you own notification.
-    output = 'OPERATION = ' || TG_OP || ' and KEY = ' || encode(row.integrator_api_key,'hex');
+    output = 'OPERATION = ' || TG_OP || ' and KEY = ' || encode(row.secret_api_key,'hex');
     
     -- Calling the pg_notify for my_table_update event with output as payload
 
