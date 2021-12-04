@@ -2,10 +2,13 @@ package pgsql
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
 	"go.vocdoni.io/api/config"
+	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/dvote/log"
 )
 
@@ -32,15 +35,20 @@ func NewNotifier(dbc *config.DB, channelName string) (*notifier, error) {
 
 // fetch is the main loop of the notifier to receive data from
 // the database in JSON-FORMAT and send it down the send channel.
-func (n *notifier) FetchNewTokens(data chan []byte) {
+func (n *notifier) FetchNewTokens(u *urlapi.URLAPI) {
 	for {
 		select {
 		case e := <-n.listener.Notify:
 			if e == nil {
 				continue
 			}
-			data <- []byte(e.Extra)
-			log.Info("FETCHED DAta", e.Extra)
+			delete, token := parseOperation(e.Extra)
+			if !delete {
+				u.RegisterToken(token, urlapi.INTEGRATOR_MAX_REQUESTS)
+			} else {
+				u.RevokeToken(token)
+			}
+			log.Debug("pgsql notified: ", e.Extra)
 		case err := <-n.failed:
 			log.Error(err)
 		case <-time.After(time.Minute):
@@ -52,6 +60,15 @@ func (n *notifier) FetchNewTokens(data chan []byte) {
 			}()
 		}
 	}
+}
+
+func parseOperation(op string) (delete bool, token string) {
+	if strings.Contains(op, "DELETE") {
+		delete = true
+	}
+	m := regexp.MustCompile(`KEY\s?=?\s?(.*)`)
+	token = m.FindStringSubmatch(op)[1]
+	return delete, token
 }
 
 func (n *notifier) logListener(event pq.ListenerEventType, err error) {

@@ -77,13 +77,11 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
 		return fmt.Errorf("error generating private key: %v", err)
 	}
-	if resp.ID, err = u.db.CreateIntegrator(apiKey, []byte{}, "", req.Name, ""); err != nil {
+	if resp.ID, err = u.db.CreateIntegrator(apiKey,
+		req.CspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
 		return err
 	}
-	// if resp.ID, err = u.db.CreateIntegrator(apiKey, req.CspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
-	// 	return err
-	// }
-	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -103,6 +101,7 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if _, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
 		return err
 	}
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -116,12 +115,6 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 	if id, err = util.GetIntID(ctx); err != nil {
 		return err
 	}
-	// Before updating integrator key, fetch & revoke the old key
-	oldIntegrator, err := u.db.GetIntegrator(id)
-	if err != nil {
-		return err
-	}
-	u.revokeToken(hex.EncodeToString(oldIntegrator.SecretApiKey))
 
 	// Now generate a new api key & update integrator
 	resp.APIKey = util.GenerateBearerToken()
@@ -131,7 +124,7 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 	if _, err = u.db.UpdateIntegratorApiKey(id, apiKey); err != nil {
 		return err
 	}
-	u.registerToken(resp.APIKey, INTEGRATOR_MAX_REQUESTS)
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -151,6 +144,7 @@ func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPI
 	resp.Name = integrator.Name
 	resp.CspPubKey = integrator.CspPubKey
 	resp.CspUrlPrefix = integrator.CspUrlPrefix
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -166,5 +160,6 @@ func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	if err = u.db.DeleteIntegrator(id); err != nil {
 		return err
 	}
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }

@@ -195,7 +195,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		encryptedPrivKey, 0, 0, orgApiToken, req.Header, req.Avatar); err != nil {
 		return fmt.Errorf("could not create organization: %v", err)
 	}
-	u.registerToken(orgApiToken, 0)
+	u.RegisterToken(orgApiToken, 0)
 
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
@@ -207,6 +207,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	resp.APIKey = orgApiToken
 	resp.EntityID = ethSignKeys.Address().Bytes()
 
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -228,6 +229,7 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// resp.Name = organization.Name
 	resp.Avatar = organization.AvatarURI
 	resp.Header = organization.HeaderURI
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -248,7 +250,8 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	if err = u.db.DeleteOrganization(integratorPrivKey, entityID); err != nil {
 		return err
 	}
-	u.revokeToken(organization.PublicAPIToken)
+	u.RevokeToken(organization.PublicAPIToken)
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -266,7 +269,7 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 		err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
-	u.revokeToken(oldOrganization.PublicAPIToken)
+	u.RevokeToken(oldOrganization.PublicAPIToken)
 
 	// Now generate a new api key & update integrator
 	resp.APIKey = util.GenerateBearerToken()
@@ -274,7 +277,8 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 		integratorPrivKey, entityID, resp.APIKey); err != nil {
 		return err
 	}
-	u.registerToken(resp.APIKey, int64(oldOrganization.PublicAPIQuota))
+	u.RegisterToken(resp.APIKey, int64(oldOrganization.PublicAPIQuota))
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -306,6 +310,7 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 
 	resp.EntityID = entityID
 	resp.ContentURI = metaURI
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -345,6 +350,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// TODO use correctly blind parameter
 	log.Debugf("blind %w", blind)
 	resp.ProcessID = processID
+	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 

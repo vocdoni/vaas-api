@@ -11,6 +11,7 @@ import (
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
+	"go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/metrics"
 )
 
@@ -88,27 +89,30 @@ func (u *URLAPI) syncAuthTokens() error {
 	}
 	for _, key := range integratorKeys {
 		// Register integrator key to router
+		log.Infof("register auth token from database %s", hex.EncodeToString(key))
 		u.api.AddAuthToken(hex.EncodeToString(key), INTEGRATOR_MAX_REQUESTS)
 
 		// Fetch integrator's organizations from the db
-		orgs, err := u.db.ListOrganizations(key, &types.ListOptions{})
-		if err != nil {
-			return err
-		}
+		// orgs, err := u.db.ListOrganizations(key, &types.ListOptions{})
+		// if err != nil {
+		// 	return err
+		// }
 
-		// Register each organization's api token to the router
-		for _, org := range orgs {
-			u.api.AddAuthToken(org.PublicAPIToken, int64(org.PublicAPIQuota))
-		}
+		// // Register each organization's api token to the router
+		// for _, org := range orgs {
+		// 	u.api.AddAuthToken(org.PublicAPIToken, int64(org.PublicAPIQuota))
+		// }
 	}
 	return nil
 }
 
-func (u *URLAPI) registerToken(token string, requests int64) {
+func (u *URLAPI) RegisterToken(token string, requests int64) {
+	log.Infof("register auth token %s", token)
 	u.api.AddAuthToken(token, requests)
 }
 
-func (u *URLAPI) revokeToken(token string) {
+func (u *URLAPI) RevokeToken(token string) {
+	log.Infof("revoke auth token %s", token)
 	u.api.DelAuthToken(token)
 }
 
