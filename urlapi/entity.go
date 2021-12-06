@@ -173,6 +173,9 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	ethSignKeys := ethereum.NewSignKeys()
+	if err = ethSignKeys.Generate(); err != nil {
+		return fmt.Errorf("could not generate ethereum keys: %v", err)
+	}
 
 	// Encrypt private key to store in db
 	_, priv := ethSignKeys.HexString()
@@ -263,13 +266,11 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	var resp types.APIResponse
 	var integratorPrivKey []byte
 	var entityID []byte
-	var oldOrganization *types.Organization
 	// authenticate integrator has permission to edit this entity
-	if integratorPrivKey, entityID, oldOrganization,
+	if integratorPrivKey, entityID, _,
 		err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
-	u.RevokeToken(oldOrganization.PublicAPIToken)
 
 	// Now generate a new api key & update integrator
 	resp.APIKey = util.GenerateBearerToken()
@@ -277,7 +278,6 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 		integratorPrivKey, entityID, resp.APIKey); err != nil {
 		return err
 	}
-	u.RegisterToken(resp.APIKey, int64(oldOrganization.PublicAPIQuota))
 	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
