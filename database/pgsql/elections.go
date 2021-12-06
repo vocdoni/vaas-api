@@ -34,8 +34,11 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 				:start_block, :end_block, confidential, :hidden_result, :created_at, :updated_at)
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, election)
-	if err != nil || !result.Next() {
+	if err != nil {
 		return 0, fmt.Errorf("error creating election: %w", err)
+	}
+	if !result.Next() {
+		return 0, fmt.Errorf("error creating organization: there is no next result row")
 	}
 	var id int32
 	err = result.Scan(&id)

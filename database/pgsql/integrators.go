@@ -27,8 +27,11 @@ func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix
 			VALUES ( :secret_api_key, :name, :email, :csp_pub_key, :csp_url_prefix, :created_at, :updated_at)
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, integrator)
-	if err != nil || !result.Next() {
+	if err != nil {
 		return 0, fmt.Errorf("error creating integrator: %w", err)
+	}
+	if !result.Next() {
+		return 0, fmt.Errorf("error creating organization: there is no next result row")
 	}
 	var id int
 	err = result.Scan(&id)

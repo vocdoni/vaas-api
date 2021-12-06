@@ -41,14 +41,17 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 	insert := `INSERT INTO organizations
 			( integrator_id, integrator_api_key, eth_address, eth_priv_key_cipher, 
 				header_uri, avatar_uri, public_api_token, quota_plan_id,
-				public_api_quota created_at, updated_at)
+				public_api_quota, created_at, updated_at)
 			VALUES ( :integrator_id, :integrator_api_key, :eth_address, :eth_priv_key_cipher, 
 				:header_uri, :avatar_uri, :public_api_token, :quota_plan_id,
 				:public_api_quota, :created_at, :updated_at)
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, organization)
-	if err != nil || !result.Next() {
+	if err != nil {
 		return 0, fmt.Errorf("error creating organization: %w", err)
+	}
+	if !result.Next() {
+		return 0, fmt.Errorf("error creating organization: there is no next result row")
 	}
 	var id int
 	err = result.Scan(&id)
