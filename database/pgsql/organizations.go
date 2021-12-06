@@ -185,13 +185,13 @@ func (d *Database) ListOrganizations(integratorAPIKey []byte, filter *types.List
 	// would nee to now last value from previous query
 	selectQuery := `SELECT
 	 				id
-					FROM organizations WHERE integratorAPIKey =$1
+					FROM organizations WHERE integrator_api_key =$1
 					ORDER BY %s %s LIMIT $2 OFFSET $3`
 	// Define default values for arguments
 	t := reflect.TypeOf(types.Organization{})
-	field, found := t.FieldByName(strings.Title("Name"))
+	field, found := t.FieldByName("ID")
 	if !found {
-		return nil, fmt.Errorf("organization name field not found in DB. Something is very wrong")
+		return nil, fmt.Errorf("organization id field not found in DB. Something is very wrong")
 	}
 	orderField := field.Tag.Get("db")
 	order := "ASC"

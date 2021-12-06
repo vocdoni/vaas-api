@@ -93,15 +93,15 @@ func (u *URLAPI) syncAuthTokens() error {
 		u.api.AddAuthToken(hex.EncodeToString(key), INTEGRATOR_MAX_REQUESTS)
 
 		// Fetch integrator's organizations from the db
-		// orgs, err := u.db.ListOrganizations(key, &types.ListOptions{})
-		// if err != nil {
-		// 	return err
-		// }
+		orgs, err := u.db.ListOrganizations(key, &types.ListOptions{})
+		if err != nil {
+			return err
+		}
 
-		// // Register each organization's api token to the router
-		// for _, org := range orgs {
-		// 	u.api.AddAuthToken(org.PublicAPIToken, int64(org.PublicAPIQuota))
-		// }
+		// Register each organization's api token to the router
+		for _, org := range orgs {
+			u.api.AddAuthToken(org.PublicAPIToken, int64(org.PublicAPIQuota))
+		}
 	}
 	return nil
 }
