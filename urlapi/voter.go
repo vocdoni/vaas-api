@@ -166,13 +166,14 @@ func parseProcessInfo(db *types.Election, vc *indexertypes.Process,
 	process.StreamURI = meta.Media.StreamURI
 
 	for _, question := range meta.Questions {
-		newQuestion := &types.Question{
+		newQuestion := types.Question{
 			Title:       question.Title["default"],
 			Description: question.Description["default"],
 		}
 		for _, choice := range question.Choices {
 			newQuestion.Choices = append(newQuestion.Choices, choice.Title["default"])
 		}
+		process.Questions = append(process.Questions, newQuestion)
 	}
 	process.Status = strings.ToTitle(models.ProcessStatus_name[vc.Status])[0:1] +
 		strings.ToLower(models.ProcessStatus_name[vc.Status])[1:]
