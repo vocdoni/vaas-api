@@ -73,6 +73,7 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 
 func (c *Client) GetResults(pid []byte) (results *apitypes.VochainResults, _ error) {
 	var req api.APIrequest
+	results = new(apitypes.VochainResults)
 	req.Method = "getResults"
 	req.ProcessID = pid
 	resp, err := c.pool.Request(req, c.signingKey)
@@ -145,7 +146,7 @@ func (c *Client) AddFile(content []byte, contentType, name string) (URI string, 
 	return resp.URI, nil
 }
 
-func (c *Client) FetchProcessMetadata(URI string) (process *models.Process, _ error) {
+func (c *Client) FetchProcessMetadata(URI string) (process *apitypes.ProcessMetadata, _ error) {
 	content, err := c.FetchFile(URI)
 	if err != nil {
 		return nil, err

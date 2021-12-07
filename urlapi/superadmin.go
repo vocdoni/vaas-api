@@ -71,14 +71,17 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var req types.APIRequest
 	var resp types.APIResponse
 	if req, err = util.UnmarshalRequest(msg); err != nil {
+		log.Error(err)
 		return err
 	}
 	resp.APIKey = util.GenerateBearerToken()
 	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
+		log.Errorf("error generating private key: %v", err)
 		return fmt.Errorf("error generating private key: %v", err)
 	}
 	if resp.ID, err = u.db.CreateIntegrator(apiKey,
 		req.CspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
+		log.Error(err)
 		return err
 	}
 	resp.Ok = true
@@ -93,12 +96,15 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
+		log.Error(err)
 		return err
 	}
 	if req, err = util.UnmarshalRequest(msg); err != nil {
+		log.Error(err)
 		return err
 	}
 	if _, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
+		log.Error(err)
 		return err
 	}
 	resp.Ok = true
@@ -113,15 +119,18 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
+		log.Error(err)
 		return err
 	}
 
 	// Now generate a new api key & update integrator
 	resp.APIKey = util.GenerateBearerToken()
 	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
+		log.Errorf("error generating private key: %v", err)
 		return fmt.Errorf("error generating private key: %v", err)
 	}
 	if _, err = u.db.UpdateIntegratorApiKey(id, apiKey); err != nil {
+		log.Error(err)
 		return err
 	}
 	resp.Ok = true
@@ -136,9 +145,11 @@ func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPI
 	var integrator *types.Integrator
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
+		log.Error(err)
 		return err
 	}
 	if integrator, err = u.db.GetIntegrator(id); err != nil {
+		log.Error(err)
 		return err
 	}
 	resp.Name = integrator.Name
@@ -155,9 +166,11 @@ func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
+		log.Error(err)
 		return err
 	}
 	if err = u.db.DeleteIntegrator(id); err != nil {
+		log.Error(err)
 		return err
 	}
 	resp.Ok = true

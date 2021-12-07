@@ -50,12 +50,55 @@ type APIResponse struct {
 
 // APIProcess is the response struct for a getProcess request
 type APIProcess struct {
-	EntityID   types.HexBytes `json:"entityId,omitempty"`
-	Ok         bool           `json:"ok,omitempty"`
-	ProcessID  types.HexBytes `json:"processId,omitempty"`
-	StartBlock []byte         `json:"start_block,omitempty"`
-	Title      string         `json:"title,omitempty"`
-	Type       string         `json:"type,omitempty"`
+	Type               string         `json:"type,omitempty"`
+	Title              string         `json:"title,omitempty"`
+	Description        string         `json:"description,omitempty"`
+	Header             string         `json:"header,omitempty"`
+	StreamURI          string         `json:"stream_uri,omitempty"`
+	Questions          []Question     `json:"questions,omitempty"`
+	Status             string         `json:"status,omitempty"`
+	VoteCount          uint32         `json:"vote_count,omitempty"`
+	Results            []Result       `json:"results,omitempty"`
+	EntityID           types.HexBytes `json:"entityId,omitempty"`
+	Ok                 bool           `json:"ok,omitempty"`
+	ProcessID          types.HexBytes `json:"processId,omitempty"`
+	StartBlock         string         `json:"start_block,omitempty"`
+	EndBlock           string         `json:"end_block,omitempty"`
+	ResultsAggregation string
+	ResultsDisplay     string
+}
+
+type ProcessMetadata struct {
+	Version     string                `json:"version,omitempty"`
+	Title       LanguageString        `json:"title,omitempty"`
+	Description LanguageString        `json:"description,omitempty"`
+	Media       ProcessMedia          `json:"media,omitempty"`
+	Meta        interface{}           `json:"meta,omitempty"`
+	Results     ProcessResultsDetails `json:"results,omitempty"`
+	Questions   []QuestionMeta        `json:"questions,omitempty"`
+}
+
+type LanguageString map[string]string
+
+type ProcessMedia struct {
+	Header    string `json:"header,omitempty"`
+	StreamURI string `json:"stream_uri,omitempty"`
+}
+
+type ProcessResultsDetails struct {
+	Aggregation string `json:"aggregation,omitempty"`
+	Display     string `json:"display,omitempty"`
+}
+
+type QuestionMeta struct {
+	Title       LanguageString `json:"title"`
+	Description LanguageString `json:"description"`
+	Choices     []Choice       `json:"choices"`
+}
+
+type Choice struct {
+	Title LanguageString
+	Value uint32
 }
 
 type EntityMetadata struct {
@@ -66,10 +109,10 @@ type EntityMetadata struct {
 }
 
 type VochainResults struct {
-	Height  uint32
-	Results [][]string
-	State   string
-	Type    string
+	Height  uint32     `json:"height,omitempty"`
+	Results [][]string `json:"results,omitempty"`
+	State   string     `json:"state,omitempty"`
+	Type    string     `json:"type,omitempty"`
 }
 
 // SetError sets the MetaResponse's Ok field to false, and Message to a string
