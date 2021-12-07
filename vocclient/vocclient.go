@@ -12,7 +12,6 @@ import (
 	"go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
-	dvoteutil "go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 	"google.golang.org/protobuf/proto"
@@ -297,7 +296,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 	var err error
 	tx.SetAccountInfo = &models.SetAccountInfoTx{
 		Txtype:  models.TxType_SET_ACCOUNT_INFO,
-		Nonce:   uint32(dvoteutil.RandomInt(0, 2<<32)),
+		Nonce:   uint32(util.RandomInt(0, 2<<32)),
 		InfoURI: uri,
 	}
 	stx := &models.SignedTx{}

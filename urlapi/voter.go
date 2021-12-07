@@ -119,7 +119,7 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	log.Debugf("send resp %v", resp)
 	data, err := json.Marshal(resp)
 	if err != nil {
-		log.Errorf("error marshaling JSON: %w", err)
+		log.Errorf("error marshaling JSON: %v", err)
 		return fmt.Errorf("error marshaling JSON: %w", err)
 	}
 	if err = ctx.Send(data); err != nil {
