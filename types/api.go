@@ -50,32 +50,32 @@ type APIResponse struct {
 
 // APIProcess is the response struct for a getProcess request
 type APIProcess struct {
-	Type               string         `json:"type,omitempty"`
-	Title              string         `json:"title,omitempty"`
 	Description        string         `json:"description,omitempty"`
-	Header             string         `json:"header,omitempty"`
-	StreamURI          string         `json:"stream_uri,omitempty"`
-	Questions          []Question     `json:"questions,omitempty"`
-	Status             string         `json:"status,omitempty"`
-	VoteCount          uint32         `json:"vote_count,omitempty"`
-	Results            []Result       `json:"results,omitempty"`
+	EndBlock           string         `json:"end_block,omitempty"`
 	EntityID           types.HexBytes `json:"entityId,omitempty"`
+	Header             string         `json:"header,omitempty"`
 	Ok                 bool           `json:"ok,omitempty"`
 	ProcessID          types.HexBytes `json:"processId,omitempty"`
+	Questions          []Question     `json:"questions,omitempty"`
+	Results            []Result       `json:"results,omitempty"`
+	ResultsAggregation string         `json:"results_aggregation,omitempty"`
+	ResultsDisplay     string         `json:"results_display,omitempty"`
 	StartBlock         string         `json:"start_block,omitempty"`
-	EndBlock           string         `json:"end_block,omitempty"`
-	ResultsAggregation string
-	ResultsDisplay     string
+	Status             string         `json:"status,omitempty"`
+	StreamURI          string         `json:"stream_uri,omitempty"`
+	Title              string         `json:"title,omitempty"`
+	Type               string         `json:"type,omitempty"`
+	VoteCount          uint32         `json:"vote_count,omitempty"`
 }
 
 type ProcessMetadata struct {
-	Version     string                `json:"version,omitempty"`
-	Title       LanguageString        `json:"title,omitempty"`
 	Description LanguageString        `json:"description,omitempty"`
 	Media       ProcessMedia          `json:"media,omitempty"`
 	Meta        interface{}           `json:"meta,omitempty"`
-	Results     ProcessResultsDetails `json:"results,omitempty"`
 	Questions   []QuestionMeta        `json:"questions,omitempty"`
+	Results     ProcessResultsDetails `json:"results,omitempty"`
+	Title       LanguageString        `json:"title,omitempty"`
+	Version     string                `json:"version,omitempty"`
 }
 
 type LanguageString map[string]string
@@ -91,14 +91,14 @@ type ProcessResultsDetails struct {
 }
 
 type QuestionMeta struct {
-	Title       LanguageString `json:"title"`
-	Description LanguageString `json:"description"`
 	Choices     []Choice       `json:"choices"`
+	Description LanguageString `json:"description"`
+	Title       LanguageString `json:"title"`
 }
 
 type Choice struct {
-	Title LanguageString
-	Value uint32
+	Title LanguageString `json:"title,omitempty"`
+	Value uint32         `json:"value,omitempty"`
 }
 
 type EntityMetadata struct {
