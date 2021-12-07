@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	apiTypes "go.vocdoni.io/api/types"
+	apitypes "go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
@@ -71,6 +71,24 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	return resp.Process, nil
 }
 
+func (c *Client) GetResults(pid []byte) (results *apitypes.VochainResults, _ error) {
+	var req api.APIrequest
+	req.Method = "getResults"
+	req.ProcessID = pid
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return nil, err
+	}
+	if resp.Height == nil {
+		resp.Height = new(uint32)
+	}
+	results.Results = resp.Results
+	results.State = resp.State
+	results.Type = resp.Type
+	results.Height = *resp.Height
+	return results, nil
+}
+
 func (c *Client) GetProcessList(entityId []byte, searchTerm string, namespace uint32, status string, withResults bool, srcNetId string, from, listSize int) (processList []string, _ error) {
 	var req api.APIrequest
 	req.Method = "getProcessList"
@@ -98,7 +116,7 @@ func (c *Client) SetEntityMetadata(avatar, description, header,
 	name string, entityID []byte) (metaURI string, _ error) {
 	var metaBytes []byte
 	var err error
-	var entityMetadata apiTypes.EntityMetadata
+	var entityMetadata apitypes.EntityMetadata
 	entityMetadata.Avatar = avatar
 	entityMetadata.Description = description
 	entityMetadata.Header = header
@@ -125,6 +143,28 @@ func (c *Client) AddFile(content []byte, contentType, name string) (URI string, 
 		return "", fmt.Errorf("could not AddFile %s: %v", name, err)
 	}
 	return resp.URI, nil
+}
+
+func (c *Client) FetchProcessMetadata(URI string) (process *models.Process, _ error) {
+	content, err := c.FetchFile(URI)
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(content, &process); err != nil {
+		return nil, err
+	}
+	return process, nil
+}
+
+func (c *Client) FetchFile(URI string) (content []byte, _ error) {
+	resp, err := c.pool.Request(api.APIrequest{
+		Method: "fetchFile",
+		URI:    URI,
+	}, c.signingKey)
+	if err != nil {
+		return []byte{}, fmt.Errorf("could not fetch file %s: %v", URI, err)
+	}
+	return resp.Content, nil
 }
 
 // CENSUS APIS

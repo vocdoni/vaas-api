@@ -428,7 +428,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
 		return nil, nil, nil, err
 	}
-	if entityID, err = util.GetBytesID(ctx); err != nil {
+	if entityID, err = util.GetBytesID(ctx, "id"); err != nil {
 		return nil, nil, nil, err
 	}
 	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {

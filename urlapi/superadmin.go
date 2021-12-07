@@ -92,7 +92,7 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var req types.APIRequest
 	var resp types.APIResponse
 	var id int
-	if id, err = util.GetIntID(ctx); err != nil {
+	if id, err = util.GetIntID(ctx, "id"); err != nil {
 		return err
 	}
 	if req, err = util.UnmarshalRequest(msg); err != nil {
@@ -112,7 +112,7 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 	var apiKey dvotetypes.HexBytes
 	var resp types.APIResponse
 	var id int
-	if id, err = util.GetIntID(ctx); err != nil {
+	if id, err = util.GetIntID(ctx, "id"); err != nil {
 		return err
 	}
 
@@ -135,7 +135,7 @@ func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPI
 	var resp types.APIResponse
 	var integrator *types.Integrator
 	var id int
-	if id, err = util.GetIntID(ctx); err != nil {
+	if id, err = util.GetIntID(ctx, "id"); err != nil {
 		return err
 	}
 	if integrator, err = u.db.GetIntegrator(id); err != nil {
@@ -154,7 +154,7 @@ func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var err error
 	var resp types.APIResponse
 	var id int
-	if id, err = util.GetIntID(ctx); err != nil {
+	if id, err = util.GetIntID(ctx, "id"); err != nil {
 		return err
 	}
 	if err = u.db.DeleteIntegrator(id); err != nil {

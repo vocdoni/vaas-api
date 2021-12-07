@@ -32,25 +32,44 @@ type APIRequest struct {
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIResponse struct {
-	Avatar       string         `json:"avatar"`
-	APIKey       string         `json:"apiKey"`
-	CspPubKey    types.HexBytes `json:"cspPubKey"`
-	Header       string         `json:"header"`
-	CspUrlPrefix string         `json:"cspUrlPrefix"`
-	ContentURI   string         `json:"contentUri"`
-	EntityID     types.HexBytes `json:"entityId"`
-	ProcessID    types.HexBytes `json:"processId"`
-	ID           int            `json:"id"`
+	APIKey       string         `json:"apiKey,omitempty"`
+	Avatar       string         `json:"avatar,omitempty"`
+	CensusID     int            `json:"census_id,omitempty"`
+	ContentURI   string         `json:"contentUri,omitempty"`
+	CspPubKey    types.HexBytes `json:"cspPubKey,omitempty"`
+	CspUrlPrefix string         `json:"cspUrlPrefix,omitempty"`
+	EndBlock     []byte         `json:"end_block,omitempty"`
+	EntityID     types.HexBytes `json:"entityId,omitempty"`
+	Header       string         `json:"header,omitempty"`
+	ID           int            `json:"id,omitempty"`
 	Message      string         `json:"message,omitempty"`
-	Name         string         `json:"name"`
-	Ok           bool           `json:"ok"`
+	Name         string         `json:"name,omitempty"`
+	Ok           bool           `json:"ok,omitempty"`
+	ProcessID    types.HexBytes `json:"processId,omitempty"`
+}
+
+// APIProcess is the response struct for a getProcess request
+type APIProcess struct {
+	EntityID   types.HexBytes `json:"entityId,omitempty"`
+	Ok         bool           `json:"ok,omitempty"`
+	ProcessID  types.HexBytes `json:"processId,omitempty"`
+	StartBlock []byte         `json:"start_block,omitempty"`
+	Title      string         `json:"title,omitempty"`
+	Type       string         `json:"type,omitempty"`
 }
 
 type EntityMetadata struct {
-	Name        string `json:"name"`
+	Avatar      string `json:"avatar"`
 	Description string `json:"description"`
 	Header      string `json:"header"`
-	Avatar      string `json:"avatar"`
+	Name        string `json:"name"`
+}
+
+type VochainResults struct {
+	Height  uint32
+	Results [][]string
+	State   string
+	Type    string
 }
 
 // SetError sets the MetaResponse's Ok field to false, and Message to a string
