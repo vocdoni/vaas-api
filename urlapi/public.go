@@ -256,7 +256,7 @@ func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
 				return uint32(times[i])
 			}
 		}
-		return 10 // fallback
+		return 10000 // fallback
 	}
 
 	t := uint32(0)
@@ -272,6 +272,46 @@ func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
 		t = getMaxTimeFrom(4)
 	}
 	return time.Now().Add(time.Duration(diffHeight*int64(t)) * time.Millisecond), nil
+}
+
+func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
+	currentHeight, err := u.vocClient.GetCurrentBlock()
+	if err != nil {
+		return 0, err
+	}
+	currentTime := time.Now()
+	// diff time in seconds
+	diffTime := target.Unix() - currentTime.Unix()
+
+	times, err := u.vocClient.GetBlockTimes()
+	if err != nil {
+		return 0, err
+	}
+
+	// block time in ms
+	getMaxTimeFrom := func(i int) uint32 {
+		for ; i >= 0; i-- {
+			if times[i] != 0 {
+				return uint32(times[i])
+			}
+		}
+		return 10000 // fallback
+	}
+
+	t := uint32(0)
+	switch {
+	// if less than around 15 minutes missing
+	case diffTime < 900:
+		t = getMaxTimeFrom(1)
+	// if less than around 6 hours missing
+	case diffTime < 21600:
+		t = getMaxTimeFrom(3)
+	// if less than around 6 hours missing
+	case diffTime >= 21600:
+		t = getMaxTimeFrom(4)
+	}
+	blockDiff := diffTime / int64((t / 1000))
+	return currentHeight + uint32(blockDiff), nil
 }
 
 func aggregateResults(meta *types.ProcessMetadata,

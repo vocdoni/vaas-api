@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"strconv"
+	"math/big"
 	"strings"
 	"time"
 
@@ -15,6 +15,8 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
+	dvoteutil "go.vocdoni.io/dvote/util"
+	"go.vocdoni.io/proto/build/go/models"
 )
 
 func (u *URLAPI) enableEntityHandlers() error {
@@ -359,6 +361,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var entityID []byte
 	var processID []byte
 	var integratorPrivKey []byte
+	var metaUri string
 
 	if strings.HasSuffix(ctx.Request.URL.Path, "signed") {
 		blind = false
@@ -380,23 +383,64 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	var startDate, endDate int64
-	if startDate, err = strconv.ParseInt(req.StartDate, 10, 64); err != nil {
+	pid := dvoteutil.RandomHex(32)
+	if processID, err = hex.DecodeString(pid); err != nil {
 		log.Error(err)
 		return err
 	}
-	if endDate, err = strconv.ParseInt(req.EndDate, 10, 64); err != nil {
-		log.Error(err)
+	startDate, err := time.Parse("2021-10-25T11:20:53.769Z", req.StartDate)
+	if err != nil {
+		return err
+	}
+	endDate, err := time.Parse("2021-10-25T11:20:53.769Z", req.EndDate)
+	if err != nil {
+		return err
+	}
+	startBlock, err := u.estimateBlockHeight(startDate)
+	if err != nil {
+		return err
+	}
+	endBlock, err := u.estimateBlockHeight(endDate)
+	if err != nil {
 		return err
 	}
 
-	// TODO create election on the vochain
-	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, time.Unix(startDate, 0), time.Unix(endDate, 0), req.Census, 0, 0, req.Confidential, req.HiddenResults); err != nil {
+	envelopeType := &models.EnvelopeType{
+		Serial:         false,
+		Anonymous:      blind,
+		EncryptedVotes: req.HiddenResults,
+		UniqueValues:   false,
+		CostFromWeight: false,
+	}
+	processMode := &models.ProcessMode{
+		AutoStart:         false,
+		Interruptible:     true,
+		DynamicCensus:     false,
+		EncryptedMetaData: req.Confidential,
+		PreRegister:       false,
+	}
+
+	maxChoiceValue := 0
+	for _, question := range req.Questions {
+		if len(question.Choices) > maxChoiceValue {
+			maxChoiceValue = len(question.Choices)
+		}
+	}
+
+	voteOptions := &models.ProcessVoteOptions{
+		MaxCount:          uint32(len(req.Questions)),
+		MaxValue:          uint32(maxChoiceValue),
+		MaxVoteOverwrites: 0,
+		MaxTotalCost:      uint32(len(req.Questions) * maxChoiceValue),
+		CostExponent:      1,
+	}
+	// TODO use encryption priv/pub keys if process is encrypted
+	u.vocClient.CreateProcess(processID, entityID, startBlock, endBlock-startBlock, []byte{}, "", []string{}, []string{}, 0, envelopeType, processMode, voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri)
+
+	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, 0, big.Int{}, big.Int{}, req.Confidential, req.HiddenResults); err != nil {
 		log.Error(err)
 		return err
 	}
-	// TODO use correctly blind parameter
-	log.Debugf("blind %w", blind)
 	resp.ProcessID = processID
 	resp.Ok = true
 	return sendResponse(resp, ctx)
