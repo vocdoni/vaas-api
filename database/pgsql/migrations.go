@@ -151,7 +151,7 @@ CREATE TABLE elections (
     integrator_api_key BYTEA NOT NULL,
     process_id BYTEA NOT NULL,
     title TEXT NOT NULL,
-    census_id INTEGER NOT NULL,
+    census_id INTEGER DEFAULT NULL,
     start_block BIGINT NOT NULL,
     end_block BIGINT NOT NULL,
     confidential  BOOLEAN DEFAULT false NOT NULL,
