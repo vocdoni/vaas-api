@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"math/big"
+	"strconv"
 	"strings"
+	"time"
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
@@ -379,9 +380,18 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	// TODO create election on the vochain
+	var startDate, endDate int64
+	if startDate, err = strconv.ParseInt(req.StartDate, 10, 64); err != nil {
+		log.Error(err)
+		return err
+	}
+	if endDate, err = strconv.ParseInt(req.EndDate, 10, 64); err != nil {
+		log.Error(err)
+		return err
+	}
 
-	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, req.Census, big.Int{}, big.Int{}, req.Confidential, req.HiddenResults); err != nil {
+	// TODO create election on the vochain
+	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, time.Unix(startDate, 0), time.Unix(endDate, 0), req.Census, 0, 0, req.Confidential, req.HiddenResults); err != nil {
 		log.Error(err)
 		return err
 	}

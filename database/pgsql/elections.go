@@ -2,7 +2,6 @@ package pgsql
 
 import (
 	"fmt"
-	"math/big"
 	"time"
 
 	_ "github.com/jackc/pgx/stdlib"
@@ -10,13 +9,15 @@ import (
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, censusID int, startBlock, endBlock big.Int, confidential, hiddenResults bool) (int32, error) {
+func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID, startBlock, endBlock int, confidential, hiddenResults bool) (int32, error) {
 	election := &types.Election{
 		OrgEthAddress:    orgEthAddress,
 		IntegratorApiKey: integratorAPIKey,
 		ProcessID:        processID,
 		Title:            title,
 		CensusID:         censusID,
+		StartDate:        startDate,
+		EndDate:          endDate,
 		StartBlock:       startBlock,
 		EndBlock:         endBlock,
 		Confidential:     confidential,
@@ -29,9 +30,9 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 	// TODO: Calculate EntityID (consult go-dvote)
 	insert := `INSERT INTO integrators
 			( organization_eth_address, integrator_api_key, process_id, title, census_id,
-				start_block, end_block, confidential, hidden_result, created_at, updated_at)
+				start_date, end_date, start_block, end_block, confidential, hidden_results, created_at, updated_at)
 			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :title, :census_id,
-				:start_block, :end_block, confidential, :hidden_result, :created_at, :updated_at)
+				:start_date, :end_date, :start_block, :end_block, confidential, :hidden_results, :created_at, :updated_at)
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, election)
 	if err != nil {
@@ -50,12 +51,25 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 
 func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error) {
 	var election *types.Election
-	selectIntegrator := `SELECT title, census_id, start_block, end_block, confidential, hidden_result, 
+	selectIntegrator := `SELECT title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, 
 							created_at, updated_at
-						FROM integrators WHERE organization_eth_address =$1 AND integrator_api_key 
-									AND process_id=$2`
+						FROM elections WHERE organization_eth_address =$1 AND integrator_api_key=$2
+									AND process_id=$3`
 	row := d.db.QueryRowx(selectIntegrator, orgEthAddress, integratorAPIKey, processID)
 	err := row.StructScan(&election)
+	if err != nil {
+		return nil, err
+	}
+
+	return election, nil
+}
+
+func (d *Database) GetElectionList(integratorAPIKey, orgEthAddress, processID []byte) ([]types.Election, error) {
+	var election []types.Election
+	selectIntegrator := `SELECT title, start_date, end_date, start_block, end_block, confidential, hidden_results, 
+							created_at, updated_at
+						FROM elections WHERE organization_eth_address =$1 AND integrator_api_key=$2`
+	err := d.db.Select(&election, selectIntegrator, orgEthAddress, integratorAPIKey, processID)
 	if err != nil {
 		return nil, err
 	}

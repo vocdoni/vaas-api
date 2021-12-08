@@ -152,8 +152,10 @@ CREATE TABLE elections (
     process_id BYTEA NOT NULL,
     title TEXT NOT NULL,
     census_id INTEGER DEFAULT NULL,
-    start_block BIGINT NOT NULL,
-    end_block BIGINT NOT NULL,
+    start_date timestamp without time zone,
+    end_date timestamp without time zone,
+    start_block INT NOT NULL,
+    end_block INT NOT NULL,
     confidential  BOOLEAN DEFAULT false NOT NULL,
     hidden_results  BOOLEAN DEFAULT false NOT NULL,
     metadata_priv_key BYTEA NOT NULL 

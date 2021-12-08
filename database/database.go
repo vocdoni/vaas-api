@@ -1,7 +1,7 @@
 package database
 
 import (
-	"math/big"
+	"time"
 
 	migrate "github.com/rubenv/sql-migrate"
 	"go.vocdoni.io/api/types"
@@ -34,7 +34,7 @@ type Database interface {
 	ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error)
 	CountOrganizations(integratorAPIKey []byte) (int, error)
 	// Election
-	CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, censusID int, startBlock, endBlock big.Int, confidential, hiddenResults bool) (int32, error)
+	CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID, startBlock, endBlock int, confidential, hiddenResults bool) (int32, error)
 	GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error)
 	// Manage DB
 	Ping() error

@@ -25,7 +25,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/entities/{entityId}/processes/*",
+		"/pub/entities/{entityId}/processes/*",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.listProcessesHandler,
@@ -64,7 +64,47 @@ func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdat
 // GET https://server/v1/priv/entities/<entityId>/processes/upcoming
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+
+	// var processList []string
+
+	var entityId []byte
+	var err error
+	if entityId, err = util.GetBytesID(ctx, "entityId"); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	path := strings.Split(ctx.Request.URL.Path, "/")
+	pathSuffix := path[len(path)-1]
+	switch pathSuffix {
+	case "enable", "active", "ended", "upcoming":
+		if _, err := u.vocClient.GetProcessList(entityId, pathSuffix, "", "", 0, false, 0, 0); err != nil {
+			log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+			return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+		}
+	case "blind", "signed":
+		log.Warnf("endpoint %s unimplemented", ctx.Request.URL.Path)
+		return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.Path)
+	default:
+		log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+
+	}
+	return nil
+
+	// Parse all the information
+	// resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
+
+	// data, err := json.Marshal(resp)
+	// if err != nil {
+	// 	log.Errorf("error marshaling JSON: %v", err)
+	// 	return fmt.Errorf("error marshaling JSON: %w", err)
+	// }
+	// if err = ctx.Send(data); err != nil {
+	// 	log.Error(err)
+	// 	return err
+	// }
+	// return nil
 }
 
 // GET https://server/v1/pub/processes/<processId>

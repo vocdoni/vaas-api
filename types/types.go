@@ -1,7 +1,6 @@
 package types
 
 import (
-	"math/big"
 	"time"
 )
 
@@ -43,16 +42,18 @@ type Organization struct {
 
 type Election struct {
 	CreatedUpdated
-	ID               int     `json:"id" db:"id"`
-	OrgEthAddress    []byte  `json:"orgEthAddress" db:"organization_eth_address"`
-	IntegratorApiKey []byte  `json:"integratorApiKey" db:"integrator_api_key"`
-	ProcessID        []byte  `json:"processId" db:"process_id"`
-	Title            string  `json:"title" db:"title"`
-	CensusID         int     `json:"censusId" db:"census_id"`
-	StartBlock       big.Int `json:"startBlock" db:"start_block"`
-	EndBlock         big.Int `json:"endBlock" db:"end_block"`
-	Confidential     bool    `json:"confidential" db:"confidential"`
-	HiddenResults    bool    `json:"hiddenResults" db:"hidden_results"`
+	ID               int       `json:"id" db:"id"`
+	OrgEthAddress    []byte    `json:"orgEthAddress" db:"organization_eth_address"`
+	IntegratorApiKey []byte    `json:"integratorApiKey" db:"integrator_api_key"`
+	ProcessID        []byte    `json:"processId" db:"process_id"`
+	Title            string    `json:"title" db:"title"`
+	CensusID         int       `json:"censusId" db:"census_id"`
+	StartDate        time.Time `json:"startDate" db:"start_date"`
+	EndDate          time.Time `json:"endDate" db:"end_date"`
+	StartBlock       int       `json:"startBlock" db:"start_block"`
+	EndBlock         int       `json:"endBlock" db:"end_block"`
+	Confidential     bool      `json:"confidential" db:"confidential"`
+	HiddenResults    bool      `json:"hiddenResults" db:"hidden_results"`
 }
 
 type Result struct {

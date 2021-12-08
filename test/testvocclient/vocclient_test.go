@@ -55,7 +55,7 @@ func TestCurrentBlock(t *testing.T) {
 }
 
 func TestGetprocess(t *testing.T) {
-	processList, err := testClient.GetProcessList([]byte{}, "", 0, "", false, "", 0, 100)
+	processList, err := testClient.GetProcessList([]byte{}, "", "", "", 0, false, 0, 100)
 	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, processList, qt.Not(qt.HasLen), 0)
 	pid, err := hex.DecodeString(processList[0])

@@ -130,7 +130,7 @@ func (c *Client) GetResults(pid []byte) (results *apitypes.VochainResults, _ err
 	return results, nil
 }
 
-func (c *Client) GetProcessList(entityId []byte, searchTerm string, namespace uint32, status string, withResults bool, srcNetId string, from, listSize int) (processList []string, _ error) {
+func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm string, namespace uint32, withResults bool, from, listSize int) (processList []string, _ error) {
 	var req api.APIrequest
 	req.Method = "getProcessList"
 	req.EntityId = entityId
