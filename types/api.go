@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"go.vocdoni.io/dvote/types"
 )
 
@@ -26,7 +27,7 @@ type APIRequest struct {
 	Questions     []Question     `json:"questions"`
 	Confidential  bool           `json:"confidential"`
 	HiddenResults bool           `json:"hiddenResults"`
-	Census        int            `json:"census"`
+	Census        uuid.NullUUID  `json:"census"`
 }
 
 // APIResponse contains all of the possible response fields.

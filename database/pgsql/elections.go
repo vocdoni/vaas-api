@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/stdlib"
 
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID, startBlock, endBlock int, confidential, hiddenResults bool) (int32, error) {
+func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
+
 	election := &types.Election{
 		OrgEthAddress:    orgEthAddress,
 		IntegratorApiKey: integratorAPIKey,
@@ -28,7 +30,7 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 		},
 	}
 	// TODO: Calculate EntityID (consult go-dvote)
-	insert := `INSERT INTO integrators
+	insert := `INSERT INTO elections
 			( organization_eth_address, integrator_api_key, process_id, title, census_id,
 				start_date, end_date, start_block, end_block, confidential, hidden_results, created_at, updated_at)
 			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :title, :census_id,
@@ -39,9 +41,9 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 		return 0, fmt.Errorf("error creating election: %w", err)
 	}
 	if !result.Next() {
-		return 0, fmt.Errorf("error creating organization: there is no next result row")
+		return 0, fmt.Errorf("error creating election: there is no next result row")
 	}
-	var id int32
+	var id int
 	err = result.Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("error creating election: %w", err)

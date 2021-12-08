@@ -1,8 +1,6 @@
 package testcommon
 
 import (
-	"database/sql"
-
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
@@ -33,17 +31,6 @@ func (t *TestAPI) Start(dbc *config.DB, route string, port int) error {
 		// Postgres with sqlx
 		if t.DB, err = pgsql.New(dbc); err != nil {
 			return err
-		}
-		_, err := t.DB.GetPlanByName("default")
-		if err != nil {
-			if err != sql.ErrNoRows {
-				log.Fatalf("Error retrieving default plan: %w", err)
-			}
-			// No default plan exists, create it
-			_, err = t.DB.CreatePlan("default", 500, 10)
-			if err != nil {
-				log.Fatalf("Error creating default plan: %w", err)
-			}
 		}
 	} else {
 		// Mock database

@@ -58,7 +58,7 @@ ADD CONSTRAINT integrators_secret_api_key_unique UNIQUE (secret_api_key);
 CREATE TABLE quota_plans (
     updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
-    id SERIAL NOT NULL,
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     name TEXT NOT NULL,
     max_census_size INTEGER NOT NULL,
     max_process_count INTEGER NOT NULL
@@ -82,7 +82,7 @@ CREATE TABLE organizations (
     header_uri TEXT NOT NULL,
     avatar_uri TEXT NOT NULL,
     public_api_token  TEXT NOT NULL,
-    quota_plan_id INTEGER NOT NULL,
+    quota_plan_id uuid,
     public_api_quota INTEGER NOT NULL
 );
 
@@ -110,7 +110,7 @@ ALTER TABLE ONLY organizations
 CREATE TABLE censuses (
     updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
-    id SERIAL NOT NULL,
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     organization_id  INTEGER NOT NULL,
     name TEXT NOT NULL
 );
@@ -128,7 +128,7 @@ CREATE TABLE census_members (
     updated_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     created_at timestamp without time zone DEFAULT (now() at time zone 'utc') NOT NULL,
     id SERIAL NOT NULL,
-    census_id  INTEGER NOT NULL,
+    census_id  uuid NOT NULL,
     public_key BYTEA NOT NULL,
     redeem_token TEXT NOT NULL,
     weight INTEGER NOT NULL DEFAULT 1
@@ -151,14 +151,14 @@ CREATE TABLE elections (
     integrator_api_key BYTEA NOT NULL,
     process_id BYTEA NOT NULL,
     title TEXT NOT NULL,
-    census_id INTEGER DEFAULT NULL,
+    census_id uuid,
     start_date timestamp without time zone,
     end_date timestamp without time zone,
     start_block INT NOT NULL,
     end_block INT NOT NULL,
     confidential  BOOLEAN DEFAULT false NOT NULL,
     hidden_results  BOOLEAN DEFAULT false NOT NULL,
-    metadata_priv_key BYTEA NOT NULL 
+    metadata_priv_key BYTEA
 );
 
 ALTER TABLE ONLY elections
@@ -168,7 +168,7 @@ ALTER TABLE ONLY elections
     ADD CONSTRAINT elections_organization_eth_address_fkey FOREIGN KEY (organization_eth_address) REFERENCES organizations(eth_address) ON DELETE CASCADE;
 
 ALTER TABLE ONLY elections
-    ADD CONSTRAINT elections_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE;
+    ADD CONSTRAINT elections_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY elections
     ADD CONSTRAINT elections_census_id_fkey FOREIGN KEY (census_id) REFERENCES censuses(id);

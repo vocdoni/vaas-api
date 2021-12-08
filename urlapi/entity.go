@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -196,7 +197,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 	// Register organization to database
 	if _, err = u.db.CreateOrganization(integratorPrivKey, ethSignKeys.Address().Bytes(),
-		encryptedPrivKey, 0, 0, orgApiToken, req.Header, req.Avatar); err != nil {
+		encryptedPrivKey, uuid.NullUUID{}, 0, orgApiToken, req.Header, req.Avatar); err != nil {
 		log.Errorf("could not create organization: %v", err)
 		return fmt.Errorf("could not create organization: %v", err)
 	}

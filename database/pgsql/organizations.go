@@ -7,13 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/stdlib"
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/log"
 )
 
-func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error) {
+func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error) {
 	integrator, err := d.GetIntegratorByKey(integratorAPIKey)
 	if err != nil {
 		if err != sql.ErrNoRows {
@@ -23,15 +24,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 			return 0, fmt.Errorf("createOrganization DB error: %w", err)
 		}
 	}
-	// Assing default plan if no plan assinged
-	if planID < 1 {
-		plan, err := d.GetPlanByName("default")
-		if err != nil {
-			log.Errorf("Unable to retrieve default plan %x", err)
-			return 0, fmt.Errorf("Unable to retrieve default plan %x", err)
-		}
-		planID = plan.ID
-	}
+
 	organization := &types.Organization{
 		EthAddress:        ethAddress,
 		IntegratorID:      integrator.ID,
@@ -106,13 +99,13 @@ func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error
 	return nil
 }
 
-func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error) {
+func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int, headerUri, avatarUri string) (int, error) {
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return 0, fmt.Errorf("invalid arguments")
 	}
 	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress}
 	update := `UPDATE organizations SET
-				quota_plan_id = COALESCE(NULLIF(:quota_plan_id, 0), quota_plan_id),
+				quota_plan_id = COALESCE(NULLIF(:quota_plan_id, NULL), quota_plan_id),
 				public_api_quota = COALESCE(NULLIF(:public_api_quota, 0), public_api_quota),
 				header_uri = COALESCE(NULLIF(:header_uri, ''), header_uri),
 				avatar_uri = COALESCE(NULLIF(:avatar_uri, ''), avatar_uri),

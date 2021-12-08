@@ -2,6 +2,8 @@ package types
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type CreatedUpdated struct {
@@ -21,39 +23,40 @@ type Integrator struct {
 
 type QuotaPlan struct {
 	CreatedUpdated
-	ID              int    `json:"id" db:"id"`
-	Name            string `json:"name" db:"name"`
-	MaxCensusSize   int    `json:"maxCensusSize" db:"max_census_size"`
-	MaxProcessCount int    `json:"maxProcessCount" db:"max_process_count"`
+	ID              uuid.UUID `json:"id" db:"id"`
+	Name            string    `json:"name" db:"name"`
+	MaxCensusSize   int       `json:"maxCensusSize" db:"max_census_size"`
+	MaxProcessCount int       `json:"maxProcessCount" db:"max_process_count"`
 }
 type Organization struct {
 	CreatedUpdated
-	ID                int    `json:"id" db:"id"`
-	IntegratorID      int    `json:"integratorId" db:"integrator_id"`
-	IntegratorApiKey  []byte `json:"integratorApiKey" db:"integrator_api_key"`
-	EthAddress        []byte `json:"ethAddress" db:"eth_address"`
-	EthPrivKeyCicpher []byte `json:"ethPrivKeyCipher" db:"eth_priv_key_cipher"` // encrypted priv key for metadata
-	HeaderURI         string `json:"headerUri" db:"header_uri"`                 // cURI
-	AvatarURI         string `json:"avatarUri" db:"avatar_uri"`                 // cURI
-	PublicAPIToken    string `json:"publicApiToken" db:"public_api_token"`      // Public API token
-	QuotaPlanID       int    `json:"quotaPlanId" db:"quota_plan_id"`            // Billing plan ID
-	PublicAPIQuota    int    `json:"publicApiQuota" db:"public_api_quota"`
+	ID                int           `json:"id" db:"id"`
+	IntegratorID      int           `json:"integratorId" db:"integrator_id"`
+	IntegratorApiKey  []byte        `json:"integratorApiKey" db:"integrator_api_key"`
+	EthAddress        []byte        `json:"ethAddress" db:"eth_address"`
+	EthPrivKeyCicpher []byte        `json:"ethPrivKeyCipher" db:"eth_priv_key_cipher"` // encrypted priv key for metadata
+	HeaderURI         string        `json:"headerUri" db:"header_uri"`                 // cURI
+	AvatarURI         string        `json:"avatarUri" db:"avatar_uri"`                 // cURI
+	PublicAPIToken    string        `json:"publicApiToken" db:"public_api_token"`      // Public API token
+	QuotaPlanID       uuid.NullUUID `json:"quotaPlanId" db:"quota_plan_id"`            // Billing plan ID
+	PublicAPIQuota    int           `json:"publicApiQuota" db:"public_api_quota"`
 }
 
 type Election struct {
 	CreatedUpdated
-	ID               int       `json:"id" db:"id"`
-	OrgEthAddress    []byte    `json:"orgEthAddress" db:"organization_eth_address"`
-	IntegratorApiKey []byte    `json:"integratorApiKey" db:"integrator_api_key"`
-	ProcessID        []byte    `json:"processId" db:"process_id"`
-	Title            string    `json:"title" db:"title"`
-	CensusID         int       `json:"censusId" db:"census_id"`
-	StartDate        time.Time `json:"startDate" db:"start_date"`
-	EndDate          time.Time `json:"endDate" db:"end_date"`
-	StartBlock       int       `json:"startBlock" db:"start_block"`
-	EndBlock         int       `json:"endBlock" db:"end_block"`
-	Confidential     bool      `json:"confidential" db:"confidential"`
-	HiddenResults    bool      `json:"hiddenResults" db:"hidden_results"`
+	ID               int           `json:"id" db:"id"`
+	OrgEthAddress    []byte        `json:"orgEthAddress" db:"organization_eth_address"`
+	IntegratorApiKey []byte        `json:"integratorApiKey" db:"integrator_api_key"`
+	ProcessID        []byte        `json:"processId" db:"process_id"`
+	Title            string        `json:"title" db:"title"`
+	CensusID         uuid.NullUUID `json:"censusId" db:"census_id"`
+	StartDate        time.Time     `json:"startDate" db:"start_date"`
+	EndDate          time.Time     `json:"endDate" db:"end_date"`
+	StartBlock       int           `json:"startBlock" db:"start_block"`
+	EndBlock         int           `json:"endBlock" db:"end_block"`
+	Confidential     bool          `json:"confidential" db:"confidential"`
+	HiddenResults    bool          `json:"hiddenResults" db:"hidden_results"`
+	MetadataPrivKey  []byte        `json:"metadataPrivKey" db:"metadata_priv_key"`
 }
 
 type Result struct {

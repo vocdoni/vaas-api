@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/stdlib"
 
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreatePlan(name string, maxCensusSize, maxProcessCount int) (int, error) {
+func (d *Database) CreatePlan(name string, maxCensusSize, maxProcessCount int) (uuid.UUID, error) {
 	plan := &types.QuotaPlan{
 		Name:            name,
 		MaxCensusSize:   maxCensusSize,
@@ -26,20 +27,20 @@ func (d *Database) CreatePlan(name string, maxCensusSize, maxProcessCount int) (
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, plan)
 	if err != nil {
-		return 0, fmt.Errorf("error creating plan: %w", err)
+		return uuid.Nil, fmt.Errorf("error creating plan: %w", err)
 	}
 	if !result.Next() {
-		return 0, fmt.Errorf("error creating plan: there is no next result row")
+		return uuid.Nil, fmt.Errorf("error creating plan: there is no next result row")
 	}
-	var id int
+	var id uuid.UUID
 	err = result.Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error creating plan: %w", err)
+		return uuid.Nil, fmt.Errorf("error creating plan: %w", err)
 	}
 	return id, nil
 }
 
-func (d *Database) GetPlan(id int) (*types.QuotaPlan, error) {
+func (d *Database) GetPlan(id uuid.UUID) (*types.QuotaPlan, error) {
 	var plan types.QuotaPlan
 	selectplan := `SELECT id, name, max_census_size, max_process_count, created_at, updated_at
 						FROM quota_plans WHERE id=$1`
@@ -65,7 +66,7 @@ func (d *Database) GetPlanByName(name string) (*types.QuotaPlan, error) {
 	return &plan, nil
 }
 
-func (d *Database) DeletePlan(id int) error {
+func (d *Database) DeletePlan(id uuid.UUID) error {
 	deleteQuery := `DELETE FROM quota_plans WHERE id = $1`
 	result, err := d.db.Exec(deleteQuery, id)
 	if err != nil {
@@ -82,7 +83,7 @@ func (d *Database) DeletePlan(id int) error {
 	return nil
 }
 
-func (d *Database) UpdatePlan(id, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error) {
+func (d *Database) UpdatePlan(id uuid.UUID, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error) {
 	integrator := &types.QuotaPlan{ID: id, Name: newName, MaxCensusSize: newMaxCensusSize, MaxProcessCount: neWMaxProcessCount}
 	update := `UPDATE quota_plans SET
 				name = COALESCE(NULLIF(:name, ''), name),

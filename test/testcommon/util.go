@@ -5,8 +5,10 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/google/uuid"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	"go.vocdoni.io/dvote/log"
 )
 
 func CreateIntegrators(size int) []*types.Integrator {
@@ -25,12 +27,11 @@ func CreateIntegrators(size int) []*types.Integrator {
 	return mp
 }
 
-// CreateEntities a given number of random entities
+// Create a given number of random organizations
 func CreateOrganizations(size int) []*types.Organization {
 	signers := CreateEthRandomKeysBatch(size)
 	mp := make([]*types.Organization, size)
 	for i := 0; i < size; i++ {
-		// retrieve entity ID
 		mp[i] = &types.Organization{
 			EthAddress:        signers[i].Address().Bytes(),
 			EthPrivKeyCicpher: []byte("ff"),
@@ -38,6 +39,31 @@ func CreateOrganizations(size int) []*types.Organization {
 			AvatarURI:         "https://",
 			PublicAPIToken:    signers[i].Address().String(),
 			PublicAPIQuota:    1000,
+			QuotaPlanID:       uuid.NullUUID{},
+		}
+	}
+	return mp
+}
+
+// Create a given number of random Elections
+func CreateElections(size int) []*types.Election {
+	var duration time.Duration
+	var err error
+	if duration, err = time.ParseDuration("1.5h"); err != nil {
+		log.Error("unexpected, cannot parse duration")
+	}
+	mp := make([]*types.Election, size)
+	for i := 0; i < size; i++ {
+		randomID := rand.Intn(10000000)
+		mp[i] = &types.Election{
+			ProcessID:       []byte(fmt.Sprintf("%d", randomID)),
+			Title:           fmt.Sprintf("Test%d", randomID),
+			StartDate:       time.Now(),
+			EndDate:         time.Now().Add(duration),
+			Confidential:    true,
+			HiddenResults:   true,
+			MetadataPrivKey: nil,
+			CensusID:        uuid.NullUUID{},
 		}
 	}
 	return mp

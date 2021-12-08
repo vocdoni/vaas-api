@@ -3,6 +3,7 @@ package database
 import (
 	"time"
 
+	"github.com/google/uuid"
 	migrate "github.com/rubenv/sql-migrate"
 	"go.vocdoni.io/api/types"
 )
@@ -18,15 +19,15 @@ type Database interface {
 	CountIntegrators() (int, error)
 	GetIntegratorApiKeysList() ([][]byte, error)
 	// Plans
-	CreatePlan(name string, maxCensusSize, maxProcessCount int) (int, error)
-	GetPlan(id int) (*types.QuotaPlan, error)
+	CreatePlan(name string, maxCensusSize, maxProcessCount int) (uuid.UUID, error)
+	GetPlan(id uuid.UUID) (*types.QuotaPlan, error)
 	GetPlanByName(name string) (*types.QuotaPlan, error)
-	DeletePlan(id int) error
-	UpdatePlan(id, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error)
+	DeletePlan(id uuid.UUID) error
+	UpdatePlan(id uuid.UUID, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error)
 	GetPlansList() ([]types.QuotaPlan, error)
 	// Organization
-	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error)
-	UpdateOrganization(integratorAPIKey, ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error)
+	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error)
+	UpdateOrganization(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int, headerUri, avatarUri string) (int, error)
 	UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCicpher []byte) (int, error)
 	UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte, newPublicApiToken string) (int, error)
 	GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error)
@@ -34,7 +35,7 @@ type Database interface {
 	ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error)
 	CountOrganizations(integratorAPIKey []byte) (int, error)
 	// Election
-	CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID, startBlock, endBlock int, confidential, hiddenResults bool) (int32, error)
+	CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error)
 	GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error)
 	// Manage DB
 	Ping() error

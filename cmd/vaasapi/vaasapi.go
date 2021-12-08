@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"os/signal"
@@ -14,7 +13,6 @@ import (
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -228,30 +226,6 @@ func main() {
 	// and if not apply them
 	if err := pgsql.Migrator("upSync", db); err != nil {
 		log.Fatal(err)
-	}
-
-	// Create default plan if not exists AND/OR update its values
-	if cfg.DefaultPlan.MaxCensusSize != 0 || cfg.DefaultPlan.MaxProccessCount != 0 {
-		plan, err := db.GetPlanByName("default")
-		if err != nil {
-			if err != sql.ErrNoRows {
-				log.Fatalf("Error retrieving default plan: %w", err)
-			}
-			// No default plan exists, create it
-			plan = new(types.QuotaPlan)
-			plan.ID, err = db.CreatePlan("default",
-				cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount)
-			if err != nil {
-				log.Fatalf("Error creating default plan: %w", err)
-			}
-		} else {
-			// A default plan exists, update the values
-			count, err := db.UpdatePlan(plan.ID,
-				cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
-			if err != nil || count != 1 {
-				log.Fatalf("Error updating default plan: %w", err)
-			}
-		}
 	}
 
 	// Router

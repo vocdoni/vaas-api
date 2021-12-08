@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/frankban/quicktest v1.13.0
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
