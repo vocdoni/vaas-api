@@ -194,7 +194,7 @@ func (d *Database) ListOrganizations(integratorAPIKey []byte, filter *types.List
 	// TODO: Replace limit offset with better strategy, can slow down DB
 	// would nee to now last value from previous query
 	selectQuery := `SELECT
-	 				id
+	 				id, eth_address, header_uri, avatar_uri, public_api_token
 					FROM organizations WHERE integrator_api_key =$1
 					ORDER BY %s %s LIMIT $2 OFFSET $3`
 	// Define default values for arguments

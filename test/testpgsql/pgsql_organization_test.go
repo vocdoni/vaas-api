@@ -34,10 +34,10 @@ func TestOrganization(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 	c.Assert(count, qt.Equals, 1)
 
-	// dbOrganizations, err := API.DB.ListOrganizations(integrators[0].SecretApiKey, nil)
-	// c.Assert(err, qt.IsNil)
-	// c.Assert(len(dbOrganizations), qt.Equals, 1)
-	// c.Assert(fmt.Sprintf("%x", dbOrganizations[0].EthPrivKeyCicpher), qt.DeepEquals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCicpher))
+	dbOrganizations, err := API.DB.ListOrganizations(integrators[0].SecretApiKey, nil)
+	c.Assert(err, qt.IsNil)
+	c.Assert(len(dbOrganizations), qt.Equals, 1)
+	c.Assert(fmt.Sprintf("%x", dbOrganizations[0].ID), qt.DeepEquals, fmt.Sprintf("%x", organizations[0].ID))
 
 	// cleaning up (cascade delete from integrators)
 	for _, integrator := range integrators {
