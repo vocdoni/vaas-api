@@ -242,10 +242,12 @@ func main() {
 				log.Fatalf("Error creating default plan: %w", err)
 			}
 		}
-		// A default plan exists, update the values
-		count, err := db.UpdatePlan(plan.ID, cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
-		if err != nil || count != 1 {
-			log.Fatalf("Error updating default plan: %w", err)
+		if plan != nil {
+			// A default plan exists, update the values
+			count, err := db.UpdatePlan(plan.ID, cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
+			if err != nil || count != 1 {
+				log.Fatalf("Error updating default plan: %w", err)
+			}
 		}
 	}
 
