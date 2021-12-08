@@ -136,17 +136,12 @@ func (c *Client) GetProcessList(entityId []byte, searchTerm string, namespace ui
 
 // FILE APIS
 
-func (c *Client) SetEntityMetadata(avatar, description, header,
-	name string, entityID []byte) (metaURI string, _ error) {
+func (c *Client) SetEntityMetadata(meta apitypes.EntityMetadata,
+	entityID []byte) (metaURI string, _ error) {
 	var metaBytes []byte
 	var err error
-	var entityMetadata apitypes.EntityMetadata
-	entityMetadata.Avatar = avatar
-	entityMetadata.Description = description
-	entityMetadata.Header = header
-	entityMetadata.Name = name
 
-	if metaBytes, err = json.Marshal(entityMetadata); err != nil {
+	if metaBytes, err = json.Marshal(meta); err != nil {
 		return "", fmt.Errorf("could not marshal entity metadata: %v", err)
 	}
 	if metaURI, err = c.AddFile(metaBytes, "ipfs",

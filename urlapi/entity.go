@@ -178,8 +178,17 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// Post metadata to ipfs
-	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description,
-		req.Header, req.Name, ethSignKeys.Address().Bytes()); err != nil {
+	if metaURI, err = u.vocClient.SetEntityMetadata(types.EntityMetadata{
+		Version:     "1.0",
+		Languages:   []string{},
+		Name:        map[string]string{"default": req.Name},
+		Description: map[string]string{"default": req.Description},
+		NewsFeed:    map[string]string{},
+		Media: types.EntityMedia{
+			Avatar: req.Avatar,
+			Header: req.Header,
+		},
+	}, ethSignKeys.Address().Bytes()); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -194,10 +203,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
-		// TODO enable this
-		// log.Errorf("could not create account on the vochain: %v", err)
-		// return fmt.Errorf("could not create account on the vochain: %v", err)
-		log.Warnf("could not create account on the vochain: %v", err)
+		log.Errorf("could not create account on the vochain: %v", err)
+		return fmt.Errorf("could not create account on the vochain: %v", err)
 	}
 
 	resp.APIKey = orgApiToken
@@ -297,15 +304,27 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 		return err
 	}
 
-	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar,
-		req.Description, req.Header, req.Name, entityID); err != nil {
+	// Post metadata to ipfs
+	if metaURI, err = u.vocClient.SetEntityMetadata(types.EntityMetadata{
+		Version:     "1.0",
+		Languages:   []string{},
+		Name:        map[string]string{"default": req.Name},
+		Description: map[string]string{"default": req.Description},
+		NewsFeed:    map[string]string{},
+		Media: types.EntityMedia{
+			Avatar: req.Avatar,
+			Header: req.Header,
+		},
+	}, entityID); err != nil {
 		log.Error(err)
 		return err
 	}
 
 	// Update organization in the db to make sure it matches the metadata
-	u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
-		organization.QuotaPlanID, organization.PublicAPIQuota, req.Header, req.Avatar)
+	if _, err = u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
+		organization.QuotaPlanID, organization.PublicAPIQuota, req.Header, req.Avatar); err != nil {
+		return err
+	}
 
 	// TODO update the entity on the Vochain to reflect the new IPFS uri
 
