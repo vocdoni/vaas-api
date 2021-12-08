@@ -3,7 +3,6 @@ package urlapi
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -75,46 +74,20 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	var err error
 	var resp types.APIProcess
 	var processId []byte
-	var process *types.Election
 	var vochainProcess *indexertypes.Process
 	var results *types.VochainResults
 	var processMetadata *types.ProcessMetadata
-	log.Debugf("get process id")
 	if processId, err = util.GetBytesID(ctx, "processId"); err != nil {
 		log.Error(err)
 		return err
 	}
 
-	log.Debugf("get process db")
-	// Fetch process from db
-	// if process, err = u.db.GetElection([]byte{}, []byte{}, processId); err != nil {
-	// log.Error(err)
-	// 	return err
-	// }
-
-	// TODO REMOVE dummy process for testing
-	process = &types.Election{
-		CreatedUpdated:   types.CreatedUpdated{},
-		ID:               2,
-		OrgEthAddress:    []byte{012},
-		IntegratorApiKey: []byte{012},
-		ProcessID:        processId,
-		Title:            "test election",
-		CensusID:         3,
-		StartBlock:       *big.NewInt(1518551),
-		EndBlock:         *big.NewInt(30909000),
-		Confidential:     true,
-		HiddenResults:    true,
-	}
-
-	log.Debugf("get process vochain")
 	// Fetch process from vochain
 	if vochainProcess, err = u.vocClient.GetProcess(processId); err != nil {
 		log.Error(err)
 		return err
 	}
 
-	log.Debugf("get process results")
 	// Fetch results
 	if vochainProcess.HaveResults {
 		if results, err = u.vocClient.GetResults(processId); err != nil {
@@ -123,7 +96,6 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 		}
 	}
 
-	log.Debugf("get process meta")
 	// Fetch metadata
 	metadataUri := vochainProcess.Metadata
 	if processMetadata, err = u.vocClient.FetchProcessMetadata(metadataUri); err != nil {
@@ -132,10 +104,8 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	}
 
 	// Parse all the information
-	log.Debugf("parse process info")
-	resp = u.parseProcessInfo(process, vochainProcess, results, processMetadata)
+	resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
 
-	log.Debugf("send resp %v", resp)
 	data, err := json.Marshal(resp)
 	if err != nil {
 		log.Errorf("error marshaling JSON: %v", err)
@@ -159,7 +129,7 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 
 // TODO add listProcessesInfoHandler
 
-func (u *URLAPI) parseProcessInfo(db *types.Election, vc *indexertypes.Process,
+func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	results *types.VochainResults, meta *types.ProcessMetadata) (process types.APIProcess) {
 	var err error
 
@@ -169,12 +139,12 @@ func (u *URLAPI) parseProcessInfo(db *types.Election, vc *indexertypes.Process,
 	// 	} else {
 	// 	resp.Type = "signed-"
 	// }
-	if db.Confidential {
+	if vc.Mode.EncryptedMetaData {
 		process.Type += "confidential-"
 	} else {
 		process.Type += "plain-"
 	}
-	if db.HiddenResults {
+	if vc.Envelope.EncryptedVotes {
 		process.Type += "hidden-results"
 	} else {
 		process.Type += "rolling-results"
@@ -205,17 +175,17 @@ func (u *URLAPI) parseProcessInfo(db *types.Election, vc *indexertypes.Process,
 		}
 	}
 	process.EntityID = vc.EntityID
-	process.ProcessID = db.ProcessID
+	process.ProcessID = vc.ID
 
-	process.StartBlock = db.StartBlock.String()
-	process.EndBlock = db.EndBlock.String()
+	process.StartBlock = fmt.Sprintf("%d", vc.StartBlock)
+	process.EndBlock = fmt.Sprintf("%d", vc.EndBlock)
 
-	if process.StartDate, err = u.estimateBlockTime(uint32(db.StartBlock.Int64())); err != nil {
-		log.Warnf("could not estimate startDate at %s: %v", db.StartBlock.String(), err)
+	if process.StartDate, err = u.estimateBlockTime(vc.StartBlock); err != nil {
+		log.Warnf("could not estimate startDate at %d: %v", vc.StartBlock, err)
 	}
 
-	if process.EndDate, err = u.estimateBlockTime(uint32(db.EndBlock.Int64())); err != nil {
-		log.Warnf("could not estimate endDate at %s: %v", db.EndBlock.String(), err)
+	if process.EndDate, err = u.estimateBlockTime(vc.EndBlock); err != nil {
+		log.Warnf("could not estimate endDate at %d: %v", vc.EndBlock, err)
 	}
 
 	process.ResultsAggregation = meta.Results.Aggregation
