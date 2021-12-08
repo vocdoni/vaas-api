@@ -32,7 +32,7 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 			( organization_eth_address, integrator_api_key, process_id, title, census_id,
 				start_date, end_date, start_block, end_block, confidential, hidden_results, created_at, updated_at)
 			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :title, :census_id,
-				:start_date, :end_date, :start_block, :end_block, confidential, :hidden_results, :created_at, :updated_at)
+				:start_date, :end_date, :start_block, :end_block, :confidential, :hidden_results, :created_at, :updated_at)
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, election)
 	if err != nil {
