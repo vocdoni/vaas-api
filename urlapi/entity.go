@@ -475,8 +475,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{},
-		req.Title, 0, startBlock, endBlock, req.Confidential, req.HiddenResults); err != nil {
+	if _, err = u.db.CreateElection(integratorPrivKey, entityID, processID, req.Title, startDate,
+		endDate, 0, int(startBlock), int(endBlock), req.Confidential, req.HiddenResults); err != nil {
 		log.Error(err)
 		return err
 	}
