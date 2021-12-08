@@ -369,30 +369,29 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 }
 
 func (c *Client) CreateProcess(
-	entityID, censusRoot []byte,
-	censusURI string,
-	pid []byte,
-	envelopeType *models.EnvelopeType,
-	censusOrigin models.CensusOrigin,
-	duration int) (blockHeight uint32, _ error) {
+	pid []byte, entityID []byte, startBlock, duration uint32, censusRoot []byte, censusURI string,
+	encryptionPrivKeys, encryptionPubKeys []string, keyIndex uint32, envelopeType *models.EnvelopeType,
+	processMode *models.ProcessMode, voteOptions *models.ProcessVoteOptions,
+	censusOrigin models.CensusOrigin, metadataUri string) (blockHeight uint32, _ error) {
 	var req api.APIrequest
+	var err error
 	req.Method = "submitRawTx"
-	block, err := c.GetCurrentBlock()
-	if err != nil {
-		return 0, err
-	}
 	processData := &models.Process{
-		EntityId:     entityID,
-		CensusRoot:   censusRoot,
-		CensusURI:    &censusURI,
-		CensusOrigin: censusOrigin,
-		BlockCount:   uint32(duration),
-		ProcessId:    pid,
-		StartBlock:   block + 4,
-		EnvelopeType: envelopeType,
-		Mode:         &models.ProcessMode{AutoStart: true, Interruptible: true},
-		Status:       models.ProcessStatus_READY,
-		VoteOptions:  &models.ProcessVoteOptions{MaxCount: 16, MaxValue: 8},
+		ProcessId:             pid,
+		EntityId:              entityID,
+		StartBlock:            startBlock,
+		BlockCount:            duration,
+		CensusRoot:            censusRoot,
+		CensusURI:             &censusURI,
+		EncryptionPrivateKeys: encryptionPrivKeys,
+		EncryptionPublicKeys:  encryptionPubKeys,
+		KeyIndex:              &keyIndex,
+		Status:                models.ProcessStatus_READY,
+		EnvelopeType:          envelopeType,
+		Mode:                  processMode,
+		VoteOptions:           voteOptions,
+		CensusOrigin:          censusOrigin,
+		Metadata:              &metadataUri,
 	}
 	p := &models.NewProcessTx{
 		Txtype:  models.TxType_NEW_PROCESS,
