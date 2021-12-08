@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
@@ -389,11 +388,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	startDate, err := time.Parse("2021-10-25T11:20:53.769Z", req.StartDate)
+	startDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.StartDate)
 	if err != nil {
 		return err
 	}
-	endDate, err := time.Parse("2021-10-25T11:20:53.769Z", req.EndDate)
+	endDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.EndDate)
 	if err != nil {
 		return err
 	}
@@ -404,6 +403,22 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	endBlock, err := u.estimateBlockHeight(endDate)
 	if err != nil {
 		return err
+	}
+
+	metadata := types.ProcessMetadata{
+		Description: map[string]string{"default": req.Description},
+		Media: types.ProcessMedia{
+			Header:    req.Header,
+			StreamURI: req.StreamURI,
+		},
+		Meta:      metaUri,
+		Questions: []types.QuestionMeta{},
+		Results: types.ProcessResultsDetails{
+			Aggregation: "discrete-values",
+			Display:     "multiple-choice",
+		},
+		Title:   map[string]string{"default": req.Title},
+		Version: "1.0",
 	}
 
 	envelopeType := &models.EnvelopeType{
@@ -426,6 +441,17 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		if len(question.Choices) > maxChoiceValue {
 			maxChoiceValue = len(question.Choices)
 		}
+		metaQuestion := types.QuestionMeta{
+			Choices:     []types.Choice{},
+			Description: map[string]string{"default": question.Description},
+			Title:       map[string]string{"default": question.Title},
+		}
+		for i, choice := range question.Choices {
+			metaQuestion.Choices = append(metaQuestion.Choices, types.Choice{
+				Title: map[string]string{"default": choice},
+				Value: uint32(i),
+			})
+		}
 	}
 
 	voteOptions := &models.ProcessVoteOptions{
@@ -436,28 +462,21 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		CostExponent:      1,
 	}
 
-	if metaUri, err = u.vocClient.SetProcessMetadata(types.ProcessMetadata{
-		Description: map[string]string{"default": req.Description},
-		Media: types.ProcessMedia{
-			Header:    req.Header,
-			StreamURI: req.StreamURI,
-		},
-		Meta:      metaUri,
-		Questions: []types.QuestionMeta{},
-		Results: types.ProcessResultsDetails{
-			Aggregation: "discrete-values",
-			Display:     "multiple-choice",
-		},
-		Title:   map[string]string{"default": req.Title},
-		Version: "1.0",
-	}, processID); err != nil {
+	if metaUri, err = u.vocClient.SetProcessMetadata(metadata, processID); err != nil {
+		log.Error(err)
 		return err
 	}
 
 	// TODO use encryption priv/pub keys if process is encrypted
-	u.vocClient.CreateProcess(processID, entityID, startBlock, endBlock-startBlock, []byte{}, "", []string{}, []string{}, 0, envelopeType, processMode, voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri)
+	if startBlock, err = u.vocClient.CreateProcess(processID, entityID, startBlock,
+		endBlock-startBlock, []byte{}, "", envelopeType, processMode,
+		voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri); err != nil {
+		log.Error(err)
+		return err
+	}
 
-	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, 0, big.Int{}, big.Int{}, req.Confidential, req.HiddenResults); err != nil {
+	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{},
+		req.Title, 0, startBlock, endBlock, req.Confidential, req.HiddenResults); err != nil {
 		log.Error(err)
 		return err
 	}
