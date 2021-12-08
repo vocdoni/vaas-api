@@ -388,6 +388,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		log.Error(err)
 		return err
 	}
+
 	startDate, err := time.Parse("2021-10-25T11:20:53.769Z", req.StartDate)
 	if err != nil {
 		return err
@@ -434,6 +435,25 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		MaxTotalCost:      uint32(len(req.Questions) * maxChoiceValue),
 		CostExponent:      1,
 	}
+
+	if metaUri, err = u.vocClient.SetProcessMetadata(types.ProcessMetadata{
+		Description: map[string]string{"default": req.Description},
+		Media: types.ProcessMedia{
+			Header:    req.Header,
+			StreamURI: req.StreamURI,
+		},
+		Meta:      metaUri,
+		Questions: []types.QuestionMeta{},
+		Results: types.ProcessResultsDetails{
+			Aggregation: "discrete-values",
+			Display:     "multiple-choice",
+		},
+		Title:   map[string]string{"default": req.Title},
+		Version: "1.0",
+	}, processID); err != nil {
+		return err
+	}
+
 	// TODO use encryption priv/pub keys if process is encrypted
 	u.vocClient.CreateProcess(processID, entityID, startBlock, endBlock-startBlock, []byte{}, "", []string{}, []string{}, 0, envelopeType, processMode, voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri)
 

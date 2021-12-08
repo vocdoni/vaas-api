@@ -168,6 +168,21 @@ func (c *Client) SetEntityMetadata(meta apitypes.EntityMetadata,
 	return metaURI, nil
 }
 
+func (c *Client) SetProcessMetadata(meta apitypes.ProcessMetadata,
+	processId []byte) (metaURI string, _ error) {
+	var metaBytes []byte
+	var err error
+
+	if metaBytes, err = json.Marshal(meta); err != nil {
+		return "", fmt.Errorf("could not marshal process metadata: %v", err)
+	}
+	if metaURI, err = c.AddFile(metaBytes, "ipfs",
+		fmt.Sprintf("%X process metadata", processId)); err != nil {
+		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
+	}
+	return metaURI, nil
+}
+
 func (c *Client) AddFile(content []byte, contentType, name string) (URI string, _ error) {
 	resp, err := c.pool.Request(api.APIrequest{
 		Method:  "addFile",
