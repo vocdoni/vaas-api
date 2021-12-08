@@ -53,7 +53,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		"/priv/entities/{entityId}/metadata",
 		"PUT",
 		bearerstdapi.MethodAccessTypePrivate,
-		u.setEntityMetadataHandler,
+		u.setOrganizationMetadataHandler,
 	); err != nil {
 		return err
 	}
@@ -301,8 +301,8 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 }
 
 // PUT https://server/v1/priv/entities/<entityId>/metadata
-// setEntityMetadataHandler sets an entity's metadata
-func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdata,
+// setOrganizationMetadataHandler sets an entity's metadata
+func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
@@ -336,10 +336,9 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 	// Update organization in the db to make sure it matches the metadata
 	if _, err = u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
 		organization.QuotaPlanID, organization.PublicAPIQuota, req.Header, req.Avatar); err != nil {
+		log.Error(err)
 		return err
 	}
-
-	// TODO update the entity on the Vochain to reflect the new IPFS uri
 
 	resp.EntityID = entityID
 	resp.ContentURI = metaURI
