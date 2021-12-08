@@ -3,6 +3,7 @@ package vocclient
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 
 	"go.vocdoni.io/dvote/api"
@@ -14,6 +15,9 @@ func discoverGateways(urls []string) (GatewayPool, error) {
 	gateways := []*client.Client{}
 	log.Debugf("discovering gateways %v", urls)
 	for _, url := range urls {
+		if !strings.HasSuffix(url, "/dvote") {
+			url = url + "/dvote"
+		}
 		client, err := client.New(url)
 		if err != nil {
 			log.Warnf("Could not connect to gateway %s: %v", url, err)

@@ -3,8 +3,6 @@ package types
 import (
 	"math/big"
 	"time"
-
-	"go.vocdoni.io/dvote/types"
 )
 
 type CreatedUpdated struct {
@@ -41,22 +39,6 @@ type Organization struct {
 	PublicAPIToken    string `json:"publicApiToken" db:"public_api_token"`      // Public API token
 	QuotaPlanID       int    `json:"quotaPlanId" db:"quota_plan_id"`            // Billing plan ID
 	PublicAPIQuota    int    `json:"publicApiQuota" db:"public_api_quota"`
-}
-
-type ErrorMsg struct {
-	Error string `json:"error"`
-}
-
-type EntitiesMsg struct {
-	EntityID  types.HexBytes    `json:"entityID"`
-	Processes []*ProcessSummary `json:"processes,omitempty"`
-}
-
-type ProcessSummary struct {
-	ProcessID types.HexBytes `json:"processId,omitempty"`
-	Status    string         `json:"status,omitempty"`
-	StartDate time.Time      `json:"startDate,omitempty"`
-	EndDate   time.Time      `json:"endDate,omitempty"`
 }
 
 type Election struct {

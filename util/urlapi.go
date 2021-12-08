@@ -27,20 +27,20 @@ func UnmarshalRequest(msg *bearerstdapi.BearerStandardAPIdata) (req types.APIReq
 	return
 }
 
-func GetBytesID(ctx *httprouter.HTTPContext) ([]byte, error) {
-	organization := ctx.URLParam("id")
+func GetBytesID(ctx *httprouter.HTTPContext, name string) ([]byte, error) {
+	organization := ctx.URLParam(name)
 	organizationID, err := hex.DecodeString(util.TrimHex(organization))
 	if err != nil {
-		return nil, fmt.Errorf("could not parse urlParam EntityID")
+		return nil, fmt.Errorf("could not parse urlParam %s: %v", name, err)
 	}
 	return organizationID, nil
 }
 
-func GetIntID(ctx *httprouter.HTTPContext) (int, error) {
-	id := ctx.URLParam("id")
+func GetIntID(ctx *httprouter.HTTPContext, name string) (int, error) {
+	id := ctx.URLParam(name)
 	intID, err := strconv.Atoi(id)
 	if err != nil {
-		return 0, fmt.Errorf("could not parse urlParam ID: %v", err)
+		return 0, fmt.Errorf("could not parse urlParam %s: %v", name, err)
 	}
 	return intID, nil
 }

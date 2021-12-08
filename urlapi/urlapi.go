@@ -76,7 +76,7 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 	if err := u.enableEntityHandlers(); err != nil {
 		return err
 	}
-	if err := u.enableVoterHandlers(); err != nil {
+	if err := u.enablePublicHandlers(); err != nil {
 		return err
 	}
 	return nil
@@ -119,9 +119,11 @@ func (u *URLAPI) RevokeToken(token string) {
 func sendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {
 	data, err := json.Marshal(response)
 	if err != nil {
+		log.Errorf("error marshaling JSON: %v", err)
 		return fmt.Errorf("error marshaling JSON: %w", err)
 	}
 	if err = ctx.Send(data); err != nil {
+		log.Error(err)
 		return err
 	}
 	return nil

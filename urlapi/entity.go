@@ -65,22 +65,6 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/entities/{entityId}/processes/*",
-		"GET",
-		bearerstdapi.MethodAccessTypePrivate,
-		u.listProcessesHandler,
-	); err != nil {
-		return err
-	}
-	if err := u.api.RegisterMethod(
-		"/priv/processes/{processId}",
-		"GET",
-		bearerstdapi.MethodAccessTypePrivate,
-		u.getProcessHandler,
-	); err != nil {
-		return err
-	}
-	if err := u.api.RegisterMethod(
 		"/priv/censuses",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
@@ -162,40 +146,48 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	var metaURI string
 	// var organizationMetadataKey []byte
 	if req, err = util.UnmarshalRequest(msg); err != nil {
+		log.Error(err)
 		return err
 	}
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+		log.Error(err)
 		return err
 	}
 	orgApiToken = util.GenerateBearerToken()
 	if orgApiKey, err = hex.DecodeString(orgApiToken); err != nil {
+		log.Errorf("could not decode org api token: %v", err)
 		return fmt.Errorf("could not decode org api token: %v", err)
 	}
 
 	ethSignKeys := ethereum.NewSignKeys()
 	if err = ethSignKeys.Generate(); err != nil {
+		log.Errorf("could not generate ethereum keys: %v", err)
 		return fmt.Errorf("could not generate ethereum keys: %v", err)
 	}
 
 	// Encrypt private key to store in db
 	_, priv := ethSignKeys.HexString()
 	if entityPrivKey, err = hex.DecodeString(priv); err != nil {
+		log.Errorf("could not decode entity private key: %v", err)
 		return fmt.Errorf("could not decode entity private key: %v", err)
 	}
 
 	if encryptedPrivKey, err = util.EncryptSymmetric(entityPrivKey, orgApiKey); err != nil {
+		log.Errorf("could not encrypt organization private key: %v", err)
 		return fmt.Errorf("could not encrypt organization private key: %v", err)
 	}
 
 	// Post metadata to ipfs
 	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description,
 		req.Header, req.Name, ethSignKeys.Address().Bytes()); err != nil {
+		log.Error(err)
 		return err
 	}
 
 	// Register organization to database
 	if _, err = u.db.CreateOrganization(integratorPrivKey, ethSignKeys.Address().Bytes(),
 		encryptedPrivKey, 0, 0, orgApiToken, req.Header, req.Avatar); err != nil {
+		log.Errorf("could not create organization: %v", err)
 		return fmt.Errorf("could not create organization: %v", err)
 	}
 	u.RegisterToken(orgApiToken, 0)
@@ -203,6 +195,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
 		// TODO enable this
+		// log.Errorf("could not create account on the vochain: %v", err)
 		// return fmt.Errorf("could not create account on the vochain: %v", err)
 		log.Warnf("could not create account on the vochain: %v", err)
 	}
@@ -223,6 +216,7 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var organization *types.Organization
 	// authenticate integrator has permission to edit this entity
 	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -247,10 +241,12 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	var entityID []byte
 	// authenticate integrator has permission to edit this entity
 	if integratorPrivKey, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Error(err)
 		return err
 	}
 
 	if err = u.db.DeleteOrganization(integratorPrivKey, entityID); err != nil {
+		log.Error(err)
 		return err
 	}
 	u.RevokeToken(organization.PublicAPIToken)
@@ -269,6 +265,7 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	// authenticate integrator has permission to edit this entity
 	if integratorPrivKey, entityID, _,
 		err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -276,6 +273,7 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	resp.APIKey = util.GenerateBearerToken()
 	if _, err = u.db.UpdateOrganizationPublicAPIToken(
 		integratorPrivKey, entityID, resp.APIKey); err != nil {
+		log.Error(err)
 		return err
 	}
 	resp.Ok = true
@@ -295,10 +293,13 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 
 	// authenticate integrator has permission to edit this entity
 	if _, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Error(err)
 		return err
 	}
 
-	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description, req.Header, req.Name, entityID); err != nil {
+	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar,
+		req.Description, req.Header, req.Name, entityID); err != nil {
+		log.Error(err)
 		return err
 	}
 
@@ -332,36 +333,32 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	} else if strings.HasSuffix(ctx.Request.URL.Path, "blind") {
 		blind = true
 	} else {
+		log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
 		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
 	}
 
 	// authenticate integrator has permission to edit this entity
 	if integratorPrivKey, entityID, _, err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Error(err)
 		return err
 	}
 
 	if req, err = util.UnmarshalRequest(msg); err != nil {
+		log.Error(err)
 		return err
 	}
 
 	// TODO create election on the vochain
 
-	u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, req.Census, big.Int{}, big.Int{}, req.Confidential, req.HiddenResults)
+	if _, err = u.db.CreateElection(integratorPrivKey, entityID, []byte{}, req.Title, req.Census, big.Int{}, big.Int{}, req.Confidential, req.HiddenResults); err != nil {
+		log.Error(err)
+		return err
+	}
 	// TODO use correctly blind parameter
 	log.Debugf("blind %w", blind)
 	resp.ProcessID = processID
 	resp.Ok = true
 	return sendResponse(resp, ctx)
-}
-
-// GET https://server/v1/priv/entities/<entityId>/processes/signed
-// GET https://server/v1/priv/entities/<entityId>/processes/blind
-// GET https://server/v1/priv/entities/<entityId>/processes/active
-// GET https://server/v1/priv/entities/<entityId>/processes/ended
-// GET https://server/v1/priv/entities/<entityId>/processes/upcoming
-// listProcessesHandler lists signed, blind, active, ended, or upcoming processes
-func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
 // GET https://server/v1/priv/processes/<processId>
@@ -428,7 +425,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
 		return nil, nil, nil, err
 	}
-	if entityID, err = util.GetBytesID(ctx); err != nil {
+	if entityID, err = util.GetBytesID(ctx, "id"); err != nil {
 		return nil, nil, nil, err
 	}
 	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
