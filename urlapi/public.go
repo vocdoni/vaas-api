@@ -95,16 +95,7 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 	// Parse all the information
 	// resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
 
-	// data, err := json.Marshal(resp)
-	// if err != nil {
-	// 	log.Errorf("error marshaling JSON: %v", err)
-	// 	return fmt.Errorf("error marshaling JSON: %w", err)
-	// }
-	// if err = ctx.Send(data); err != nil {
-	// 	log.Error(err)
-	// 	return err
-	// }
-	// return nil
+	// return sendResponse(resp, ctx)
 }
 
 // GET https://server/v1/pub/processes/<processId>

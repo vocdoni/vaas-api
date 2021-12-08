@@ -116,7 +116,7 @@ func (u *URLAPI) RevokeToken(token string) {
 	u.api.DelAuthToken(token)
 }
 
-func sendResponse(response types.APIResponse, ctx *httprouter.HTTPContext) error {
+func sendResponse(response interface{}, ctx *httprouter.HTTPContext) error {
 	data, err := json.Marshal(response)
 	if err != nil {
 		log.Errorf("error marshaling JSON: %v", err)
