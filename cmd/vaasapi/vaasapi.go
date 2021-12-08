@@ -14,6 +14,7 @@ import (
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -237,17 +238,16 @@ func main() {
 				log.Fatalf("Error retrieving default plan: %w", err)
 			}
 			// No default plan exists, create it
-			_, err = db.CreatePlan("default", cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount)
+			plan = new(types.QuotaPlan)
+			plan.ID, err = db.CreatePlan("default", cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount)
 			if err != nil {
 				log.Fatalf("Error creating default plan: %w", err)
 			}
 		}
-		if plan != nil {
-			// A default plan exists, update the values
-			count, err := db.UpdatePlan(plan.ID, cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
-			if err != nil || count != 1 {
-				log.Fatalf("Error updating default plan: %w", err)
-			}
+		// A default plan exists, update the values
+		count, err := db.UpdatePlan(plan.ID, cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
+		if err != nil || count != 1 {
+			log.Fatalf("Error updating default plan: %w", err)
 		}
 	}
 
