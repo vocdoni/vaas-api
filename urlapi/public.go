@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
@@ -15,12 +16,20 @@ import (
 	"go.vocdoni.io/proto/build/go/models"
 )
 
-func (u *URLAPI) enableVoterHandlers() error {
+func (u *URLAPI) enablePublicHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/pub/censuses/{censusId}/token",
 		"POST",
-		bearerstdapi.MethodAccessTypeQuota,
+		bearerstdapi.MethodAccessTypePublic,
 		u.registerPublicKeyHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
+		"/priv/entities/{entityId}/processes/*",
+		"GET",
+		bearerstdapi.MethodAccessTypePublic,
+		u.listProcessesHandler,
 	); err != nil {
 		return err
 	}
@@ -35,7 +44,7 @@ func (u *URLAPI) enableVoterHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/pub/processes/{processId}/auth/{signature}",
 		"GET",
-		bearerstdapi.MethodAccessTypeQuota,
+		bearerstdapi.MethodAccessTypePublic,
 		u.getProcessInfoConfidentialHandler,
 	); err != nil {
 		return err
@@ -46,6 +55,16 @@ func (u *URLAPI) enableVoterHandlers() error {
 // POST https://server/v1/pub/censuses/<censusId>/token
 // registerPublicKeyHandler registers a voter's public key with a census token
 func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+}
+
+// GET https://server/v1/priv/entities/<entityId>/processes/signed
+// GET https://server/v1/priv/entities/<entityId>/processes/blind
+// GET https://server/v1/priv/entities/<entityId>/processes/active
+// GET https://server/v1/priv/entities/<entityId>/processes/ended
+// GET https://server/v1/priv/entities/<entityId>/processes/upcoming
+// listProcessesHandler lists signed, blind, active, ended, or upcoming processes
+func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
@@ -82,8 +101,8 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 		ProcessID:        processId,
 		Title:            "test election",
 		CensusID:         3,
-		StartBlock:       *big.NewInt(2090900),
-		EndBlock:         *big.NewInt(33423),
+		StartBlock:       *big.NewInt(1518551),
+		EndBlock:         *big.NewInt(30909000),
 		Confidential:     true,
 		HiddenResults:    true,
 	}
@@ -114,7 +133,7 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 
 	// Parse all the information
 	log.Debugf("parse process info")
-	resp = parseProcessInfo(process, vochainProcess, results, processMetadata)
+	resp = u.parseProcessInfo(process, vochainProcess, results, processMetadata)
 
 	log.Debugf("send resp %v", resp)
 	data, err := json.Marshal(resp)
@@ -132,14 +151,15 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 // GET https://server/v1/pub/processes/<processId>/auth/<signature>
 // getProcessInfoConfidentialHandler gets process info, including private metadata,
 //  checking the voter's signature for inclusion in the census
-func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
 	log.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
 // TODO add listProcessesInfoHandler
 
-func parseProcessInfo(db *types.Election, vc *indexertypes.Process,
+func (u *URLAPI) parseProcessInfo(db *types.Election, vc *indexertypes.Process,
 	results *types.VochainResults, meta *types.ProcessMetadata) (process types.APIProcess) {
 	var err error
 
@@ -190,12 +210,67 @@ func parseProcessInfo(db *types.Election, vc *indexertypes.Process,
 	process.StartBlock = db.StartBlock.String()
 	process.EndBlock = db.EndBlock.String()
 
+	if process.StartDate, err = u.estimateBlockTime(uint32(db.StartBlock.Int64())); err != nil {
+		log.Warnf("could not estimate startDate at %s: %v", db.StartBlock.String(), err)
+	}
+
+	if process.EndDate, err = u.estimateBlockTime(uint32(db.EndBlock.Int64())); err != nil {
+		log.Warnf("could not estimate endDate at %s: %v", db.EndBlock.String(), err)
+	}
+
 	process.ResultsAggregation = meta.Results.Aggregation
 	process.ResultsDisplay = meta.Results.Display
 
 	process.Ok = true
 
 	return process
+}
+
+func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
+	currentHeight, err := u.vocClient.GetCurrentBlock()
+	if err != nil {
+		return time.Time{}, err
+	}
+	diffHeight := int64(height) - int64(currentHeight)
+
+	if diffHeight < 0 {
+		blk, err := u.vocClient.GetBlock(height)
+		if err != nil {
+			return time.Time{}, err
+		}
+		if blk == nil {
+			return time.Time{}, fmt.Errorf("cannot get block height %d", height)
+		}
+		return blk.Timestamp, nil
+	}
+
+	times, err := u.vocClient.GetBlockTimes()
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	getMaxTimeFrom := func(i int) uint32 {
+		for ; i >= 0; i-- {
+			if times[i] != 0 {
+				return uint32(times[i])
+			}
+		}
+		return 10 // fallback
+	}
+
+	t := uint32(0)
+	switch {
+	// if less than around 15 minutes missing
+	case diffHeight < 100:
+		t = getMaxTimeFrom(1)
+	// if less than around 6 hours missing
+	case diffHeight < 1000:
+		t = getMaxTimeFrom(3)
+	// if less than around 6 hours missing
+	case diffHeight >= 1000:
+		t = getMaxTimeFrom(4)
+	}
+	return time.Now().Add(time.Duration(diffHeight*int64(t)) * time.Millisecond), nil
 }
 
 func aggregateResults(meta *types.ProcessMetadata,

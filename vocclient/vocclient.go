@@ -59,6 +59,30 @@ func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
 	return *resp.Height, nil
 }
 
+func (c *Client) GetBlockTimes() (blockTimes [5]int32, _ error) {
+	var req api.APIrequest
+	req.Method = "getBlockStatus"
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return [5]int32{}, err
+	}
+	if resp.BlockTime == nil {
+		return [5]int32{}, fmt.Errorf("blockTime is nil")
+	}
+	return *resp.BlockTime, nil
+}
+
+func (c *Client) GetBlock(height uint32) (*indexertypes.BlockMetadata, error) {
+	var req api.APIrequest
+	req.Method = "getBlock"
+	req.Height = height
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Block, nil
+}
+
 func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	var req api.APIrequest
 	req.Method = "getProcessInfo"

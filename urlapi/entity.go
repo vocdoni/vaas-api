@@ -65,22 +65,6 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/entities/{entityId}/processes/*",
-		"GET",
-		bearerstdapi.MethodAccessTypePrivate,
-		u.listProcessesHandler,
-	); err != nil {
-		return err
-	}
-	if err := u.api.RegisterMethod(
-		"/priv/processes/{processId}",
-		"GET",
-		bearerstdapi.MethodAccessTypePrivate,
-		u.getProcessHandler,
-	); err != nil {
-		return err
-	}
-	if err := u.api.RegisterMethod(
 		"/priv/censuses",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
@@ -375,16 +359,6 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	resp.ProcessID = processID
 	resp.Ok = true
 	return sendResponse(resp, ctx)
-}
-
-// GET https://server/v1/priv/entities/<entityId>/processes/signed
-// GET https://server/v1/priv/entities/<entityId>/processes/blind
-// GET https://server/v1/priv/entities/<entityId>/processes/active
-// GET https://server/v1/priv/entities/<entityId>/processes/ended
-// GET https://server/v1/priv/entities/<entityId>/processes/upcoming
-// listProcessesHandler lists signed, blind, active, ended, or upcoming processes
-func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
 // GET https://server/v1/priv/processes/<processId>

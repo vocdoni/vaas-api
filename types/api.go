@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"time"
 
 	"go.vocdoni.io/dvote/types"
 )
@@ -51,7 +52,6 @@ type APIResponse struct {
 // APIProcess is the response struct for a getProcess request
 type APIProcess struct {
 	Description        string         `json:"description,omitempty"`
-	EndBlock           string         `json:"end_block,omitempty"`
 	EntityID           types.HexBytes `json:"entityId,omitempty"`
 	Header             string         `json:"header,omitempty"`
 	Ok                 bool           `json:"ok,omitempty"`
@@ -60,12 +60,17 @@ type APIProcess struct {
 	Results            []Result       `json:"results,omitempty"`
 	ResultsAggregation string         `json:"results_aggregation,omitempty"`
 	ResultsDisplay     string         `json:"results_display,omitempty"`
-	StartBlock         string         `json:"start_block,omitempty"`
-	Status             string         `json:"status,omitempty"`
-	StreamURI          string         `json:"stream_uri,omitempty"`
-	Title              string         `json:"title,omitempty"`
-	Type               string         `json:"type,omitempty"`
-	VoteCount          uint32         `json:"vote_count,omitempty"`
+	// Estimated start/end dates
+	EndDate   time.Time `json:"end_date,omitempty"`
+	StartDate time.Time `json:"start_date,omitempty"`
+	// Start/end blocks are source of truth
+	EndBlock   string `json:"end_block,omitempty"`
+	StartBlock string `json:"start_block,omitempty"`
+	Status     string `json:"status,omitempty"`
+	StreamURI  string `json:"stream_uri,omitempty"`
+	Title      string `json:"title,omitempty"`
+	Type       string `json:"type,omitempty"`
+	VoteCount  uint32 `json:"vote_count,omitempty"`
 }
 
 type ProcessMetadata struct {
@@ -99,6 +104,16 @@ type QuestionMeta struct {
 type Choice struct {
 	Title LanguageString `json:"title,omitempty"`
 	Value uint32         `json:"value,omitempty"`
+}
+
+type ProcessSummary struct {
+	ProcessID   types.HexBytes `json:"processId,omitempty"`
+	Title       string
+	Description string
+	Header      string
+	Status      string    `json:"status,omitempty"`
+	StartDate   time.Time `json:"startDate,omitempty"`
+	EndDate     time.Time `json:"endDate,omitempty"`
 }
 
 type EntityMetadata struct {

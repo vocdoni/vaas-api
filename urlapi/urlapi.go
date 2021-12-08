@@ -76,7 +76,7 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 	if err := u.enableEntityHandlers(); err != nil {
 		return err
 	}
-	if err := u.enableVoterHandlers(); err != nil {
+	if err := u.enablePublicHandlers(); err != nil {
 		return err
 	}
 	return nil
