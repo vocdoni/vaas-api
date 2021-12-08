@@ -39,6 +39,7 @@ type APIResponse struct {
 	ContentURI   string         `json:"contentUri,omitempty"`
 	CspPubKey    types.HexBytes `json:"cspPubKey,omitempty"`
 	CspUrlPrefix string         `json:"cspUrlPrefix,omitempty"`
+	Description  string         `json:"description,omitempty"`
 	EndBlock     []byte         `json:"end_block,omitempty"`
 	EntityID     types.HexBytes `json:"entityId,omitempty"`
 	Header       string         `json:"header,omitempty"`

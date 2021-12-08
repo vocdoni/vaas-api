@@ -199,7 +199,6 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		log.Errorf("could not create organization: %v", err)
 		return fmt.Errorf("could not create organization: %v", err)
 	}
-	u.RegisterToken(orgApiToken, 0)
 
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
@@ -221,18 +220,31 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var err error
 	var resp types.APIResponse
 	var organization *types.Organization
+	var organizationMetadata *types.EntityMetadata
+	var metaUri string
 	// authenticate integrator has permission to edit this entity
 	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
 		log.Error(err)
 		return err
 	}
 
-	// TODO get metadata if needed
+	// Fetch process from vochain
+	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Fetch metadata
+	if organizationMetadata, err = u.vocClient.FetchOrganizationMetadata(metaUri); err != nil {
+		log.Error(err)
+		return err
+	}
 
 	resp.APIKey = organization.PublicAPIToken
-	// resp.Name = organization.Name
-	resp.Avatar = organization.AvatarURI
-	resp.Header = organization.HeaderURI
+	resp.Name = organizationMetadata.Name["default"]
+	resp.Description = organizationMetadata.Description["default"]
+	resp.Avatar = organizationMetadata.Media.Avatar
+	resp.Header = organizationMetadata.Media.Header
 	resp.Ok = true
 	return sendResponse(resp, ctx)
 }

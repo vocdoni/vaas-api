@@ -62,7 +62,7 @@ func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdat
 // GET https://server/v1/priv/entities/<entityId>/processes/active
 // GET https://server/v1/priv/entities/<entityId>/processes/ended
 // GET https://server/v1/priv/entities/<entityId>/processes/upcoming
-// listProcessesHandler lists signed, blind, active, ended, or upcoming processes
+// listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }

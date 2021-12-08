@@ -94,6 +94,23 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	return resp.Process, nil
 }
 
+func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
+	var req api.APIrequest
+	req.Method = "getAccount"
+	req.EntityId = entityId
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return "", 0, 0, err
+	}
+	if resp.Balance == nil {
+		resp.Balance = new(uint64)
+	}
+	if resp.Nonce == nil {
+		resp.Nonce = new(uint32)
+	}
+	return resp.InfoURI, *resp.Balance, *resp.Nonce, nil
+}
+
 func (c *Client) GetResults(pid []byte) (results *apitypes.VochainResults, _ error) {
 	var req api.APIrequest
 	results = new(apitypes.VochainResults)
@@ -173,6 +190,17 @@ func (c *Client) FetchProcessMetadata(URI string) (process *apitypes.ProcessMeta
 		return nil, err
 	}
 	return process, nil
+}
+
+func (c *Client) FetchOrganizationMetadata(URI string) (entity *apitypes.EntityMetadata, _ error) {
+	content, err := c.FetchFile(URI)
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(content, &entity); err != nil {
+		return nil, err
+	}
+	return entity, nil
 }
 
 func (c *Client) FetchFile(URI string) (content []byte, _ error) {
