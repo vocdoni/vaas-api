@@ -211,6 +211,9 @@ func (c *Client) FetchFile(URI string) (content []byte, _ error) {
 	if err != nil {
 		return []byte{}, fmt.Errorf("could not fetch file %s: %v", URI, err)
 	}
+	if !resp.Ok {
+		return []byte{}, fmt.Errorf(resp.Message)
+	}
 	return resp.Content, nil
 }
 

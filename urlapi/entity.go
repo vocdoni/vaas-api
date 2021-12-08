@@ -41,7 +41,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/entities/{id}/key",
+		"/priv/account/entities/{entityId}/key",
 		"PATCH",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.resetOrganizationKeyHandler,
@@ -456,11 +456,11 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
 		return nil, nil, nil, err
 	}
-	if entityID, err = util.GetBytesID(ctx, "id"); err != nil {
+	if entityID, err = util.GetBytesID(ctx, "entityId"); err != nil {
 		return nil, nil, nil, err
 	}
 	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db", entityID)
+		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db: %v", entityID, err)
 	}
 	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
 		return nil, nil, nil, fmt.Errorf("entity %X does not belong to this integrator", entityID)
