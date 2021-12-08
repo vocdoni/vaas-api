@@ -21,6 +21,14 @@ type Integrator struct {
 	CspUrlPrefix string `json:"cspUrlPrefix" db:"csp_url_prefix"`
 	CspPubKey    []byte `json:"cspPubKey" db:"csp_pub_key"` // CSP compressed eth public key
 }
+
+type QuotaPlan struct {
+	CreatedUpdated
+	ID              int    `json:"id" db:"id"`
+	Name            string `json:"name" db:"name"`
+	MaxCensusSize   int    `json:"maxCensusSize" db:"max_census_size"`
+	MaxProcessCount int    `json:"maxProcessCount" db:"max_process_count"`
+}
 type Organization struct {
 	CreatedUpdated
 	ID                int    `json:"id" db:"id"`

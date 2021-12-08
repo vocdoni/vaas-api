@@ -17,7 +17,14 @@ type Database interface {
 	DeleteIntegrator(id int) error
 	CountIntegrators() (int, error)
 	GetIntegratorApiKeysList() ([][]byte, error)
-	// Entity
+	// Plans
+	CreatePlan(name string, maxCensusSize, maxProcessCount int) (int, error)
+	GetPlan(id int) (*types.QuotaPlan, error)
+	GetPlanByName(name string) (*types.QuotaPlan, error)
+	DeletePlan(id int) error
+	UpdatePlan(id, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error)
+	GetPlansList() ([]types.QuotaPlan, error)
+	// Organization
 	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error)
 	UpdateOrganization(integratorAPIKey, ethAddress []byte, planID, apiQuota int, headerUri, avatarUri string) (int, error)
 	UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCicpher []byte) (int, error)

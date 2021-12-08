@@ -27,6 +27,14 @@ type API struct {
 	}
 }
 
+type Plan struct {
+	//  Default name would be "Default"
+	// MaxCensusSize the number of censuses allowed
+	MaxCensusSize int
+	// MaxProccessCount the number of processes allowed
+	MaxProccessCount int
+}
+
 type Error struct {
 	// Critical indicates if the error encountered is critical and the app must be stopped
 	Critical bool
@@ -62,22 +70,25 @@ type Vaas struct {
 	AdminToken string
 	// Urls to use for gateway api
 	GatewayUrls []string
+	// Plans to be imported
+	DefaultPlan *Plan
 	// Migration options
 	Migrate *Migrate
 }
 
 func (v *Vaas) String() string {
-	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, Migrate: %+v",
-		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKey, v.GatewayUrls, *v.Migrate)
+	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, Plan: %v, Migrate: %+v",
+		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKey, v.GatewayUrls, *v.DefaultPlan, *v.Migrate)
 }
 
 // NewVaasConfig initializes the fields in the config stuct
 func NewVaasConfig() *Vaas {
 	return &Vaas{
-		API:     new(API),
-		DB:      new(DB),
-		Migrate: new(Migrate),
-		Metrics: new(MetricsCfg),
+		API:         new(API),
+		DB:          new(DB),
+		Migrate:     new(Migrate),
+		Metrics:     new(MetricsCfg),
+		DefaultPlan: new(Plan),
 	}
 }
 

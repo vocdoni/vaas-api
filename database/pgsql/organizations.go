@@ -23,6 +23,15 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 			return 0, fmt.Errorf("createOrganization DB error: %w", err)
 		}
 	}
+	// Assing default plan if no plan assinged
+	if planID < 1 {
+		plan, err := d.GetPlanByName("default")
+		if err != nil {
+			log.Errorf("Unable to retrieve default plan %x", err)
+			return 0, fmt.Errorf("Unable to retrieve default plan %x", err)
+		}
+		planID = plan.ID
+	}
 	organization := &types.Organization{
 		EthAddress:        ethAddress,
 		IntegratorID:      integrator.ID,
@@ -31,6 +40,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 		HeaderURI:         headerUri,
 		AvatarURI:         avatarUri,
 		PublicAPIToken:    publicApiToken,
+		QuotaPlanID:       planID,
 		PublicAPIQuota:    publiApiQuota,
 		CreatedUpdated: types.CreatedUpdated{
 			CreatedAt: time.Now(),
@@ -65,7 +75,7 @@ func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.
 	var organization types.Organization
 	selectOrganization := `SELECT id , integrator_id, integrator_api_key, eth_address, eth_priv_key_cipher, 
 								header_uri, avatar_uri, public_api_token, quota_plan_id,
-								public_api_quota created_at, updated_at  
+								public_api_quota, created_at, updated_at  
 							FROM organizations WHERE integrator_api_key=$1 AND eth_address=$2`
 	row := d.db.QueryRowx(selectOrganization, integratorAPIKey, ethAddress)
 	err := row.StructScan(&organization)

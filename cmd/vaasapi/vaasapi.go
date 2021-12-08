@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"os/signal"
@@ -52,6 +53,8 @@ func newConfig() (*config.Vaas, config.Error) {
 	cfg.DB.Password = *flag.String("dbPassword", "password", "DB password")
 	cfg.DB.Dbname = *flag.String("dbName", "database", "DB database name")
 	cfg.DB.Sslmode = *flag.String("dbSslmode", "prefer", "DB postgres sslmode")
+	cfg.DefaultPlan.MaxCensusSize = *flag.Int("defaultPlanCensusSize", 500, "Default census size (500)")
+	cfg.DefaultPlan.MaxProccessCount = *flag.Int("defaultPlanProccessCoun", 10, "Default process count (10)")
 	cfg.Migrate.Action = *flag.String("migrateAction", "", "Migration action (up,down,status)")
 	// metrics
 	cfg.Metrics.Enabled = *flag.Bool("metricsEnabled", true, "enable prometheus metrics")
@@ -90,6 +93,8 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("db.password", flag.Lookup("dbPassword"))
 	viper.BindPFlag("db.dbName", flag.Lookup("dbName"))
 	viper.BindPFlag("db.sslMode", flag.Lookup("dbSslmode"))
+	viper.BindPFlag("defaultPlan.censusSize", flag.Lookup("defaultPlanCensusSize"))
+	viper.BindPFlag("defaultPlan.ProcessCount", flag.Lookup("defaultPlanProcessCount"))
 	viper.BindPFlag("migrate.action", flag.Lookup("migrateAction"))
 	// metrics
 	viper.BindPFlag("metrics.enabled", flag.Lookup("metricsEnabled"))
@@ -222,6 +227,26 @@ func main() {
 	// and if not apply them
 	if err := pgsql.Migrator("upSync", db); err != nil {
 		log.Fatal(err)
+	}
+
+	// Create default plan if not exists AND/OR update its values
+	if cfg.DefaultPlan.MaxCensusSize != 0 || cfg.DefaultPlan.MaxProccessCount != 0 {
+		plan, err := db.GetPlanByName("default")
+		if err != nil {
+			if err != sql.ErrNoRows {
+				log.Fatalf("Error retrieving default plan: %w", err)
+			}
+			// No default plan exists, create it
+			_, err = db.CreatePlan("default", cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount)
+			if err != nil {
+				log.Fatalf("Error creating default plan: %w", err)
+			}
+		}
+		// A default plan exists, update the values
+		count, err := db.UpdatePlan(plan.ID, cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
+		if err != nil || count != 1 {
+			log.Fatalf("Error updating default plan: %w", err)
+		}
 	}
 
 	// Router

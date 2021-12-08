@@ -33,10 +33,11 @@ func CreateOrganizations(size int) []*types.Organization {
 		// retrieve entity ID
 		mp[i] = &types.Organization{
 			EthAddress:        signers[i].Address().Bytes(),
-			EthPrivKeyCicpher: []byte("\xff"),
+			EthPrivKeyCicpher: []byte("ff"),
 			HeaderURI:         "https://",
 			AvatarURI:         "https://",
 			PublicAPIToken:    signers[i].Address().String(),
+			PublicAPIQuota:    1000,
 		}
 	}
 	return mp

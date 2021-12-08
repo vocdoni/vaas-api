@@ -56,7 +56,7 @@ func (d *Database) GetIntegrator(id int) (*types.Integrator, error) {
 
 func (d *Database) GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, error) {
 	var integrator types.Integrator
-	selectIntegrator := `SELECT secret_api_key, name, csp_url_prefix, csp_pub_key, created_at, updated_at 
+	selectIntegrator := `SELECT id, secret_api_key, name, csp_url_prefix, csp_pub_key, created_at, updated_at 
 						FROM integrators WHERE secret_api_key=$1`
 	row := d.db.QueryRowx(selectIntegrator, secretApiKey)
 	err := row.StructScan(&integrator)
