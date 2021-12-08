@@ -239,15 +239,18 @@ func main() {
 			}
 			// No default plan exists, create it
 			plan = new(types.QuotaPlan)
-			plan.ID, err = db.CreatePlan("default", cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount)
+			plan.ID, err = db.CreatePlan("default",
+				cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount)
 			if err != nil {
 				log.Fatalf("Error creating default plan: %w", err)
 			}
-		}
-		// A default plan exists, update the values
-		count, err := db.UpdatePlan(plan.ID, cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
-		if err != nil || count != 1 {
-			log.Fatalf("Error updating default plan: %w", err)
+		} else {
+			// A default plan exists, update the values
+			count, err := db.UpdatePlan(plan.ID,
+				cfg.DefaultPlan.MaxCensusSize, cfg.DefaultPlan.MaxProccessCount, "")
+			if err != nil || count != 1 {
+				log.Fatalf("Error updating default plan: %w", err)
+			}
 		}
 	}
 
