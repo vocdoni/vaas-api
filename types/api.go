@@ -39,6 +39,7 @@ type APIResponse struct {
 	ContentURI   string         `json:"contentUri,omitempty"`
 	CspPubKey    types.HexBytes `json:"cspPubKey,omitempty"`
 	CspUrlPrefix string         `json:"cspUrlPrefix,omitempty"`
+	Description  string         `json:"description,omitempty"`
 	EndBlock     []byte         `json:"end_block,omitempty"`
 	EntityID     types.HexBytes `json:"entityId,omitempty"`
 	Header       string         `json:"header,omitempty"`
@@ -117,10 +118,20 @@ type ProcessSummary struct {
 }
 
 type EntityMetadata struct {
-	Avatar      string `json:"avatar"`
-	Description string `json:"description"`
-	Header      string `json:"header"`
-	Name        string `json:"name"`
+	Version     string         `json:"version,omitempty"`
+	Languages   []string       `json:"languages,omitempty"`
+	Name        LanguageString `json:"name,omitempty"`
+	Description LanguageString `json:"description,omitempty"`
+	NewsFeed    LanguageString `json:"news_feed,omitempty"`
+	Media       EntityMedia    `json:"media,omitempty"`
+	Meta        interface{}    `json:"meta,omitempty"`
+	Actions     interface{}    `json:"actions,omitempty"`
+}
+
+type EntityMedia struct {
+	Avatar string `json:"avatar,omitempty"`
+	Header string `json:"header,omitempty"`
+	Logo   string `json:"logo,omitempty"`
 }
 
 type VochainResults struct {

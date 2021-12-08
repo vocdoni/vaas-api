@@ -41,7 +41,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/entities/{id}/key",
+		"/priv/account/entities/{entityId}/key",
 		"PATCH",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.resetOrganizationKeyHandler,
@@ -178,8 +178,17 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// Post metadata to ipfs
-	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar, req.Description,
-		req.Header, req.Name, ethSignKeys.Address().Bytes()); err != nil {
+	if metaURI, err = u.vocClient.SetEntityMetadata(types.EntityMetadata{
+		Version:     "1.0",
+		Languages:   []string{},
+		Name:        map[string]string{"default": req.Name},
+		Description: map[string]string{"default": req.Description},
+		NewsFeed:    map[string]string{},
+		Media: types.EntityMedia{
+			Avatar: req.Avatar,
+			Header: req.Header,
+		},
+	}, ethSignKeys.Address().Bytes()); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -190,14 +199,11 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		log.Errorf("could not create organization: %v", err)
 		return fmt.Errorf("could not create organization: %v", err)
 	}
-	u.RegisterToken(orgApiToken, 0)
 
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
-		// TODO enable this
-		// log.Errorf("could not create account on the vochain: %v", err)
-		// return fmt.Errorf("could not create account on the vochain: %v", err)
-		log.Warnf("could not create account on the vochain: %v", err)
+		log.Errorf("could not create account on the vochain: %v", err)
+		return fmt.Errorf("could not create account on the vochain: %v", err)
 	}
 
 	resp.APIKey = orgApiToken
@@ -214,18 +220,31 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var err error
 	var resp types.APIResponse
 	var organization *types.Organization
+	var organizationMetadata *types.EntityMetadata
+	var metaUri string
 	// authenticate integrator has permission to edit this entity
 	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
 		log.Error(err)
 		return err
 	}
 
-	// TODO get metadata if needed
+	// Fetch process from vochain
+	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Fetch metadata
+	if organizationMetadata, err = u.vocClient.FetchOrganizationMetadata(metaUri); err != nil {
+		log.Error(err)
+		return err
+	}
 
 	resp.APIKey = organization.PublicAPIToken
-	// resp.Name = organization.Name
-	resp.Avatar = organization.AvatarURI
-	resp.Header = organization.HeaderURI
+	resp.Name = organizationMetadata.Name["default"]
+	resp.Description = organizationMetadata.Description["default"]
+	resp.Avatar = organizationMetadata.Media.Avatar
+	resp.Header = organizationMetadata.Media.Header
 	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
@@ -297,15 +316,27 @@ func (u *URLAPI) setEntityMetadataHandler(msg *bearerstdapi.BearerStandardAPIdat
 		return err
 	}
 
-	if metaURI, err = u.vocClient.SetEntityMetadata(req.Avatar,
-		req.Description, req.Header, req.Name, entityID); err != nil {
+	// Post metadata to ipfs
+	if metaURI, err = u.vocClient.SetEntityMetadata(types.EntityMetadata{
+		Version:     "1.0",
+		Languages:   []string{},
+		Name:        map[string]string{"default": req.Name},
+		Description: map[string]string{"default": req.Description},
+		NewsFeed:    map[string]string{},
+		Media: types.EntityMedia{
+			Avatar: req.Avatar,
+			Header: req.Header,
+		},
+	}, entityID); err != nil {
 		log.Error(err)
 		return err
 	}
 
 	// Update organization in the db to make sure it matches the metadata
-	u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
-		organization.QuotaPlanID, organization.PublicAPIQuota, req.Header, req.Avatar)
+	if _, err = u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
+		organization.QuotaPlanID, organization.PublicAPIQuota, req.Header, req.Avatar); err != nil {
+		return err
+	}
 
 	// TODO update the entity on the Vochain to reflect the new IPFS uri
 
@@ -425,11 +456,11 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
 		return nil, nil, nil, err
 	}
-	if entityID, err = util.GetBytesID(ctx, "id"); err != nil {
+	if entityID, err = util.GetBytesID(ctx, "entityId"); err != nil {
 		return nil, nil, nil, err
 	}
 	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db", entityID)
+		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db: %v", entityID, err)
 	}
 	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
 		return nil, nil, nil, fmt.Errorf("entity %X does not belong to this integrator", entityID)
