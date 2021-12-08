@@ -92,7 +92,7 @@ func (d *Database) UpdatePlan(id, newMaxCensusSize, neWMaxProcessCount int, newN
 				WHERE (id = :id )
 				AND  (:name IS DISTINCT FROM name 
 					OR :max_process_count IS DISTINCT FROM max_process_count 					
-					OR TEXT(:max_census_size) IS DISTINCT FROM TEXT(max_census_size)
+					OR :max_census_size IS DISTINCT FROM max_census_size
 					)`
 	result, err := d.db.NamedExec(update, integrator)
 	if err != nil {
