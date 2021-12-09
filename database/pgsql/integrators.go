@@ -7,6 +7,7 @@ import (
 	_ "github.com/jackc/pgx/stdlib"
 
 	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/dvote/log"
 )
 
 func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name, email string) (int, error) {
@@ -28,15 +29,18 @@ func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, integrator)
 	if err != nil {
-		return 0, fmt.Errorf("error creating integrator: %w", err)
+		log.Errorf("error creating integrator: %v", err)
+		return 0, fmt.Errorf("error creating integrator")
 	}
 	if !result.Next() {
-		return 0, fmt.Errorf("error creating organization: there is no next result row")
+		log.Errorf("error creating integrator: there is no next result row")
+		return 0, fmt.Errorf("error creating integrator: there is no next result row")
 	}
 	var id int
 	err = result.Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error creating integrator: %w", err)
+		log.Errorf("error creating integrator: %v", err)
+		return 0, fmt.Errorf("error creating integrator")
 	}
 	return id, nil
 }
@@ -71,12 +75,12 @@ func (d *Database) DeleteIntegrator(id int) error {
 	deleteQuery := `DELETE FROM integrators WHERE id = $1`
 	result, err := d.db.Exec(deleteQuery, id)
 	if err != nil {
-		return fmt.Errorf("error deleting integrator: %w", err)
+		return fmt.Errorf("error deleting integrator: %v", err)
 	}
 	// var rows int64
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("error veryfying deleted integrator: %w", err)
+		return fmt.Errorf("error veryfying deleted integrator: %v", err)
 	}
 	if rows != 1 {
 		return fmt.Errorf("nothing to delete")
@@ -99,11 +103,11 @@ func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newName, newCsp
 					)`
 	result, err := d.db.NamedExec(update, integrator)
 	if err != nil {
-		return 0, fmt.Errorf("error updating integrator: %w", err)
+		return 0, fmt.Errorf("error updating integrator: %v", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
-		return 0, fmt.Errorf("cannot get affected rows: %w", err)
+		return 0, fmt.Errorf("cannot get affected rows: %v", err)
 	} else if rows != 1 && rows != 0 { /* Nothing to update? */
 		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
 	}
@@ -113,7 +117,7 @@ func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newName, newCsp
 func (d *Database) UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, error) {
 	integrator, err := d.GetIntegrator(id)
 	if err != nil {
-		return 0, fmt.Errorf("error updating integrator: %w", err)
+		return 0, fmt.Errorf("error updating integrator: %v", err)
 	}
 	integrator.SecretApiKey = newSecretApiKey
 	update := `UPDATE integrators SET
@@ -123,11 +127,11 @@ func (d *Database) UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, 
 				AND  (TEXT(:secret_api_key) IS DISTINCT FROM TEXT(secret_api_key))`
 	result, err := d.db.NamedExec(update, integrator)
 	if err != nil {
-		return 0, fmt.Errorf("error updating integrator: %w", err)
+		return 0, fmt.Errorf("error updating integrator: %v", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
-		return 0, fmt.Errorf("cannot get affected rows: %w", err)
+		return 0, fmt.Errorf("cannot get affected rows: %v", err)
 	} else if rows != 1 && rows != 0 { /* Nothing to update? */
 		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
 	}

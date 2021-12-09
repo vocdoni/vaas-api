@@ -17,10 +17,7 @@ func UnmarshalRequest(msg *bearerstdapi.BearerStandardAPIdata) (req types.APIReq
 	if err != nil {
 		return req, fmt.Errorf("could not decode request body %s: %v", string(msg.Data), err)
 	}
-	// Ensure all values are non-nil
-	if req.CspPubKey == nil {
-		req.CspPubKey = []byte{}
-	}
+
 	if req.Questions == nil {
 		req.Questions = []types.Question{}
 	}

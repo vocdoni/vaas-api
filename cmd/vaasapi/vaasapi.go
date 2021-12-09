@@ -42,7 +42,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	cfg.SigningKey = *flag.String("signingKey", "", "signing private Keys (if not specified, a new one will be created), the first one is the oracle public key")
 	cfg.AdminToken = *flag.String("adminToken", "", "hexString token for admin api calls")
 	cfg.GatewayUrls = *flag.StringArray("gatewayUrls", []string{"https://gw1.vocdoni.net/dvote"}, "urls to use as gateway api endpoints")
-	cfg.API.Route = *flag.String("apiRoute", "/api", "dvote API route")
+	cfg.API.Route = *flag.String("apiRoute", "/", "dvote API route")
 	cfg.API.ListenHost = *flag.String("listenHost", "0.0.0.0", "API endpoint listen address")
 	cfg.API.ListenPort = *flag.Int("listenPort", 8000, "API endpoint http port")
 	cfg.API.Ssl.Domain = *flag.String("sslDomain", "", "enable TLS secure domain with LetsEncrypt auto-generated certificate")

@@ -15,6 +15,8 @@ import (
 	"go.vocdoni.io/dvote/metrics"
 )
 
+const API_VERSION string = "v1"
+
 type URLAPI struct {
 	PrivateCalls uint64
 	PublicCalls  uint64
@@ -35,14 +37,16 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 		return nil, fmt.Errorf("invalid base route (%s), it must start with /", baseRoute)
 	}
 	// Remove trailing slash
-	if len(baseRoute) > 1 {
+	if len(baseRoute) > 0 {
 		baseRoute = strings.TrimSuffix(baseRoute, "/")
 	}
+	baseRoute += "/" + API_VERSION
 	urlapi := URLAPI{
 		BaseRoute:    baseRoute,
 		router:       router,
 		metricsagent: metricsAgent,
 	}
+	log.Infof("url api available with baseRoute %s", baseRoute)
 	urlapi.registerMetrics()
 	var err error
 	urlapi.api, err = bearerstdapi.NewBearerStandardAPI(router, baseRoute)

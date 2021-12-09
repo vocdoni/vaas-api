@@ -331,7 +331,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 
 	// Update organization in the db to make sure it matches the metadata
 	if _, err = u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
-		organization.QuotaPlanID, organization.PublicAPIQuota, req.Header, req.Avatar); err != nil {
+		uuid.NullUUID{}, organization.PublicAPIQuota, req.Header, req.Avatar); err != nil {
 		log.Error(err)
 		return err
 	}

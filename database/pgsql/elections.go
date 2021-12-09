@@ -38,7 +38,7 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, election)
 	if err != nil {
-		return 0, fmt.Errorf("error creating election: %w", err)
+		return 0, fmt.Errorf("error creating election: %v", err)
 	}
 	if !result.Next() {
 		return 0, fmt.Errorf("error creating election: there is no next result row")
@@ -46,7 +46,7 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 	var id int
 	err = result.Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error creating election: %w", err)
+		return 0, fmt.Errorf("error creating election: %v", err)
 	}
 	return id, nil
 }

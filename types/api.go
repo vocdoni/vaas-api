@@ -11,22 +11,22 @@ import (
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIRequest struct {
-	Avatar        string         `json:"avatar"`
-	CspPubKey     types.HexBytes `json:"cspPubKey"`
-	CspUrlPrefix  string         `json:"cspUrlPrefix"`
-	Description   string         `json:"description"`
-	Header        string         `json:"header"`
-	Name          string         `json:"name"`
-	Email         string         `json:"email"`
-	ID            int            `json:"id"`
-	Title         string         `json:"title"`
-	StreamURI     string         `json:"streamUri"`
-	StartDate     string         `json:"startDate"`
-	EndDate       string         `json:"endDate"`
-	Questions     []Question     `json:"questions"`
-	Confidential  bool           `json:"confidential"`
-	HiddenResults bool           `json:"hiddenResults"`
-	Census        string         `json:"census"`
+	Avatar        string     `json:"avatar"`
+	CspPubKey     string     `json:"cspPubKey"`
+	CspUrlPrefix  string     `json:"cspUrlPrefix"`
+	Description   string     `json:"description"`
+	Header        string     `json:"header"`
+	Name          string     `json:"name"`
+	Email         string     `json:"email"`
+	ID            int        `json:"id"`
+	Title         string     `json:"title"`
+	StreamURI     string     `json:"streamUri"`
+	StartDate     string     `json:"startDate"`
+	EndDate       string     `json:"endDate"`
+	Questions     []Question `json:"questions"`
+	Confidential  bool       `json:"confidential"`
+	HiddenResults bool       `json:"hiddenResults"`
+	Census        string     `json:"census"`
 }
 
 // APIResponse contains all of the possible response fields.

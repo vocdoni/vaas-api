@@ -9,7 +9,8 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
-	dvotetypes "go.vocdoni.io/dvote/types"
+	dvoteTypes "go.vocdoni.io/dvote/types"
+	dvoteUtil "go.vocdoni.io/dvote/util"
 )
 
 const (
@@ -67,7 +68,7 @@ func (u *URLAPI) enableSuperadminHandlers(adminToken string) error {
 // createIntegratorAccountHandler creates a new integrator account
 func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
-	var apiKey dvotetypes.HexBytes
+	var apiKey dvoteTypes.HexBytes
 	var req types.APIRequest
 	var resp types.APIResponse
 	if req, err = util.UnmarshalRequest(msg); err != nil {
@@ -79,8 +80,15 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		log.Errorf("error generating private key: %v", err)
 		return fmt.Errorf("error generating private key: %v", err)
 	}
+
+	var cspPubKey dvoteTypes.HexBytes
+	cspPubKey, err = hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
+	if err != nil {
+		log.Errorf("error devocding csp pub key: %v", err)
+		return fmt.Errorf("error devocding csp pub key")
+	}
 	if resp.ID, err = u.db.CreateIntegrator(apiKey,
-		req.CspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
+		cspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -103,7 +111,14 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		log.Error(err)
 		return err
 	}
-	if _, err = u.db.UpdateIntegrator(id, req.CspPubKey, req.Name, req.CspUrlPrefix); err != nil {
+
+	var cspPubKey dvoteTypes.HexBytes
+	cspPubKey, err = hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
+	if err != nil {
+		log.Errorf("error devocding csp pub key: %v", err)
+		return fmt.Errorf("error devocding csp pub key")
+	}
+	if _, err = u.db.UpdateIntegrator(id, cspPubKey, req.Name, req.CspUrlPrefix); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -115,7 +130,7 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 // resetIntegratorKeyHandler resets an integrator api key
 func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
-	var apiKey dvotetypes.HexBytes
+	var apiKey dvoteTypes.HexBytes
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {

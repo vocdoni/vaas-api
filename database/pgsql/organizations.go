@@ -21,7 +21,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 			log.Errorf("Tried to createOrganization by uknown API Key %x", integratorAPIKey)
 			return 0, fmt.Errorf("unkown API key: %x", integratorAPIKey)
 		} else {
-			return 0, fmt.Errorf("createOrganization DB error: %w", err)
+			return 0, fmt.Errorf("createOrganization DB error: %v", err)
 		}
 	}
 
@@ -51,7 +51,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error creating organization: %w", err)
+		return 0, fmt.Errorf("error creating organization: %v", err)
 	}
 	if !result.Next() {
 		return 0, fmt.Errorf("error creating organization: there is no next result row")
@@ -59,7 +59,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 	var id int
 	err = result.Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("error creating organization: %w", err)
+		return 0, fmt.Errorf("error creating organization: %v", err)
 	}
 	return id, nil
 }
@@ -86,12 +86,12 @@ func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error
 	deleteQuery := `DELETE FROM organizations integrator_api_key=$1 AND eth_address=$2`
 	result, err := d.db.Exec(deleteQuery, integratorAPIKey, ethAddress)
 	if err != nil {
-		return fmt.Errorf("error deleting organization: %w", err)
+		return fmt.Errorf("error deleting organization: %v", err)
 	}
 	// var rows int64
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("error veryfying deleted organization: %w", err)
+		return fmt.Errorf("error veryfying deleted organization: %v", err)
 	}
 	if rows != 1 {
 		return fmt.Errorf("nothing to delete")
@@ -103,7 +103,8 @@ func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, planI
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return 0, fmt.Errorf("invalid arguments")
 	}
-	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, QuotaPlanID: planID,
+		PublicAPIQuota: apiQuota, HeaderURI: headerUri, AvatarURI: avatarUri}
 	update := `UPDATE organizations SET
 				quota_plan_id = COALESCE(NULLIF(:quota_plan_id, NULL), quota_plan_id),
 				public_api_quota = COALESCE(NULLIF(:public_api_quota, 0), public_api_quota),
@@ -117,11 +118,11 @@ func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, planI
 					:avatar_uri IS DISTINCT FROM avatar_uri)`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error updating organization: %w", err)
+		return 0, fmt.Errorf("error updating organization: %v", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
-		return 0, fmt.Errorf("cannot get affected rows: %w", err)
+		return 0, fmt.Errorf("cannot get affected rows: %v", err)
 	} else if rows != 1 && rows != 0 { /* Nothing to update? */
 		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
 	}
@@ -140,11 +141,11 @@ func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddre
 				AND  (//TODO)`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error updating organization: %w", err)
+		return 0, fmt.Errorf("error updating organization: %v", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
-		return 0, fmt.Errorf("cannot get affected rows: %w", err)
+		return 0, fmt.Errorf("cannot get affected rows: %v", err)
 	} else if rows != 1 && rows != 0 { /* Nothing to update? */
 		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
 	}
@@ -163,11 +164,11 @@ func (d *Database) UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress
 				AND  (//TODO)`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error updating organization: %w", err)
+		return 0, fmt.Errorf("error updating organization: %v", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
-		return 0, fmt.Errorf("cannot get affected rows: %w", err)
+		return 0, fmt.Errorf("cannot get affected rows: %v", err)
 	} else if rows != 1 && rows != 0 { /* Nothing to update? */
 		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
 	}
