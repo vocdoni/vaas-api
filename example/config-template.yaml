@@ -1,0 +1,4 @@
+superadminKey: "1234"
+apiUrlPrefix: "https://api-dev.vocdoni.net/api"
+cspUrlPrefix: "https://csp-dev.vocdoni.net"
+cspPublicKey: "0x34567890"
