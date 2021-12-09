@@ -205,7 +205,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 			log.Errorf("could not aggregate results: %v", err)
 		}
 	}
-	process.EntityID = vc.EntityID
+	process.OrganizationID = vc.EntityID
 	process.ProcessID = vc.ID
 
 	process.StartBlock = fmt.Sprintf("%d", vc.StartBlock)
@@ -297,20 +297,30 @@ func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
 		}
 		return 10000 // fallback
 	}
-
+	inPast := diffTime < 0
+	absDiff := diffTime
+	if inPast {
+		absDiff = -absDiff
+	}
 	t := uint32(0)
 	switch {
 	// if less than around 15 minutes missing
-	case diffTime < 900:
+	case absDiff < 900:
 		t = getMaxTimeFrom(1)
 	// if less than around 6 hours missing
-	case diffTime < 21600:
+	case absDiff < 21600:
 		t = getMaxTimeFrom(3)
 	// if less than around 6 hours missing
-	case diffTime >= 21600:
+	case absDiff >= 21600:
 		t = getMaxTimeFrom(4)
 	}
-	blockDiff := diffTime / int64((t / 1000))
+	blockDiff := uint32(absDiff) / uint32((t / 1000))
+	if inPast {
+		if blockDiff > currentHeight {
+			return 0, fmt.Errorf("target time %v is before Vochain origin", target)
+		}
+		return currentHeight - uint32(blockDiff), nil
+	}
 	return currentHeight + uint32(blockDiff), nil
 }
 

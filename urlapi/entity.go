@@ -411,6 +411,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if err != nil {
 		return err
 	}
+	log.Debugf("start block %d end block %d", startBlock, endBlock)
 
 	metadata := types.ProcessMetadata{
 		Description: map[string]string{"default": req.Description},
