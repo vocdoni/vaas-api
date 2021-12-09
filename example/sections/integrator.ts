@@ -59,6 +59,7 @@ export async function getOrganizationPriv(id: string, apiKey: string) {
   }
 
   const responseBody = await response.json()
+  console.log("GET", url, responseBody)
 
   const { error } = responseBody
   if (error) throw new Error(error)
@@ -135,13 +136,16 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
 export async function createSignedElection(organizationId: string, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/signed"
 
+  const startDate = new Date(Date.now() + 1000 * 15)
+  const endDate = new Date(Date.now() + 1000 * 60 * 60)
+
   const body = {
     title: "Signed election",
     description: "Description here",
     header: "https://my/header.jpeg",
     streamUri: "https://youtu.be/1234",
-    startDate: "2021-10-25T11:20:53.769Z", // can be empty
-    endDate: "2021-10-30T12:00:00.000Z",
+    startDate: startDate.toJSON(), //  "2021-12-10T11:20:53.769Z", // can be empty
+    endDate: endDate.toJSON(), //  "2021-12-15T12:00:00.000Z",
     questions: [
       {
         title: "Question 1 goes here",
@@ -160,7 +164,7 @@ export async function createSignedElection(organizationId: string, apiKey: strin
   }
 
   const response = await fetch(url, {
-    method: "PUT",
+    method: "POST",
     headers: {
       "Authorization": "Bearer " + apiKey,
       'Content-Type': 'application/json'
@@ -181,20 +185,23 @@ export async function createSignedElection(organizationId: string, apiKey: strin
 
   const { processId: electionId } = responseBody
 
-  console.log("Updated organization with ID", organizationId)
+  console.log("Created election with ID", electionId)
   return { electionId }
 }
 
 export async function createAnonymousElection(organizationId: string, apiKey: string) {
-  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/signed"
+  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/blind"
+
+  const startDate = new Date(Date.now() + 1000 * 15)
+  const endDate = new Date(Date.now() + 1000 * 60 * 60)
 
   const body = {
-    title: "Signed election",
+    title: "Anonymous election",
     description: "Description here",
     header: "https://my/header.jpeg",
     streamUri: "https://youtu.be/1234",
-    startDate: "2021-10-25T11:20:53.769Z", // can be empty
-    endDate: "2021-10-30T12:00:00.000Z",
+    startDate: startDate.toJSON(), //  "2021-12-10T11:20:53.769Z", // can be empty
+    endDate: endDate.toJSON(), //  "2021-12-15T12:00:00.000Z",
     questions: [
       {
         title: "Question 1 goes here",
@@ -213,7 +220,7 @@ export async function createAnonymousElection(organizationId: string, apiKey: st
   }
 
   const response = await fetch(url, {
-    method: "PUT",
+    method: "POST",
     headers: {
       "Authorization": "Bearer " + apiKey,
       'Content-Type': 'application/json'
@@ -234,7 +241,7 @@ export async function createAnonymousElection(organizationId: string, apiKey: st
 
   const { processId: electionId } = responseBody
 
-  console.log("Updated organization with ID", organizationId)
+  console.log("Created anonymous election", electionId)
   return { electionId }
 }
 

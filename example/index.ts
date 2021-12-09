@@ -17,8 +17,8 @@ async function main() {
 
     const { electionId: electionId1 } = await createSignedElection(organizationId, integratorApiKey)
     const { electionId: electionId2 } = await createAnonymousElection(organizationId, integratorApiKey)
-    const electionList = await listElectionsPriv(organizationId, integratorApiKey)
-    const electionDetails = await getElectionPriv(electionId1, integratorApiKey)
+    // const electionList = await listElectionsPriv(organizationId, integratorApiKey)
+    // const electionDetails = await getElectionPriv(electionId1, integratorApiKey)
 
     // VOTER ENDPOINTS (frontend)
 
