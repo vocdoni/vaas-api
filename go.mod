@@ -15,7 +15,7 @@ require (
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
-	go.vocdoni.io/dvote v1.0.4-0.20211208183856-3cc820f5d0b2
+	go.vocdoni.io/dvote v1.0.4-0.20211209102700-ab5dad159747
 	go.vocdoni.io/proto v1.13.3-0.20211202161242-17ea8a435be6
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	google.golang.org/protobuf v1.27.1
