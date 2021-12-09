@@ -1,6 +1,7 @@
 package urlapi
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -36,6 +37,14 @@ func (u *URLAPI) enablePublicHandlers() error {
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getProcessInfoPublicHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
+		"/pub/processes/{processId}/vote",
+		"POST",
+		bearerstdapi.MethodAccessTypePublic,
+		u.submitVotePublicHandler,
 	); err != nil {
 		return err
 	}
@@ -171,7 +180,6 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		log.Error(err)
 		return err
 	}
-
 	// Fetch process from vochain
 	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
 		log.Error(err)
@@ -190,6 +198,28 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	resp.Header = organizationMetadata.Media.Header
 	resp.Ok = true
 	return sendResponse(resp, ctx)
+}
+
+func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	var resp types.APIResponse
+
+	var err error
+	var req types.APIRequest
+	if req, err = util.UnmarshalRequest(msg); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	var votePkg []byte
+	if votePkg, err = base64.StdEncoding.DecodeString(req.Vote); err != nil {
+		log.Error(err)
+		return err
+	}
+	if err = u.vocClient.SubmitRawTx(votePkg); err != nil {
+		log.Error(err)
+	}
+
+	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
 // TODO add listProcessesInfoHandler

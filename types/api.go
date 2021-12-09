@@ -27,6 +27,7 @@ type APIRequest struct {
 	Confidential  bool       `json:"confidential"`
 	HiddenResults bool       `json:"hiddenResults"`
 	Census        string     `json:"census"`
+	Vote          string     `json:"vote"`
 }
 
 // APIResponse contains all of the possible response fields.
