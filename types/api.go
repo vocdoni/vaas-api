@@ -43,13 +43,14 @@ type APIResponse struct {
 	CspUrlPrefix   string         `json:"cspUrlPrefix,omitempty"`
 	Description    string         `json:"description,omitempty"`
 	EndBlock       []byte         `json:"end_block,omitempty"`
-	OrganizationID types.HexBytes `json:"organizationId,omitempty"`
 	Header         string         `json:"header,omitempty"`
 	ID             int            `json:"id,omitempty"`
 	Message        string         `json:"message,omitempty"`
 	Name           string         `json:"name,omitempty"`
+	Nullifier      string         `json:"nullifier,omitempty"`
 	Ok             bool           `json:"ok,omitempty"`
 	ElectionID     types.HexBytes `json:"electionId,omitempty"`
+	OrganizationID types.HexBytes `json:"organizationId,omitempty"`
 }
 
 // APIProcess is the response struct for a getProcess request
