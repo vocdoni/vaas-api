@@ -103,7 +103,8 @@ func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, planI
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return 0, fmt.Errorf("invalid arguments")
 	}
-	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, QuotaPlanID: planID,
+		PublicAPIQuota: apiQuota, HeaderURI: headerUri, AvatarURI: avatarUri}
 	update := `UPDATE organizations SET
 				quota_plan_id = COALESCE(NULLIF(:quota_plan_id, NULL), quota_plan_id),
 				public_api_quota = COALESCE(NULLIF(:public_api_quota, 0), public_api_quota),
