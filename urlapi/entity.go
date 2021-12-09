@@ -233,8 +233,8 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// Fetch metadata
 	if organizationMetadata, err = u.vocClient.FetchOrganizationMetadata(metaUri); err != nil {
-		log.Error(err)
-		return err
+		log.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
+		return fmt.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
 	}
 
 	resp.APIToken = organization.PublicAPIToken
