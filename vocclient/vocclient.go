@@ -433,3 +433,17 @@ func (c *Client) CreateProcess(
 	}
 	return p.Process.StartBlock, nil
 }
+
+func (c *Client) SubmitRawTx(payload []byte) (string, error) {
+	var req api.APIrequest
+	var err error
+
+	req.Method = "submitRawTx"
+	req.Payload = payload
+	// TODO get nullifier and return it
+	if _, err = c.pool.Request(req, c.signingKey); err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
