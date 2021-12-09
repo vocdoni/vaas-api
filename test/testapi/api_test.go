@@ -37,7 +37,7 @@ func TestMain(m *testing.M) {
 	}
 	// var API testcommon.TestAPI
 	apiPort := 9000
-	apiAuthToken := "test"
+	apiAuthToken := "bb1a42df36d0cf3f4dd53d71dffa15780d44c54a5971792acd31974bc2cbceb6"
 	apiGateways := []string{"https://api-dev.vocdoni.net/dvote"}
 	if err := API.Start(db, "/api", apiAuthToken, apiGateways, apiPort, csp); err != nil {
 		log.Printf("SKIPPING: could not start the API: %v", err)
@@ -65,7 +65,7 @@ func DoRequest(t *testing.T, url, authToken, method string, request types.APIReq
 	qt.Check(t, err, qt.IsNil)
 	respBody, err := io.ReadAll(resp.Body)
 	var response types.APIResponse
-	err = json.Unmarshal(respBody, &response)
+	err = json.Unmarshal([]byte(respBody), &response)
 	qt.Check(t, err, qt.IsNil)
 	return response
 }
