@@ -33,27 +33,28 @@ type APIRequest struct {
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIResponse struct {
-	APIKey       string         `json:"apiKey,omitempty"`
-	Avatar       string         `json:"avatar,omitempty"`
-	CensusID     int            `json:"census_id,omitempty"`
-	ContentURI   string         `json:"contentUri,omitempty"`
-	CspPubKey    types.HexBytes `json:"cspPubKey,omitempty"`
-	CspUrlPrefix string         `json:"cspUrlPrefix,omitempty"`
-	Description  string         `json:"description,omitempty"`
-	EndBlock     []byte         `json:"end_block,omitempty"`
-	EntityID     types.HexBytes `json:"entityId,omitempty"`
-	Header       string         `json:"header,omitempty"`
-	ID           int            `json:"id,omitempty"`
-	Message      string         `json:"message,omitempty"`
-	Name         string         `json:"name,omitempty"`
-	Ok           bool           `json:"ok,omitempty"`
-	ProcessID    types.HexBytes `json:"processId,omitempty"`
+	APIKey         string         `json:"apiKey,omitempty"`
+	APIToken       string         `json:"apiToken,omitempty"`
+	Avatar         string         `json:"avatar,omitempty"`
+	CensusID       int            `json:"census_id,omitempty"`
+	ContentURI     string         `json:"contentUri,omitempty"`
+	CspPubKey      types.HexBytes `json:"cspPubKey,omitempty"`
+	CspUrlPrefix   string         `json:"cspUrlPrefix,omitempty"`
+	Description    string         `json:"description,omitempty"`
+	EndBlock       []byte         `json:"end_block,omitempty"`
+	OrganizationID types.HexBytes `json:"organizationId,omitempty"`
+	Header         string         `json:"header,omitempty"`
+	ID             int            `json:"id,omitempty"`
+	Message        string         `json:"message,omitempty"`
+	Name           string         `json:"name,omitempty"`
+	Ok             bool           `json:"ok,omitempty"`
+	ProcessID      types.HexBytes `json:"processId,omitempty"`
 }
 
 // APIProcess is the response struct for a getProcess request
 type APIProcess struct {
 	Description        string         `json:"description,omitempty"`
-	EntityID           types.HexBytes `json:"entityId,omitempty"`
+	OrganizationID     types.HexBytes `json:"organizationId,omitempty"`
 	Header             string         `json:"header,omitempty"`
 	Ok                 bool           `json:"ok,omitempty"`
 	ProcessID          types.HexBytes `json:"processId,omitempty"`

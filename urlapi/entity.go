@@ -203,8 +203,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return fmt.Errorf("could not create account on the vochain: %v", err)
 	}
 
-	resp.APIKey = orgApiToken
-	resp.EntityID = ethSignKeys.Address().Bytes()
+	resp.APIToken = orgApiToken
+	resp.OrganizationID = ethSignKeys.Address().Bytes()
 
 	resp.Ok = true
 	return sendResponse(resp, ctx)
@@ -237,7 +237,7 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	resp.APIKey = organization.PublicAPIToken
+	resp.APIToken = organization.PublicAPIToken
 	resp.Name = organizationMetadata.Name["default"]
 	resp.Description = organizationMetadata.Description["default"]
 	resp.Avatar = organizationMetadata.Media.Avatar
@@ -286,9 +286,9 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	}
 
 	// Now generate a new api key & update integrator
-	resp.APIKey = util.GenerateBearerToken()
+	resp.APIToken = util.GenerateBearerToken()
 	if _, err = u.db.UpdateOrganizationPublicAPIToken(
-		integratorPrivKey, entityID, resp.APIKey); err != nil {
+		integratorPrivKey, entityID, resp.APIToken); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -336,7 +336,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 		return err
 	}
 
-	resp.EntityID = entityID
+	resp.OrganizationID = entityID
 	resp.ContentURI = metaURI
 	resp.Ok = true
 	return sendResponse(resp, ctx)
