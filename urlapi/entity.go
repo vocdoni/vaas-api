@@ -19,7 +19,7 @@ import (
 
 func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
-		"/priv/account/entities",
+		"/priv/account/organizations",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.createOrganizationHandler,
@@ -27,7 +27,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/entities/{entityId}",
+		"/priv/account/organizations/{entityId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.getOrganizationHandler,
@@ -35,7 +35,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/entities/{entityId}",
+		"/priv/account/organizations/{entityId}",
 		"DELETE",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.deleteOrganizationHandler,
@@ -43,7 +43,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/entities/{entityId}/key",
+		"/priv/account/organizations/{entityId}/key",
 		"PATCH",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.resetOrganizationKeyHandler,
@@ -51,7 +51,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/entities/{entityId}/metadata",
+		"/priv/organizations/{entityId}/metadata",
 		"PUT",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.setOrganizationMetadataHandler,
@@ -59,7 +59,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/entities/{entityId}/processes/*",
+		"/priv/organizations/{entityId}/processes/*",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.createProcessHandler,
@@ -133,7 +133,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 	return nil
 }
 
-// POST https://server/v1/priv/account/entities
+// POST https://server/v1/priv/account/organizations
 // createOrganizationHandler creates a new entity
 func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -210,7 +210,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	return sendResponse(resp, ctx)
 }
 
-// GET https://server/v1/priv/account/entities/<entityId>
+// GET https://server/v1/priv/account/organizations/<entityId>
 // getOrganizationHandler fetches an entity
 func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -246,7 +246,7 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	return sendResponse(resp, ctx)
 }
 
-// DELETE https://server/v1/priv/account/entities/<entityId>
+// DELETE https://server/v1/priv/account/organizations/<entityId>
 // deleteOrganizationHandler deletes an entity
 func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -270,7 +270,7 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	return sendResponse(resp, ctx)
 }
 
-// PATCH https://server/v1/account/entities/<id>/key
+// PATCH https://server/v1/account/organizations/<id>/key
 // resetOrganizationKeyHandler resets an entity's api key
 func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -296,7 +296,7 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	return sendResponse(resp, ctx)
 }
 
-// PUT https://server/v1/priv/entities/<entityId>/metadata
+// PUT https://server/v1/priv/organizations/<entityId>/metadata
 // setOrganizationMetadataHandler sets an entity's metadata
 func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -342,8 +342,8 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	return sendResponse(resp, ctx)
 }
 
-// POST https://server/v1/priv/entities/<entityId>/processes/signed
-// POST https://server/v1/priv/entities/<entityId>/processes/blind
+// POST https://server/v1/priv/organizations/<entityId>/processes/signed
+// POST https://server/v1/priv/organizations/<entityId>/processes/blind
 // createProcessHandler creates a process with the given metadata, either with signed or blind signature voting
 func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
