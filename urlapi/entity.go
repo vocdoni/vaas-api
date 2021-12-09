@@ -14,6 +14,7 @@ import (
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
 	dvoteutil "go.vocdoni.io/dvote/util"
+	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 )
 
@@ -30,7 +31,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		"/priv/account/organizations/{entityId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
-		u.getOrganizationHandler,
+		u.getOrganizationPrivateHandler,
 	); err != nil {
 		return err
 	}
@@ -130,6 +131,14 @@ func (u *URLAPI) enableEntityHandlers() error {
 	); err != nil {
 		return err
 	}
+	if err := u.api.RegisterMethod(
+		"/priv/processes/{processId}",
+		"GET",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.getProcessHandler,
+	); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -211,8 +220,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 }
 
 // GET https://server/v1/priv/account/organizations/<entityId>
-// getOrganizationHandler fetches an entity
-func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
+// getOrganizationPrivateHandler fetches an entity
+func (u *URLAPI) getOrganizationPrivateHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
@@ -511,7 +520,43 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 // getProcessHandler gets the entirety of a process, including metadata
 // confidential processes need no extra step, only the api key
 func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+	var err error
+	var resp types.APIProcess
+	var processId []byte
+	var vochainProcess *indexertypes.Process
+	var results *types.VochainResults
+	var processMetadata *types.ProcessMetadata
+	if processId, err = util.GetBytesID(ctx, "processId"); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Fetch process from vochain
+	if vochainProcess, err = u.vocClient.GetProcess(processId); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Fetch results
+	if vochainProcess.HaveResults {
+		if results, err = u.vocClient.GetResults(processId); err != nil {
+			log.Error(err)
+			return err
+		}
+	}
+
+	// Fetch metadata
+	metadataUri := vochainProcess.Metadata
+	if processMetadata, err = u.vocClient.FetchProcessMetadata(metadataUri); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Parse all the information
+	resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
+
+	sendResponse(resp, ctx)
+	return nil
 }
 
 // POST https://server/v1/priv/censuses

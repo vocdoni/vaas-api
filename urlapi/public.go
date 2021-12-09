@@ -1,7 +1,6 @@
 package urlapi
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -45,6 +44,14 @@ func (u *URLAPI) enablePublicHandlers() error {
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getProcessInfoConfidentialHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
+		"/pub/account/organizations/{entityId}",
+		"GET",
+		bearerstdapi.MethodAccessTypePublic,
+		u.getOrganizationHandler,
 	); err != nil {
 		return err
 	}
@@ -137,15 +144,7 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	// Parse all the information
 	resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
 
-	data, err := json.Marshal(resp)
-	if err != nil {
-		log.Errorf("error marshaling JSON: %v", err)
-		return fmt.Errorf("error marshaling JSON: %w", err)
-	}
-	if err = ctx.Send(data); err != nil {
-		log.Error(err)
-		return err
-	}
+	sendResponse(resp, ctx)
 	return nil
 }
 
@@ -156,6 +155,41 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 	ctx *httprouter.HTTPContext) error {
 	log.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+}
+
+// GET https://server/v1/pub/account/organizations/<entityId>
+// getOrganizationHandler fetches an entity
+func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var err error
+	var resp types.APIResponse
+	var organization *types.Organization
+	var organizationMetadata *types.EntityMetadata
+	var metaUri string
+	// authenticate integrator has permission to edit this entity
+	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Fetch process from vochain
+	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	// Fetch metadata
+	if organizationMetadata, err = u.vocClient.FetchOrganizationMetadata(metaUri); err != nil {
+		log.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
+		return fmt.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
+	}
+
+	resp.Name = organizationMetadata.Name["default"]
+	resp.Description = organizationMetadata.Description["default"]
+	resp.Avatar = organizationMetadata.Media.Avatar
+	resp.Header = organizationMetadata.Media.Header
+	resp.Ok = true
+	return sendResponse(resp, ctx)
 }
 
 // TODO add listProcessesInfoHandler
