@@ -66,12 +66,12 @@ func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte
 	return election, nil
 }
 
-func (d *Database) GetElectionList(integratorAPIKey, orgEthAddress, processID []byte) ([]types.Election, error) {
+func (d *Database) ListElections(integratorAPIKey, orgEthAddress []byte) ([]types.Election, error) {
 	var election []types.Election
 	selectIntegrator := `SELECT title, start_date, end_date, start_block, end_block, confidential, hidden_results, 
 							created_at, updated_at
 						FROM elections WHERE organization_eth_address =$1 AND integrator_api_key=$2`
-	err := d.db.Select(&election, selectIntegrator, orgEthAddress, integratorAPIKey, processID)
+	err := d.db.Select(&election, selectIntegrator, orgEthAddress, integratorAPIKey)
 	if err != nil {
 		return nil, err
 	}

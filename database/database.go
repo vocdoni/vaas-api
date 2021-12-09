@@ -37,6 +37,7 @@ type Database interface {
 	// Election
 	CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error)
 	GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error)
+	ListElections(integratorAPIKey, orgEthAddress []byte) ([]types.Election, error)
 	// Manage DB
 	Ping() error
 	Close() error
