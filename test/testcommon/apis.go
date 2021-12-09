@@ -1,25 +1,38 @@
 package testcommon
 
 import (
+	"fmt"
+
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
 	"go.vocdoni.io/api/urlapi"
+	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/log"
+	dvoteTypes "go.vocdoni.io/dvote/types"
 )
 
 type TestAPI struct {
-	DB     database.Database
-	Port   int
-	Signer *ethereum.SignKeys
+	DB        database.Database
+	Port      int
+	Signer    *ethereum.SignKeys
+	URL       string
+	AuthToken string
+	CSP       TestCSP
+	Gateways  []string
+}
+
+type TestCSP struct {
+	UrlPrefix string
+	CspPubKey dvoteTypes.HexBytes
 }
 
 // Start creates a new database connection and API endpoint for testing.
 // If dbc is nill the testdb will be used.
 // If route is nill, then the websockets API won't be initialized
-func (t *TestAPI) Start(dbc *config.DB, route string, port int) error {
+func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateways []string, port int, csp TestCSP) error {
 	log.Init("info", "stdout")
 	var err error
 	if route != "" {
@@ -40,16 +53,29 @@ func (t *TestAPI) Start(dbc *config.DB, route string, port int) error {
 	}
 
 	if route != "" {
-		// api, err := NewTestClient(route, port)
-		// log.Infof("enabling API methods")
+		client, err := vocclient.New(gateways, t.Signer)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var httpRouter httprouter.HTTProuter
+		if err = httpRouter.Init("127.0.0.1", port); err != nil {
+			log.Fatal(err)
+		}
+		// Rest api
+		urlApi, err := urlapi.NewURLAPI(&httpRouter, route, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Vaas api
+		log.Infof("enabling VaaS API methods")
+		if err := urlApi.EnableVotingServiceHandlers(t.DB, client, "test"); err != nil {
+			log.Fatal(err)
+		}
+		t.URL = fmt.Sprintf("http://127.0.0.1:%d/api", port)
+		t.AuthToken = authToken
+		t.CSP = csp
 	}
 	return nil
-}
-
-func NewTestClient(host string, port int) (*urlapi.URLAPI, error) {
-	var httpRouter httprouter.HTTProuter
-	if err := httpRouter.Init(host, port); err != nil {
-		log.Fatal(err)
-	}
-	return urlapi.NewURLAPI(&httpRouter, "/api", nil)
 }
