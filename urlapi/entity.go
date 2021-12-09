@@ -397,18 +397,32 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	startDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.StartDate)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	endDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.EndDate)
 	if err != nil {
+		log.Error(err)
 		return err
+	}
+
+	now := time.Now()
+	if startDate.Before(now) || endDate.Before(now) {
+		log.Errorf("election start and end date cannot be in the past")
+		return fmt.Errorf("election start and end date cannot be in the past")
+	}
+	if endDate.Before(startDate) {
+		log.Errorf("end date must be after start date")
+		return fmt.Errorf("end date must be after start date")
 	}
 	startBlock, err := u.estimateBlockHeight(startDate)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	endBlock, err := u.estimateBlockHeight(endDate)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 	log.Debugf("start block %d end block %d", startBlock, endBlock)
