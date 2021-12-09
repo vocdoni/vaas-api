@@ -99,24 +99,59 @@ func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error
 	return nil
 }
 
-func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int, headerUri, avatarUri string) (int, error) {
+func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error) {
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return 0, fmt.Errorf("invalid arguments")
 	}
-	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, QuotaPlanID: planID,
-		PublicAPIQuota: apiQuota, HeaderURI: headerUri, AvatarURI: avatarUri}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, HeaderURI: headerUri, AvatarURI: avatarUri}
 	update := `UPDATE organizations SET
-				quota_plan_id = COALESCE(NULLIF(:quota_plan_id, NULL), quota_plan_id),
-				public_api_quota = COALESCE(NULLIF(:public_api_quota, 0), public_api_quota),
 				header_uri = COALESCE(NULLIF(:header_uri, ''), header_uri),
 				avatar_uri = COALESCE(NULLIF(:avatar_uri, ''), avatar_uri),
 				updated_at = now()
-				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:integrator_api_key)
+				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
 				AND  (:quota_plan_id IS DISTINCT FROM quota_plan_id OR
 					:public_api_quota IS DISTINCT FROM public_api_quota OR
 					:header_uri IS DISTINCT FROM header_uri OR
 					:avatar_uri IS DISTINCT FROM avatar_uri)`
 	result, err := d.db.NamedExec(update, organization)
+	if err != nil {
+		return 0, fmt.Errorf("error updating organization: %v", err)
+	}
+	var rows int64
+	if rows, err = result.RowsAffected(); err != nil {
+		return 0, fmt.Errorf("cannot get affected rows: %v", err)
+	} else if rows != 1 && rows != 0 { /* Nothing to update? */
+		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
+	}
+	return int(rows), nil
+}
+
+func (d *Database) UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int) (int, error) {
+	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
+		return 0, fmt.Errorf("invalid arguments")
+	}
+	type PlanData struct {
+		IntegratorAPIKey []byte    `db:"integrator_api_key"`
+		EthAddress       []byte    `db:"eth_address"`
+		PlanID           uuid.UUID `db:"quota_plan_id"`
+		APIQuota         int       `db:"public_api_quota"`
+	}
+
+	plan := PlanData{
+		IntegratorAPIKey: integratorAPIKey,
+		EthAddress:       ethAddress,
+		PlanID:           planID.UUID,
+		APIQuota:         apiQuota,
+	}
+	update := `UPDATE organizations SET
+				quota_plan_id = COALESCE(NULLIF(:quota_plan_id, NULL), quota_plan_id),
+				public_api_quota = COALESCE(NULLIF(:public_api_quota, 0), public_api_quota),
+				updated_at = now()
+				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
+				AND  (:quota_plan_id IS DISTINCT FROM quota_plan_id OR
+					:public_api_quota IS DISTINCT FROM public_api_quota
+				)`
+	result, err := d.db.NamedExec(update, plan)
 	if err != nil {
 		return 0, fmt.Errorf("error updating organization: %v", err)
 	}

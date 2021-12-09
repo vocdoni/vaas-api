@@ -25,19 +25,22 @@ func TestOrganization(t *testing.T) {
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
 	organizations[0].ID = id
 
+	count, err := API.DB.UpdateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress, "", "")
+	c.Assert(err, qt.IsNil)
+	c.Assert(int(id), qt.Not(qt.Equals), 0)
+
 	organization, err := API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	log.Infof("%w", organization)
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.DeepEquals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCicpher))
 
-	count, err := API.DB.CountOrganizations(integrators[0].SecretApiKey)
+	count, err = API.DB.CountOrganizations(integrators[0].SecretApiKey)
 	c.Assert(err, qt.IsNil)
 	c.Assert(count, qt.Equals, 1)
 
 	dbOrganizations, err := API.DB.ListOrganizations(integrators[0].SecretApiKey, nil)
 	c.Assert(err, qt.IsNil)
 	c.Assert(len(dbOrganizations), qt.Equals, 1)
-	c.Assert(fmt.Sprintf("%x", dbOrganizations[0].ID), qt.DeepEquals, fmt.Sprintf("%x", organizations[0].ID))
 
 	// cleaning up (cascade delete from integrators)
 	for _, integrator := range integrators {

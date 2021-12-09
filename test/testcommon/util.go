@@ -63,7 +63,6 @@ func CreateElections(size int) []*types.Election {
 			Confidential:    true,
 			HiddenResults:   true,
 			MetadataPrivKey: nil,
-			CensusID:        uuid.NullUUID{},
 		}
 	}
 	return mp

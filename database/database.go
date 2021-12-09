@@ -27,7 +27,8 @@ type Database interface {
 	GetPlansList() ([]types.QuotaPlan, error)
 	// Organization
 	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error)
-	UpdateOrganization(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int, headerUri, avatarUri string) (int, error)
+	UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error)
+	UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int) (int, error)
 	UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCicpher []byte) (int, error)
 	UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte, newPublicApiToken string) (int, error)
 	GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error)
