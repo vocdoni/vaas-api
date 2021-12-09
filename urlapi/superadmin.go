@@ -81,7 +81,12 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		return fmt.Errorf("error generating private key: %v", err)
 	}
 
-	cspPubKey := []byte(dvoteUtil.TrimHex(req.CspPubKey))
+	var cspPubKey dvoteTypes.HexBytes
+	cspPubKey, err = hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
+	if err != nil {
+		log.Errorf("error devocding csp pub key: %v", err)
+		return fmt.Errorf("error devocding csp pub key")
+	}
 	if resp.ID, err = u.db.CreateIntegrator(apiKey,
 		cspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
 		log.Error(err)
@@ -107,7 +112,12 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		return err
 	}
 
-	cspPubKey := []byte(dvoteUtil.TrimHex(req.CspPubKey))
+	var cspPubKey dvoteTypes.HexBytes
+	cspPubKey, err = hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
+	if err != nil {
+		log.Errorf("error devocding csp pub key: %v", err)
+		return fmt.Errorf("error devocding csp pub key")
+	}
 	if _, err = u.db.UpdateIntegrator(id, cspPubKey, req.Name, req.CspUrlPrefix); err != nil {
 		log.Error(err)
 		return err
