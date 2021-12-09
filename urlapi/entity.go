@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -144,7 +143,6 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	var entityPrivKey []byte
 	var integratorPrivKey []byte
 	var orgApiToken string
-	var orgApiKey []byte
 	var encryptedPrivKey []byte
 	var metaURI string
 	// var organizationMetadataKey []byte
@@ -157,10 +155,6 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return err
 	}
 	orgApiToken = util.GenerateBearerToken()
-	if orgApiKey, err = hex.DecodeString(orgApiToken); err != nil {
-		log.Errorf("could not decode org api token: %v", err)
-		return fmt.Errorf("could not decode org api token: %v", err)
-	}
 
 	ethSignKeys := ethereum.NewSignKeys()
 	if err = ethSignKeys.Generate(); err != nil {
@@ -175,7 +169,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return fmt.Errorf("could not decode entity private key: %v", err)
 	}
 
-	if encryptedPrivKey, err = util.EncryptSymmetric(entityPrivKey, orgApiKey); err != nil {
+	if encryptedPrivKey, err = util.EncryptSymmetric(entityPrivKey, integratorPrivKey); err != nil {
 		log.Errorf("could not encrypt organization private key: %v", err)
 		return fmt.Errorf("could not encrypt organization private key: %v", err)
 	}
@@ -356,23 +350,26 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var err error
 	var resp types.APIResponse
 	var req types.APIRequest
-	var blind bool
+	var organization *types.Organization
+	// var blind bool
 	var entityID []byte
 	var processID []byte
 	var integratorPrivKey []byte
 	var metaUri string
 
-	if strings.HasSuffix(ctx.Request.URL.Path, "signed") {
-		blind = false
-	} else if strings.HasSuffix(ctx.Request.URL.Path, "blind") {
-		blind = true
-	} else {
-		log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-	}
+	// TODO use blind/signed
+
+	// if strings.HasSuffix(ctx.Request.URL.Path, "signed") {
+	// 	blind = false
+	// } else if strings.HasSuffix(ctx.Request.URL.Path, "blind") {
+	// 	blind = true
+	// } else {
+	// 	log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+	// 	return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+	// }
 
 	// authenticate integrator has permission to edit this entity
-	if integratorPrivKey, entityID, _, err = u.authEntityPermissions(msg, ctx); err != nil {
+	if integratorPrivKey, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -386,6 +383,16 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if processID, err = hex.DecodeString(pid); err != nil {
 		log.Error(err)
 		return err
+	}
+	entityPrivKey, ok := util.DecryptSymmetric(organization.EthPrivKeyCicpher, integratorPrivKey)
+	if !ok {
+		log.Errorf("could not decrypt entity private key")
+		return fmt.Errorf("could not decrypt entity private key")
+	}
+	entitySignKeys := ethereum.NewSignKeys()
+	if err = entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
+		log.Errorf("could not decode entity private key: %v", err)
+		return fmt.Errorf("could not decode entity private key: %v", err)
 	}
 
 	startDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.StartDate)
@@ -423,7 +430,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	envelopeType := &models.EnvelopeType{
 		Serial:         false,
-		Anonymous:      blind,
+		Anonymous:      false,
 		EncryptedVotes: req.HiddenResults,
 		UniqueValues:   false,
 		CostFromWeight: false,
@@ -470,13 +477,13 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// TODO use encryption priv/pub keys if process is encrypted
 	if startBlock, err = u.vocClient.CreateProcess(processID, entityID, startBlock,
 		endBlock-startBlock, []byte{}, "", envelopeType, processMode,
-		voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri); err != nil {
+		voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri, entitySignKeys); err != nil {
 		log.Error(err)
 		return err
 	}
 
 	if _, err = u.db.CreateElection(integratorPrivKey, entityID, processID, req.Title, startDate,
-		endDate, 0, int(startBlock), int(endBlock), req.Confidential, req.HiddenResults); err != nil {
+		endDate, uuid.NullUUID{}, int(startBlock), int(endBlock), req.Confidential, req.HiddenResults); err != nil {
 		log.Error(err)
 		return err
 	}

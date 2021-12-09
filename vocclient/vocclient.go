@@ -17,6 +17,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+var MAX_CENSUS_SIZE = uint64(1024)
+
 type Client struct {
 	pool       GatewayPool
 	signingKey *ethereum.SignKeys
@@ -386,23 +388,25 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 func (c *Client) CreateProcess(
 	pid []byte, entityID []byte, startBlock, duration uint32, censusRoot []byte, censusURI string, envelopeType *models.EnvelopeType,
 	processMode *models.ProcessMode, voteOptions *models.ProcessVoteOptions,
-	censusOrigin models.CensusOrigin, metadataUri string) (blockHeight uint32, _ error) {
+	censusOrigin models.CensusOrigin, metadataUri string, signingKey *ethereum.SignKeys) (blockHeight uint32, _ error) {
+	var resp *api.APIresponse
 	var req api.APIrequest
 	var err error
 	req.Method = "submitRawTx"
 	processData := &models.Process{
-		ProcessId:    pid,
-		EntityId:     entityID,
-		StartBlock:   startBlock,
-		BlockCount:   duration,
-		CensusRoot:   censusRoot,
-		CensusURI:    &censusURI,
-		Status:       models.ProcessStatus_READY,
-		EnvelopeType: envelopeType,
-		Mode:         processMode,
-		VoteOptions:  voteOptions,
-		CensusOrigin: censusOrigin,
-		Metadata:     &metadataUri,
+		ProcessId:     pid,
+		EntityId:      entityID,
+		StartBlock:    startBlock,
+		BlockCount:    duration,
+		CensusRoot:    censusRoot,
+		CensusURI:     &censusURI,
+		Status:        models.ProcessStatus_READY,
+		EnvelopeType:  envelopeType,
+		Mode:          processMode,
+		VoteOptions:   voteOptions,
+		CensusOrigin:  censusOrigin,
+		Metadata:      &metadataUri,
+		MaxCensusSize: &MAX_CENSUS_SIZE,
 	}
 	p := &models.NewProcessTx{
 		Txtype:  models.TxType_NEW_PROCESS,
@@ -414,15 +418,17 @@ func (c *Client) CreateProcess(
 	if err != nil {
 		return 0, err
 	}
-	if stx.Signature, err = c.signingKey.Sign(stx.Tx); err != nil {
+	if stx.Signature, err = signingKey.Sign(stx.Tx); err != nil {
 		return 0, err
 	}
 	if req.Payload, err = proto.Marshal(stx); err != nil {
 		return 0, err
 	}
-
-	if _, err = c.pool.Request(req, c.signingKey); err != nil {
+	if resp, err = c.pool.Request(req, c.signingKey); err != nil {
 		return 0, err
+	}
+	if !resp.Ok {
+		return 0, fmt.Errorf("could not create organization on the vochain: %s", resp.Message)
 	}
 	return p.Process.StartBlock, nil
 }
