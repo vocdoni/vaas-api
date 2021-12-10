@@ -60,7 +60,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/organizations/{entityId}/processes/*",
+		"/priv/organizations/{entityId}/elections/*",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.createProcessHandler,
@@ -124,7 +124,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/processes/{electionId}/status",
+		"/priv/elections/{electionId}/status",
 		"PUT",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.setProcessStatusHandler,
@@ -132,7 +132,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/processes/{electionId}",
+		"/priv/elections/{electionId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.getProcessHandler,
@@ -344,8 +344,8 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	return sendResponse(resp, ctx)
 }
 
-// POST https://server/v1/priv/organizations/<entityId>/processes/signed
-// POST https://server/v1/priv/organizations/<entityId>/processes/blind
+// POST https://server/v1/priv/organizations/<entityId>/elections/signed
+// POST https://server/v1/priv/organizations/<entityId>/elections/blind
 // createProcessHandler creates a process with the given metadata, either with signed or blind signature voting
 func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -516,7 +516,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	return sendResponse(resp, ctx)
 }
 
-// GET https://server/v1/priv/processes/<processId>
+// GET https://server/v1/priv/elections/<processId>
 // getProcessHandler gets the entirety of a process, including metadata
 // confidential processes need no extra step, only the api key
 func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
@@ -600,7 +600,7 @@ func (u *URLAPI) importPublicKeysHandler(msg *bearerstdapi.BearerStandardAPIdata
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-// PUT https://server/v1/priv/processes/<processId>/status
+// PUT https://server/v1/priv/elections/<processId>/status
 // setProcessStatusHandler sets the process status (READY, PAUSED, ENDED, CANCELED)
 func (u *URLAPI) setProcessStatusHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())

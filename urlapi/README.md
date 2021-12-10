@@ -307,8 +307,8 @@ Generates a Merkle Tree with the given current census keys and generates a votin
 
 #### Request 
 ```bash
-curl -X POST -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/processes/signed
-curl -X POST -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/processes/blind
+curl -X POST -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/elections/signed
+curl -X POST -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/elections/blind
 ```
 
 #### Request body
@@ -355,12 +355,12 @@ Allows unrestricted listing, paging and filtering for the integrator backend to 
 
 #### Request 
 ```bash
-curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/processes/signed
-curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/processes/blind
+curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/elections/signed
+curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/elections/blind
 
-curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/processes/active
-curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/processes/ended
-curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/processes/upcoming
+curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/elections/active
+curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/elections/ended
+curl -H "Bearer: <integrator-key>" https://server/v1/priv/organizations/<organizationId>/elections/upcoming
 ```
 #### HTTP 200
 ```json
@@ -392,7 +392,7 @@ Confidential processes do not require any additional step, just the integrator A
 
 #### Request 
 ```bash
-curl -H "Bearer: <integrator-key>" https://server/v1/priv/processes/<processId>
+curl -H "Bearer: <integrator-key>" https://server/v1/priv/elections/<processId>
 ```
 
 #### Request body
@@ -674,7 +674,7 @@ curl -X POST -H "Bearer: <integrator-key>" https://server/v1/priv/censuses/<cens
 
 #### Request 
 ```bash
-curl -X PUT -H "Bearer: <integrator-key>" https://server/v1/priv/processes/<processId>/status
+curl -X PUT -H "Bearer: <integrator-key>" https://server/v1/priv/elections/<processId>/status
 ```
 
 #### Request body
@@ -733,9 +733,9 @@ curl -H "Bearer: <organization-api-token>" https://server/v1/pub/organizations/<
 
 #### Request 
 ```bash
-curl -H "Bearer: <manager-key>" https://server/v1/pub/organizations/<organizationId>/processes/active
-curl -H "Bearer: <manager-key>" https://server/v1/pub/organizations/<organizationId>/processes/ended
-curl -H "Bearer: <manager-key>" https://server/v1/pub/organizations/<organizationId>/processes/upcoming
+curl -H "Bearer: <manager-key>" https://server/v1/pub/organizations/<organizationId>/elections/active
+curl -H "Bearer: <manager-key>" https://server/v1/pub/organizations/<organizationId>/elections/ended
+curl -H "Bearer: <manager-key>" https://server/v1/pub/organizations/<organizationId>/elections/upcoming
 
 ```
 #### HTTP 200
@@ -765,7 +765,7 @@ curl -H "Bearer: <manager-key>" https://server/v1/pub/organizations/<organizatio
 
 #### Request 
 ```bash
-curl -H "Bearer: <organization-api-token>" https://server/v1/pub/processes/<processId>
+curl -H "Bearer: <organization-api-token>" https://server/v1/pub/elections/<processId>
 ```
 
 #### HTTP 200
@@ -816,7 +816,7 @@ URL Params:
 
 #### Request 
 ```bash
-curl -H "Bearer: <entity-api-token>" https://server/v1/pub/processes/<process-id>/auth/<pid-signed>/<csp-signature>
+curl -H "Bearer: <entity-api-token>" https://server/v1/pub/elections/<process-id>/auth/<pid-signed>/<csp-signature>
 ```
 
 #### HTTP 200
@@ -858,7 +858,7 @@ People voting on a signed process will need to package a vote envelope using the
 
 #### Request 
 ```bash
-curl -H "Bearer: <organization-api-token>" https://server/v1/pub/processes/<processId>/proof
+curl -H "Bearer: <organization-api-token>" https://server/v1/pub/elections/<processId>/proof
 ```
 
 #### Request body
@@ -890,7 +890,7 @@ Voters using the tiny JS SDK will get a base64 bundle including the vote and the
 
 #### Request 
 ```bash
-curl -X POST -H "Bearer: <organization-api-token>" https://server/v1/pub/processes/<processId>/vote
+curl -X POST -H "Bearer: <organization-api-token>" https://server/v1/pub/elections/<processId>/vote
 ```
 
 #### Request body

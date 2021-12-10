@@ -134,7 +134,7 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
 }
 
 export async function createSignedElection(organizationId: string, apiKey: string) {
-  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/signed"
+  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
 
   const startDate = new Date(Date.now() + 1000 * 15)
   const endDate = new Date(Date.now() + 1000 * 60 * 60)
@@ -190,7 +190,7 @@ export async function createSignedElection(organizationId: string, apiKey: strin
 }
 
 export async function createAnonymousElection(organizationId: string, apiKey: string) {
-  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/blind"
+  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/blind"
 
   const startDate = new Date(Date.now() + 1000 * 15)
   const endDate = new Date(Date.now() + 1000 * 60 * 60)
@@ -254,11 +254,11 @@ type ElectionSummary = {
   endDate: string
 }
 export async function listElectionsPriv(organizationId: string, apiKey: string): Promise<Array<ElectionSummary>> {
-  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/signed"
-  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/blind"
-  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/active"
-  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/ended"
-  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/processes/ended"
+  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
+  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/blind"
+  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/active"
+  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/ended"
+  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/ended"
 
   const response = await fetch(url, {
     headers: {
@@ -298,7 +298,7 @@ type ElectionDetails = {
   status: string
 }
 export async function getElectionPriv(electionId: string, apiKey: string): Promise<ElectionDetails> {
-  const url = config.apiUrlPrefix + "/v1/priv/processes/" + electionId
+  const url = config.apiUrlPrefix + "/v1/priv/elections/" + electionId
 
   const response = await fetch(url, {
     headers: {

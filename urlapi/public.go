@@ -24,7 +24,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/entities/{entityId}/processes/*",
+		"/pub/entities/{entityId}/elections/*",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.listProcessesHandler,
@@ -32,7 +32,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/processes/{electionId}",
+		"/pub/elections/{electionId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getProcessInfoPublicHandler,
@@ -40,7 +40,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/processes/{electionId}/auth/{signature}",
+		"/pub/elections/{electionId}/auth/{signature}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getProcessInfoConfidentialHandler,
@@ -64,11 +64,11 @@ func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdat
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-// GET https://server/v1/priv/entities/<entityId>/processes/signed
-// GET https://server/v1/priv/entities/<entityId>/processes/blind
-// GET https://server/v1/priv/entities/<entityId>/processes/active
-// GET https://server/v1/priv/entities/<entityId>/processes/ended
-// GET https://server/v1/priv/entities/<entityId>/processes/upcoming
+// GET https://server/v1/priv/entities/<entityId>/elections/signed
+// GET https://server/v1/priv/entities/<entityId>/elections/blind
+// GET https://server/v1/priv/entities/<entityId>/elections/active
+// GET https://server/v1/priv/entities/<entityId>/elections/ended
+// GET https://server/v1/priv/entities/<entityId>/elections/upcoming
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 
@@ -105,7 +105,7 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 	// return sendResponse(resp, ctx)
 }
 
-// GET https://server/v1/pub/processes/<processId>
+// GET https://server/v1/pub/elections/<processId>
 // getProcessInfoPublicHandler gets public process info
 func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -148,7 +148,7 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	return nil
 }
 
-// GET https://server/v1/pub/processes/<processId>/auth/<signature>
+// GET https://server/v1/pub/elections/<processId>/auth/<signature>
 // getProcessInfoConfidentialHandler gets process info, including private metadata,
 //  checking the voter's signature for inclusion in the census
 func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStandardAPIdata,

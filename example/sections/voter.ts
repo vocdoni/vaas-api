@@ -45,7 +45,7 @@ type ElectionSummary = {
   endDate: string // JSON date
 }
 export async function getElectionListPub(organizationId: string, status: "active" | "ended" | "upcoming", orgApiToken: string) {
-  const url = config.apiUrlPrefix + "/v1/pub/organizations/" + organizationId + "/processes/" + status
+  const url = config.apiUrlPrefix + "/v1/pub/organizations/" + organizationId + "/elections/" + status
 
   const response = await fetch(url, {
     headers: {
@@ -84,7 +84,7 @@ type ElectionDetail = {
   results: Array<Array<{ title: string, value: string }>> // Empty arrays when no results []
 }
 export async function getElectionInfoPub(electionId: string, orgApiToken: string) {
-  const url = config.apiUrlPrefix + "/v1/pub/processes/" + electionId
+  const url = config.apiUrlPrefix + "/v1/pub/elections/" + electionId
 
   const response = await fetch(url, {
     headers: {
@@ -108,7 +108,7 @@ export async function getElectionInfoPub(electionId: string, orgApiToken: string
 }
 
 export async function getElectionSecretInfoPub(electionId: string, cspSharedKey: string, orgApiToken: string) {
-  const url = config.apiUrlPrefix + "/v1/pub/processes/" + electionId + "/auth/" + cspSharedKey
+  const url = config.apiUrlPrefix + "/v1/pub/elections/" + electionId + "/auth/" + cspSharedKey
 
   const response = await fetch(url, {
     headers: {
@@ -136,7 +136,7 @@ export async function getElectionSecretInfoPub(electionId: string, cspSharedKey:
 //////////////////////////////////////////////////////////////////////////
 
 export async function getElectionSharedKey(electionId: string, signedElectionId: string, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/sharedKey"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/sharedKey"
 
   const body = {
     "authData": [signedElectionId]
@@ -169,7 +169,7 @@ export async function getElectionSharedKey(electionId: string, signedElectionId:
 }
 
 export async function getCspSigningTokenPlain(electionId: string, signedElectionId: string, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/ecdsa/auth"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/ecdsa/auth"
 
   const body = {
     "authData": [signedElectionId]
@@ -202,7 +202,7 @@ export async function getCspSigningTokenPlain(electionId: string, signedElection
 }
 
 export async function getCspSigningTokenBlind(electionId: string, signedElectionId: string, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/blind/auth"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/blind/auth"
 
   const body = {
     "authData": [signedElectionId]
@@ -235,7 +235,7 @@ export async function getCspSigningTokenBlind(electionId: string, signedElection
 }
 
 export async function getCspPlainSignature(electionId: string, tokenR: string, payload: string, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/ecdsa/sign"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/ecdsa/sign"
 
   const body = {
     tokenR,
@@ -269,7 +269,7 @@ export async function getCspPlainSignature(electionId: string, tokenR: string, p
 }
 
 export async function getCspBlindSignature(electionId: string, tokenR: string, blindedPayload: string, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/blind/sign"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/blind/sign"
 
   const body = {
     tokenR,
@@ -307,7 +307,7 @@ export async function getCspBlindSignature(electionId: string, tokenR: string, b
 //////////////////////////////////////////////////////////////////////////
 
 export async function getElectionSharedKeyCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/sharedKey"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/sharedKey"
 
   const body = {
     "authData": [proof.param1, proof.param2] // The custom values that the CSP expects
@@ -340,7 +340,7 @@ export async function getElectionSharedKeyCustom(electionId: string, proof: { pa
 }
 
 export async function getCspSigningTokenPlainCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/ecdsa/auth"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/ecdsa/auth"
 
   const body = {
     "authData": [proof.param1, proof.param2] // The custom values that the CSP expects
@@ -373,7 +373,7 @@ export async function getCspSigningTokenPlainCustom(electionId: string, proof: {
 }
 
 export async function getCspSigningTokenBlindCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/processes/" + electionId + "/blind/auth"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/blind/auth"
 
   const body = {
     "authData": [proof.param1, proof.param2] // The custom values that the CSP expects
