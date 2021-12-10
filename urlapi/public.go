@@ -166,7 +166,6 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-<<<<<<< HEAD
 // GET https://server/v1/pub/account/organizations/<entityId>
 // getOrganizationHandler fetches an entity
 func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
@@ -201,9 +200,7 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	return sendResponse(resp, ctx)
 }
 
-=======
 // POST https://server/v1/pub/processes/<processId>/vote
->>>>>>> Return nullifier from submitRawTx
 func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
@@ -218,7 +215,7 @@ func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata
 		log.Errorf("could not decode vote pkg to base64: %v", err)
 		return fmt.Errorf("could not decode vote pkg to base64: %v", err)
 	}
-	if resp.Nullifier, err = u.vocClient.SubmitRawTx(votePkg); err != nil {
+	if resp.Nullifier, err = u.vocClient.RelayTx(votePkg); err != nil {
 		log.Errorf("could not submit vote tx: %v", err)
 		return fmt.Errorf("could not submit vote tx: %v", err)
 	}

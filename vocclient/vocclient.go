@@ -1,20 +1,26 @@
 package vocclient
 
 import (
+	"bytes"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
+	"time"
 
-	apitypes "go.vocdoni.io/api/types"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	"go.vocdoni.io/dvote/httprouter/jsonrpcapi"
 	"go.vocdoni.io/dvote/log"
-	"go.vocdoni.io/dvote/types"
+	dvoteTypes "go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 	"google.golang.org/protobuf/proto"
+	"nhooyr.io/websocket"
 )
 
 var MAX_CENSUS_SIZE = uint64(1024)
@@ -25,7 +31,7 @@ type Client struct {
 }
 
 func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
-	gwPool, err := discoverGateways(gatewayUrls)
+	gwPool, err := DiscoverGateways(gatewayUrls)
 	if err != nil {
 		return nil, err
 	}
@@ -113,9 +119,9 @@ func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
 	return resp.InfoURI, *resp.Balance, *resp.Nonce, nil
 }
 
-func (c *Client) GetResults(pid []byte) (results *apitypes.VochainResults, _ error) {
+func (c *Client) GetResults(pid []byte) (results *types.VochainResults, _ error) {
 	var req api.APIrequest
-	results = new(apitypes.VochainResults)
+	results = new(types.VochainResults)
 	req.Method = "getResults"
 	req.ProcessID = pid
 	resp, err := c.pool.Request(req, c.signingKey)
@@ -155,7 +161,7 @@ func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm st
 
 // FILE APIS
 
-func (c *Client) SetEntityMetadata(meta apitypes.EntityMetadata,
+func (c *Client) SetEntityMetadata(meta types.EntityMetadata,
 	entityID []byte) (metaURI string, _ error) {
 	var metaBytes []byte
 	var err error
@@ -170,7 +176,7 @@ func (c *Client) SetEntityMetadata(meta apitypes.EntityMetadata,
 	return metaURI, nil
 }
 
-func (c *Client) SetProcessMetadata(meta apitypes.ProcessMetadata,
+func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 	processId []byte) (metaURI string, _ error) {
 	var metaBytes []byte
 	var err error
@@ -198,7 +204,7 @@ func (c *Client) AddFile(content []byte, contentType, name string) (URI string, 
 	return resp.URI, nil
 }
 
-func (c *Client) FetchProcessMetadata(URI string) (process *apitypes.ProcessMetadata, _ error) {
+func (c *Client) FetchProcessMetadata(URI string) (process *types.ProcessMetadata, _ error) {
 	content, err := c.FetchFile(URI)
 	if err != nil {
 		return nil, err
@@ -209,7 +215,7 @@ func (c *Client) FetchProcessMetadata(URI string) (process *apitypes.ProcessMeta
 	return process, nil
 }
 
-func (c *Client) FetchOrganizationMetadata(URI string) (entity *apitypes.EntityMetadata, _ error) {
+func (c *Client) FetchOrganizationMetadata(URI string) (entity *types.EntityMetadata, _ error) {
 	content, err := c.FetchFile(URI)
 	if err != nil {
 		return nil, err
@@ -252,7 +258,7 @@ func (c *Client) AddCensus() (CensusID string, _ error) {
 	return resp.CensusID, nil
 }
 
-func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string, censusValue []byte) (root types.HexBytes, _ error) {
+func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string, censusValue []byte) (root dvoteTypes.HexBytes, _ error) {
 	var req api.APIrequest
 	var hexpub string
 	req.Method = "addClaim"
@@ -265,18 +271,18 @@ func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, cens
 	}
 	pub, err := hex.DecodeString(hexpub)
 	if err != nil {
-		return types.HexBytes{}, err
+		return dvoteTypes.HexBytes{}, err
 	}
 	req.CensusKey = pub
 	req.CensusValue = censusValue
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
-		return types.HexBytes{}, err
+		return dvoteTypes.HexBytes{}, err
 	}
 	return resp.Root, nil
 }
 
-func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string, censusValues []*types.BigInt) (root types.HexBytes, invalidClaims []int, _ error) {
+func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string, censusValues []*dvoteTypes.BigInt) (root dvoteTypes.HexBytes, invalidClaims []int, _ error) {
 	var req api.APIrequest
 	req.CensusID = censusID
 	censusSize := 0
@@ -294,7 +300,7 @@ func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKey
 	var hexpub string
 	for currentSize > 0 {
 		claims := [][]byte{}
-		values := []*types.BigInt{}
+		values := []*dvoteTypes.BigInt{}
 		for j := 0; j < 100; j++ {
 			if currentSize < 1 {
 				break
@@ -306,7 +312,7 @@ func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKey
 			}
 			pub, err := hex.DecodeString(hexpub)
 			if err != nil {
-				return types.HexBytes{}, []int{}, err
+				return dvoteTypes.HexBytes{}, []int{}, err
 			}
 			claims = append(claims, pub)
 			if len(censusValues) > 0 {
@@ -318,7 +324,7 @@ func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKey
 		req.Weights = values
 		resp, err := c.pool.Request(req, c.signingKey)
 		if err != nil {
-			return types.HexBytes{}, []int{}, err
+			return dvoteTypes.HexBytes{}, []int{}, err
 		}
 		root = resp.Root
 		invalidClaims = append(invalidClaims, resp.InvalidClaims...)
@@ -328,7 +334,7 @@ func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKey
 	return root, invalidClaims, nil
 }
 
-func (c *Client) PublishCensus(censusID string, rootHash types.HexBytes) (uri string, _ error) {
+func (c *Client) PublishCensus(censusID string, rootHash dvoteTypes.HexBytes) (uri string, _ error) {
 	var req api.APIrequest
 	req.Method = "publish"
 	req.CensusID = censusID
@@ -344,13 +350,13 @@ func (c *Client) PublishCensus(censusID string, rootHash types.HexBytes) (uri st
 	return resp.URI, nil
 }
 
-func (c *Client) GetRoot(censusID string) (root types.HexBytes, _ error) {
+func (c *Client) GetRoot(censusID string) (root dvoteTypes.HexBytes, _ error) {
 	var req api.APIrequest
 	req.Method = "getRoot"
 	req.CensusID = censusID
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
-		return types.HexBytes{}, err
+		return dvoteTypes.HexBytes{}, err
 	}
 	return resp.Root, nil
 }
@@ -433,17 +439,62 @@ func (c *Client) CreateProcess(
 	return p.Process.StartBlock, nil
 }
 
-func (c *Client) SubmitRawTx(payload []byte) (string, error) {
-	var req api.APIrequest
-	var resp *api.APIresponse
+func (c *Client) RelayTx(reqBody []byte) (string, error) {
 	var err error
 
-	req.Method = "submitRawTx"
-	req.Payload = payload
-	// TODO get nullifier and return it
-	if resp, err = c.pool.Request(req, c.signingKey); err != nil {
+	var gw Gateway
+	if gw, err = c.pool.activeGateway(); err != nil {
 		return "", err
 	}
 
-	return resp.Nullifier, nil
+	var reqOuter jsonrpcapi.RequestMessage
+	if err := json.Unmarshal(reqBody, &reqOuter); err != nil {
+		return "", fmt.Errorf("%s: %v", "sumbitRawTx", err)
+	}
+	reqId := reqOuter.ID
+
+	message := []byte{}
+	if gw.client.WS != nil {
+		tctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		if err := gw.client.WS.Write(tctx, websocket.MessageText, reqBody); err != nil {
+			return "", fmt.Errorf("%s: %v", "relayTx", err)
+		}
+		_, message, err = gw.client.WS.Read(tctx)
+		if err != nil {
+			return "", fmt.Errorf("%s: %v", "relayTx", err)
+		}
+	}
+	if gw.client.HTTP != nil {
+		resp, err := gw.client.HTTP.Post(gw.client.Addr, "application/json", bytes.NewBuffer(reqBody))
+		if err != nil {
+			return "", err
+		}
+		message, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return "", err
+		}
+		resp.Body.Close()
+	}
+	log.Debugf("response: %s", message)
+	var respOuter jsonrpcapi.ResponseMessage
+	if err := json.Unmarshal(message, &respOuter); err != nil {
+		return "", fmt.Errorf("%s: %v", "relayTx", err)
+	}
+	if respOuter.ID != reqId {
+		return "", fmt.Errorf("%s: %v", "relayTx", "request ID doesn't match")
+	}
+	if len(respOuter.Signature) == 0 {
+		return "", fmt.Errorf("%s: empty signature in response: %s", "relayTx", message)
+	}
+	var respInner api.APIresponse
+	if err := json.Unmarshal(respOuter.MessageAPI, &respInner); err != nil {
+		return "", fmt.Errorf("%s: %v", "relayTx", err)
+	}
+
+	if len(respInner.Nullifier) < 1 {
+		return "", fmt.Errorf("%", "did not received nullifier")
+	}
+
+	return respInner.Nullifier, nil
 }
