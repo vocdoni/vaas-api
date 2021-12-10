@@ -12,45 +12,47 @@ import (
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIRequest struct {
 	Avatar        string     `json:"avatar"`
+	Census        string     `json:"census"`
+	Confidential  bool       `json:"confidential"`
 	CspPubKey     string     `json:"cspPubKey"`
 	CspUrlPrefix  string     `json:"cspUrlPrefix"`
 	Description   string     `json:"description"`
-	Header        string     `json:"header"`
-	Name          string     `json:"name"`
 	Email         string     `json:"email"`
-	ID            int        `json:"id"`
-	Title         string     `json:"title"`
-	StreamURI     string     `json:"streamUri"`
-	StartDate     string     `json:"startDate"`
 	EndDate       string     `json:"endDate"`
-	Questions     []Question `json:"questions"`
-	Confidential  bool       `json:"confidential"`
+	Header        string     `json:"header"`
 	HiddenResults bool       `json:"hiddenResults"`
-	Census        string     `json:"census"`
 	Vote          string     `json:"vote"`
+	ID            int        `json:"id"`
+	Name          string     `json:"name"`
+	Questions     []Question `json:"questions"`
+	StartDate     string     `json:"startDate"`
+	StreamURI     string     `json:"streamUri"`
+	Title         string     `json:"title"`
 }
 
 // APIResponse contains all of the possible response fields.
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIResponse struct {
-	APIKey         string         `json:"apiKey,omitempty"`
-	APIToken       string         `json:"apiToken,omitempty"`
-	Avatar         string         `json:"avatar,omitempty"`
-	CensusID       int            `json:"census_id,omitempty"`
-	ContentURI     string         `json:"contentUri,omitempty"`
-	CspPubKey      types.HexBytes `json:"cspPubKey,omitempty"`
-	CspUrlPrefix   string         `json:"cspUrlPrefix,omitempty"`
-	Description    string         `json:"description,omitempty"`
-	EndBlock       []byte         `json:"end_block,omitempty"`
-	Header         string         `json:"header,omitempty"`
-	ID             int            `json:"id,omitempty"`
-	Message        string         `json:"message,omitempty"`
-	Name           string         `json:"name,omitempty"`
-	Nullifier      string         `json:"nullifier,omitempty"`
-	Ok             bool           `json:"ok,omitempty"`
-	ElectionID     types.HexBytes `json:"electionId,omitempty"`
-	OrganizationID types.HexBytes `json:"organizationId,omitempty"`
+	APIKey           string         `json:"apiKey,omitempty"`
+	APIToken         string         `json:"apiToken,omitempty"`
+	Avatar           string         `json:"avatar,omitempty"`
+	CensusID         int            `json:"census_id,omitempty"`
+	ContentURI       string         `json:"contentUri,omitempty"`
+	CspPubKey        types.HexBytes `json:"cspPubKey,omitempty"`
+	CspUrlPrefix     string         `json:"cspUrlPrefix,omitempty"`
+	Description      string         `json:"description,omitempty"`
+	ElectionID       types.HexBytes `json:"electionId,omitempty"`
+	EndBlock         []byte         `json:"end_block,omitempty"`
+	Header           string         `json:"header,omitempty"`
+	ID               int            `json:"id,omitempty"`
+	Message          string         `json:"message,omitempty"`
+	Name             string         `json:"name,omitempty"`
+	Nullifier        string         `json:"nullifier,omitempty"`
+	Ok               bool           `json:"ok,omitempty"`
+	OrganizationID   types.HexBytes `json:"organizationId,omitempty"`
+	PrivateProcesses []Election     `json:"private,omitempty"`
+	PublicProcesses  []Election     `json:"public,omitempty"`
 }
 
 // APIProcess is the response struct for a getProcess request
