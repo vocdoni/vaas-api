@@ -2,6 +2,7 @@ package urlapi
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -73,19 +74,19 @@ func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdat
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-// GET https://server/v1/priv/entities/<entityId>/elections/signed
-// GET https://server/v1/priv/entities/<entityId>/elections/blind
-// GET https://server/v1/priv/entities/<entityId>/elections/active
-// GET https://server/v1/priv/entities/<entityId>/elections/ended
-// GET https://server/v1/priv/entities/<entityId>/elections/upcoming
+// GET https://server/v1/pub/entities/<entityId>/processes/signed
+// GET https://server/v1/pub/entities/<entityId>/processes/blind
+// GET https://server/v1/pub/entities/<entityId>/processes/active
+// GET https://server/v1/pub/entities/<entityId>/processes/ended
+// GET https://server/v1/pub/entities/<entityId>/processes/upcoming
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-
-	// var processList []string
-
+	var processList []types.Election
 	var entityId []byte
 	var err error
-	if entityId, err = util.GetBytesID(ctx, "organizationId"); err != nil {
+	var resp types.APIResponse
+
+	if entityId, err = util.GetBytesID(ctx, "entityId"); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -93,10 +94,57 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 	path := strings.Split(ctx.Request.URL.Path, "/")
 	pathSuffix := path[len(path)-1]
 	switch pathSuffix {
-	case "enable", "active", "ended", "upcoming":
-		if _, err := u.vocClient.GetProcessList(entityId, pathSuffix, "", "", 0, false, 0, 0); err != nil {
-			log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-			return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+	case "active", "ended", "upcoming":
+		var tempProcessList []string
+		var totalProcs int
+		var currentHeight uint32
+		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
+			log.Errorf("could not get current block height: %v", err)
+			return fmt.Errorf("could not get current block height: %v", err)
+		}
+		cont := true
+		for cont {
+			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
+				"", "", "", 0, false, totalProcs, 64); err != nil {
+				log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+				return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+			}
+			if len(tempProcessList) < 64 {
+				cont = false
+			}
+			totalProcs += len(tempProcessList)
+			for _, processID := range tempProcessList {
+				var processIDBytes []byte
+				var newProcess *types.Election
+				if processIDBytes, err = hex.DecodeString(processID); err != nil {
+					log.Error(err)
+					break
+				}
+				// TODO implement getElection with just entityAddress+processID
+				if newProcess, err = u.db.GetElection([]byte{}, entityId, processIDBytes); err != nil {
+					log.Error(err)
+					break
+				}
+
+				// Sanitize private fields from election
+				newProcess.IntegratorApiKey = nil
+				newProcess.MetadataPrivKey = nil
+
+				switch pathSuffix {
+				case "active":
+					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
+						processList = append(processList, *newProcess)
+					}
+				case "upcoming":
+					if newProcess.StartBlock > int(currentHeight) {
+						processList = append(processList, *newProcess)
+					}
+				case "ended":
+					if newProcess.EndBlock < int(currentHeight) {
+						processList = append(processList, *newProcess)
+					}
+				}
+			}
 		}
 	case "blind", "signed":
 		log.Warnf("endpoint %s unimplemented", ctx.Request.URL.Path)
@@ -106,12 +154,9 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
 
 	}
-	return nil
 
-	// Parse all the information
-	// resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
-
-	// return sendResponse(resp, ctx)
+	resp.PublicProcesses = processList
+	return sendResponse(resp, ctx)
 }
 
 // GET https://server/v1/pub/elections/<processId>
