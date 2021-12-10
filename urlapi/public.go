@@ -26,7 +26,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/entities/{organizationId}/elections/*",
+		"/pub/organizations/{organizationId}/elections/*",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.listProcessesHandler,
@@ -74,13 +74,14 @@ func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdat
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-// GET https://server/v1/pub/entities/<entityId>/processes/signed
-// GET https://server/v1/pub/entities/<entityId>/processes/blind
-// GET https://server/v1/pub/entities/<entityId>/processes/active
-// GET https://server/v1/pub/entities/<entityId>/processes/ended
-// GET https://server/v1/pub/entities/<entityId>/processes/upcoming
+// GET https://server/v1/pub/organizations/<entityId>/processes/signed
+// GET https://server/v1/pub/organizations/<entityId>/processes/blind
+// GET https://server/v1/pub/organizations/<entityId>/processes/active
+// GET https://server/v1/pub/organizations/<entityId>/processes/ended
+// GET https://server/v1/pub/organizations/<entityId>/processes/upcoming
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
-func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
 	var processList []types.Election
 	var entityId []byte
 	var err error
@@ -120,8 +121,7 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 					log.Error(err)
 					break
 				}
-				// TODO implement getElection with just entityAddress+processID
-				if newProcess, err = u.db.GetElection([]byte{}, entityId, processIDBytes); err != nil {
+				if newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes); err != nil {
 					log.Error(err)
 					break
 				}
