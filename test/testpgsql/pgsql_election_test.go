@@ -29,6 +29,10 @@ func TestElection(t *testing.T) {
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
 	elections[0].ID = id
 
+	election, err := API.DB.GetElectionPublic(organizations[0].EthAddress, elections[0].ProcessID)
+	c.Assert(err, qt.IsNil)
+	c.Assert(election.ID, qt.Not(qt.Equals), elections[0].ID)
+
 	list, err := API.DB.ListElections(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
 	c.Assert(len(list), qt.Equals, 1)
