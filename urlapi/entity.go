@@ -28,7 +28,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/organizations/{entityId}",
+		"/priv/account/organizations/{organizationId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.getOrganizationPrivateHandler,
@@ -36,7 +36,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/organizations/{entityId}",
+		"/priv/account/organizations/{organizationId}",
 		"DELETE",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.deleteOrganizationHandler,
@@ -44,7 +44,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/account/organizations/{entityId}/key",
+		"/priv/account/organizations/{organizationId}/key",
 		"PATCH",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.resetOrganizationKeyHandler,
@@ -52,7 +52,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/organizations/{entityId}/metadata",
+		"/priv/organizations/{organizationId}/metadata",
 		"PUT",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.setOrganizationMetadataHandler,
@@ -60,7 +60,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/organizations/{entityId}/elections/*",
+		"/priv/organizations/{organizationId}/elections/*",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.createProcessHandler,
@@ -616,7 +616,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
 		return nil, nil, nil, err
 	}
-	if entityID, err = util.GetBytesID(ctx, "entityId"); err != nil {
+	if entityID, err = util.GetBytesID(ctx, "organizationId"); err != nil {
 		return nil, nil, nil, err
 	}
 	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {

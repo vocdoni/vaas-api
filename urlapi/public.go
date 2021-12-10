@@ -24,7 +24,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/entities/{entityId}/elections/*",
+		"/pub/entities/{organizationId}/elections/*",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.listProcessesHandler,
@@ -48,7 +48,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/account/organizations/{entityId}",
+		"/pub/account/organizations/{organizationId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getOrganizationHandler,
@@ -76,7 +76,7 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 
 	var entityId []byte
 	var err error
-	if entityId, err = util.GetBytesID(ctx, "entityId"); err != nil {
+	if entityId, err = util.GetBytesID(ctx, "organizationId"); err != nil {
 		log.Error(err)
 		return err
 	}
