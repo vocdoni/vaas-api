@@ -115,7 +115,7 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	var vochainProcess *indexertypes.Process
 	var results *types.VochainResults
 	var processMetadata *types.ProcessMetadata
-	if processId, err = util.GetBytesID(ctx, "processId"); err != nil {
+	if processId, err = util.GetBytesID(ctx, "electionId"); err != nil {
 		log.Error(err)
 		return err
 	}
