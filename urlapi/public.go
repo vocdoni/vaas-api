@@ -43,7 +43,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/processes/{electionId}/vote",
+		"/pub/elections/{electionId}/vote",
 		"POST",
 		bearerstdapi.MethodAccessTypePublic,
 		u.submitVotePublicHandler,
@@ -75,11 +75,11 @@ func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdat
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-// GET https://server/v1/pub/organizations/<entityId>/processes/signed
-// GET https://server/v1/pub/organizations/<entityId>/processes/blind
-// GET https://server/v1/pub/organizations/<entityId>/processes/active
-// GET https://server/v1/pub/organizations/<entityId>/processes/ended
-// GET https://server/v1/pub/organizations/<entityId>/processes/upcoming
+// GET https://server/v1/pub/organizations/<organizationId>/elections/signed
+// GET https://server/v1/pub/organizations/<organizationId>/elections/blind
+// GET https://server/v1/pub/organizations/<organizationId>/elections/active
+// GET https://server/v1/pub/organizations/<organizationId>/elections/ended
+// GET https://server/v1/pub/organizations/<organizationId>/elections/upcoming
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -87,7 +87,7 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var err error
 	var resp types.APIResponse
 
-	if entityId, err = util.GetBytesID(ctx, "entityId"); err != nil {
+	if entityId, err = util.GetBytesID(ctx, "organizationId"); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -219,7 +219,7 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-// GET https://server/v1/pub/account/organizations/<entityId>
+// GET https://server/v1/pub/account/organizations/<organizationId>
 // getOrganizationHandler fetches an entity
 func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -252,12 +252,12 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	return sendResponse(resp, ctx)
 }
 
-// POST https://server/v1/pub/processes/<processId>/vote
+// POST https://server/v1/pub/elections/<processId>/vote
 func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
 	var req types.APIRequest
-	log.Debugf("query to submit vote for process %s", ctx.URLParam("processId"))
+	log.Debugf("query to submit vote for process %s", ctx.URLParam("electionId"))
 	if req, err = util.UnmarshalRequest(msg); err != nil {
 		log.Error(err)
 		return err
@@ -481,16 +481,16 @@ func aggregateResults(meta *types.ProcessMetadata,
 
 func reflectElectionPublic(election types.Election) types.APIElection {
 	newElection := types.APIElection{
-		OrgEthAddress:  election.OrgEthAddress,
-		OrganizationID: election.ProcessID,
-		Title:          election.Title,
-		CensusID:       election.CensusID.UUID.String(),
-		StartDate:      election.StartDate,
-		EndDate:        election.EndDate,
-		StartBlock:     election.StartBlock,
-		EndBlock:       election.EndBlock,
-		Confidential:   election.Confidential,
-		HiddenResults:  election.HiddenResults,
+		OrgEthAddress: election.OrgEthAddress,
+		ElectionID:    election.ProcessID,
+		Title:         election.Title,
+		CensusID:      election.CensusID.UUID.String(),
+		StartDate:     election.StartDate,
+		EndDate:       election.EndDate,
+		StartBlock:    election.StartBlock,
+		EndBlock:      election.EndBlock,
+		Confidential:  election.Confidential,
+		HiddenResults: election.HiddenResults,
 	}
 	if election.CensusID.UUID == uuid.Nil {
 		newElection.CensusID = ""

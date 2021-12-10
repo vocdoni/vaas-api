@@ -69,7 +69,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/organizations/{entityId}/processes/*",
+		"/priv/organizations/{entityId}/elections/*",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.listProcessesPrivateHandler,
@@ -227,7 +227,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	return sendResponse(resp, ctx)
 }
 
-// GET https://server/v1/priv/account/organizations/<entityId>
+// GET https://server/v1/priv/account/organizations/<organizationId>
 // getOrganizationPrivateHandler fetches an entity
 func (u *URLAPI) getOrganizationPrivateHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -262,7 +262,7 @@ func (u *URLAPI) getOrganizationPrivateHandler(msg *bearerstdapi.BearerStandardA
 	return sendResponse(resp, ctx)
 }
 
-// DELETE https://server/v1/priv/account/organizations/<entityId>
+// DELETE https://server/v1/priv/account/organizations/<organizationId>
 // deleteOrganizationHandler deletes an entity
 func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -308,7 +308,7 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	return sendResponse(resp, ctx)
 }
 
-// PUT https://server/v1/priv/organizations/<entityId>/metadata
+// PUT https://server/v1/priv/organizations/<organizationId>/metadata
 // setOrganizationMetadataHandler sets an entity's metadata
 func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -353,8 +353,8 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	return sendResponse(resp, ctx)
 }
 
-// POST https://server/v1/priv/organizations/<entityId>/elections/signed
-// POST https://server/v1/priv/organizations/<entityId>/elections/blind
+// POST https://server/v1/priv/organizations/<organizationId>/elections/signed
+// POST https://server/v1/priv/organizations/<organizationId>/elections/blind
 // createProcessHandler creates a process with the given metadata, either with signed or blind signature voting
 func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -525,11 +525,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	return sendResponse(resp, ctx)
 }
 
-// GET https://server/v1/priv/organizations/<entityId>/processes/signed
-// GET https://server/v1/priv/organizations/<entityId>/processes/blind
-// GET https://server/v1/priv/organizations/<entityId>/processes/active
-// GET https://server/v1/pprivub/organizations/<entityId>/processes/ended
-// GET https://server/v1/priv/organizations/<entityId>/processes/upcoming
+// GET https://server/v1/priv/organizations/<organizationId>/elections/signed
+// GET https://server/v1/priv/organizations/<organizationId>/elections/blind
+// GET https://server/v1/priv/organizations/<organizationId>/elections/active
+// GET https://server/v1/pprivub/organizations/<organizationId>/elections/ended
+// GET https://server/v1/priv/organizations/<organizationId>/elections/upcoming
 // listProcessesPrivateHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -607,7 +607,7 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 	return sendResponse(resp, ctx)
 }
 
-// GET https://server/v1/priv/processes/<processId>
+// GET https://server/v1/priv/elections/<processId>
 // getProcessHandler gets the entirety of a process, including metadata
 // confidential processes need no extra step, only the api key
 func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
@@ -722,7 +722,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 func reflectElectionPrivate(election types.Election) types.APIElection {
 	newElection := types.APIElection{
 		OrgEthAddress:   election.OrgEthAddress,
-		OrganizationID:  election.ProcessID,
+		ElectionID:      election.ProcessID,
 		Title:           election.Title,
 		CensusID:        election.CensusID.UUID.String(),
 		StartDate:       election.StartDate,
