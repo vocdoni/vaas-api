@@ -193,7 +193,7 @@ func (d *Database) UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress
 	}
 	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, PublicAPIToken: newPublicApiToken}
 	update := `UPDATE organizations SET
-				public_api_token = COALESCE(NULLIF(:public_api_token, '' ::::bytea ),  public_api_token)
+				public_api_token = COALESCE(NULLIF(:public_api_token, '' ::::bytea ),  public_api_token),
 				updated_at = now()
 				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
 				AND  (//TODO)`

@@ -259,20 +259,18 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
-	var organization *types.Organization
 	var integratorPrivKey []byte
 	var entityID []byte
 	// authenticate integrator has permission to edit this entity
-	if integratorPrivKey, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Error(err)
-		return err
+	if integratorPrivKey, entityID, _, err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Warn(err)
+		return sendResponse(resp, ctx)
 	}
 
 	if err = u.db.DeleteOrganization(integratorPrivKey, entityID); err != nil {
-		log.Error(err)
-		return err
+		log.Warn(err)
+		return sendResponse(resp, ctx)
 	}
-	u.RevokeToken(organization.PublicAPIToken)
 	return sendResponse(resp, ctx)
 }
 
