@@ -493,7 +493,7 @@ func (c *Client) RelayTx(reqBody []byte) (string, error) {
 	}
 
 	if len(respInner.Nullifier) < 1 {
-		return "", fmt.Errorf("%", "did not received nullifier")
+		return "", fmt.Errorf("%s", "did not received nullifier")
 	}
 
 	return respInner.Nullifier, nil
