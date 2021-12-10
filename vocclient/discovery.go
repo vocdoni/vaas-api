@@ -11,7 +11,7 @@ import (
 	"go.vocdoni.io/dvote/log"
 )
 
-func discoverGateways(urls []string) (GatewayPool, error) {
+func DiscoverGateways(urls []string) (GatewayPool, error) {
 	gateways := []*client.Client{}
 	log.Debugf("discovering gateways %v", urls)
 	for _, url := range urls {
