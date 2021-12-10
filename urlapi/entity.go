@@ -583,15 +583,15 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 				switch pathSuffix {
 				case "active":
 					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-						resp = append(resp, reflectElectionPublic(*newProcess))
+						resp = append(resp, reflectElectionPrivate(*newProcess))
 					}
 				case "upcoming":
 					if newProcess.StartBlock > int(currentHeight) {
-						resp = append(resp, reflectElectionPublic(*newProcess))
+						resp = append(resp, reflectElectionPrivate(*newProcess))
 					}
 				case "ended":
 					if newProcess.EndBlock < int(currentHeight) {
-						resp = append(resp, reflectElectionPublic(*newProcess))
+						resp = append(resp, reflectElectionPrivate(*newProcess))
 					}
 				}
 			}
@@ -718,6 +718,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 	return integratorPrivKey, entityID, organization, nil
 }
+
 func reflectElectionPrivate(election types.Election) types.APIElection {
 	newElection := types.APIElection{
 		OrgEthAddress:   election.OrgEthAddress,
