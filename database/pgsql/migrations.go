@@ -40,7 +40,7 @@ CREATE TABLE integrators (
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     csp_url_prefix TEXT NOT NULL,
-    csp_pub_key TEXT NOT NULL
+    csp_pub_key BYTEA NOT NULL
 );
 
 ALTER TABLE ONLY integrators
