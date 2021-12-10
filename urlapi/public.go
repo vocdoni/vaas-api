@@ -239,7 +239,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 		}
 	}
 	process.OrganizationID = vc.EntityID
-	process.ProcessID = vc.ID
+	process.ElectionID = vc.ID
 
 	process.StartBlock = fmt.Sprintf("%d", vc.StartBlock)
 	process.EndBlock = fmt.Sprintf("%d", vc.EndBlock)

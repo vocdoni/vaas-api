@@ -512,7 +512,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		log.Error(err)
 		return err
 	}
-	resp.ProcessID = processID
+	resp.ElectionID = processID
 	return sendResponse(resp, ctx)
 }
 

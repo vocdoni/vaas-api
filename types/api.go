@@ -48,7 +48,7 @@ type APIResponse struct {
 	Message        string         `json:"message,omitempty"`
 	Name           string         `json:"name,omitempty"`
 	Ok             bool           `json:"ok,omitempty"`
-	ProcessID      types.HexBytes `json:"processId,omitempty"`
+	ElectionID     types.HexBytes `json:"electionId,omitempty"`
 }
 
 // APIProcess is the response struct for a getProcess request
@@ -57,7 +57,7 @@ type APIProcess struct {
 	OrganizationID     types.HexBytes `json:"organizationId,omitempty"`
 	Header             string         `json:"header,omitempty"`
 	Ok                 bool           `json:"ok,omitempty"`
-	ProcessID          types.HexBytes `json:"processId,omitempty"`
+	ElectionID         types.HexBytes `json:"electionId,omitempty"`
 	Questions          []Question     `json:"questions,omitempty"`
 	Results            []Result       `json:"results,omitempty"`
 	ResultsAggregation string         `json:"results_aggregation,omitempty"`
@@ -106,16 +106,6 @@ type QuestionMeta struct {
 type Choice struct {
 	Title LanguageString `json:"title,omitempty"`
 	Value uint32         `json:"value,omitempty"`
-}
-
-type ProcessSummary struct {
-	ProcessID   types.HexBytes `json:"processId,omitempty"`
-	Title       string
-	Description string
-	Header      string
-	Status      string    `json:"status,omitempty"`
-	StartDate   time.Time `json:"startDate,omitempty"`
-	EndDate     time.Time `json:"endDate,omitempty"`
 }
 
 type EntityMetadata struct {
