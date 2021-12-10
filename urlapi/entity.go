@@ -481,7 +481,10 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 				Value: uint32(i),
 			})
 		}
+		metadata.Questions = append(metadata.Questions, metaQuestion)
 	}
+	log.Debugf("req eustions: %v", req.Questions)
+	log.Debugf("meta qustions: %v", metadata.Questions)
 
 	voteOptions := &models.ProcessVoteOptions{
 		MaxCount:          uint32(len(req.Questions)),

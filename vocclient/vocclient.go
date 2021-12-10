@@ -178,6 +178,7 @@ func (c *Client) SetProcessMetadata(meta apitypes.ProcessMetadata,
 	if metaBytes, err = json.Marshal(meta); err != nil {
 		return "", fmt.Errorf("could not marshal process metadata: %v", err)
 	}
+	log.Debugf("meta: %s", string(metaBytes))
 	if metaURI, err = c.AddFile(metaBytes, "ipfs",
 		fmt.Sprintf("%X process metadata", processId)); err != nil {
 		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
