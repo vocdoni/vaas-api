@@ -133,15 +133,27 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 				switch pathSuffix {
 				case "active":
 					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-						processList = append(processList, *newProcess)
+						if newProcess.Confidential {
+							resp.PrivateProcesses = append(processList, *newProcess)
+						} else {
+							resp.PublicProcesses = append(processList, *newProcess)
+						}
 					}
 				case "upcoming":
 					if newProcess.StartBlock > int(currentHeight) {
-						processList = append(processList, *newProcess)
+						if newProcess.Confidential {
+							resp.PrivateProcesses = append(processList, *newProcess)
+						} else {
+							resp.PublicProcesses = append(processList, *newProcess)
+						}
 					}
 				case "ended":
 					if newProcess.EndBlock < int(currentHeight) {
-						processList = append(processList, *newProcess)
+						if newProcess.Confidential {
+							resp.PrivateProcesses = append(processList, *newProcess)
+						} else {
+							resp.PublicProcesses = append(processList, *newProcess)
+						}
 					}
 				}
 			}
@@ -154,8 +166,6 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata, c
 		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
 
 	}
-
-	resp.PublicProcesses = processList
 	return sendResponse(resp, ctx)
 }
 
@@ -198,8 +208,7 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	// Parse all the information
 	resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
 
-	sendResponse(resp, ctx)
-	return nil
+	return sendResponse(resp, ctx)
 }
 
 // GET https://server/v1/pub/elections/<processId>/auth/<signature>
