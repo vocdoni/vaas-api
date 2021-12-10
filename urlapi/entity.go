@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -64,6 +65,14 @@ func (u *URLAPI) enableEntityHandlers() error {
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.createProcessHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
+		"/priv/organizations/{entityId}/processes/*",
+		"GET",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.listProcessesPrivateHandler,
 	); err != nil {
 		return err
 	}
@@ -516,7 +525,89 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	return sendResponse(resp, ctx)
 }
 
-// GET https://server/v1/priv/elections/<processId>
+// GET https://server/v1/priv/organizations/<entityId>/processes/signed
+// GET https://server/v1/priv/organizations/<entityId>/processes/blind
+// GET https://server/v1/priv/organizations/<entityId>/processes/active
+// GET https://server/v1/pprivub/organizations/<entityId>/processes/ended
+// GET https://server/v1/priv/organizations/<entityId>/processes/upcoming
+// listProcessesPrivateHandler' lists signed, blind, active, ended, or upcoming processes
+func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var entityId []byte
+	var integratorPrivKey []byte
+	var err error
+	var resp []types.APIElection
+
+	if integratorPrivKey, entityId, _, err = u.authEntityPermissions(msg, ctx); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	path := strings.Split(ctx.Request.URL.Path, "/")
+	pathSuffix := path[len(path)-1]
+	switch pathSuffix {
+	case "active", "ended", "upcoming":
+		var tempProcessList []string
+		var totalProcs int
+		var currentHeight uint32
+		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
+			log.Errorf("could not get current block height: %v", err)
+			return fmt.Errorf("could not get current block height: %v", err)
+		}
+		cont := true
+		for cont {
+			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
+				"", "", "", 0, false, totalProcs, 64); err != nil {
+				log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+				return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+			}
+			if len(tempProcessList) < 64 {
+				cont = false
+			}
+			totalProcs += len(tempProcessList)
+			for _, processID := range tempProcessList {
+				var processIDBytes []byte
+				var newProcess *types.Election
+				if processIDBytes, err = hex.DecodeString(processID); err != nil {
+					log.Error(err)
+					continue
+				}
+				if newProcess, err = u.db.GetElection(integratorPrivKey, entityId, processIDBytes); err != nil {
+					log.Warn(fmt.Errorf("could not get election,"+
+						" process %x may no be in db: %v", processIDBytes, err))
+					continue
+				}
+				newProcess.OrgEthAddress = entityId
+				newProcess.ProcessID = processIDBytes
+
+				switch pathSuffix {
+				case "active":
+					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
+						resp = append(resp, reflectElectionPublic(*newProcess))
+					}
+				case "upcoming":
+					if newProcess.StartBlock > int(currentHeight) {
+						resp = append(resp, reflectElectionPublic(*newProcess))
+					}
+				case "ended":
+					if newProcess.EndBlock < int(currentHeight) {
+						resp = append(resp, reflectElectionPublic(*newProcess))
+					}
+				}
+			}
+		}
+	case "blind", "signed":
+		log.Warnf("endpoint %s unimplemented", ctx.Request.URL.Path)
+		return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.Path)
+	default:
+		log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+
+	}
+	return sendResponse(resp, ctx)
+}
+
+// GET https://server/v1/priv/processes/<processId>
 // getProcessHandler gets the entirety of a process, including metadata
 // confidential processes need no extra step, only the api key
 func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
@@ -626,4 +717,23 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 		return nil, nil, nil, fmt.Errorf("entity %X does not belong to this integrator", entityID)
 	}
 	return integratorPrivKey, entityID, organization, nil
+}
+func reflectElectionPrivate(election types.Election) types.APIElection {
+	newElection := types.APIElection{
+		OrgEthAddress:   election.OrgEthAddress,
+		ProcessID:       election.ProcessID,
+		Title:           election.Title,
+		CensusID:        election.CensusID.UUID.String(),
+		StartDate:       election.StartDate,
+		EndDate:         election.EndDate,
+		StartBlock:      election.StartBlock,
+		EndBlock:        election.EndBlock,
+		Confidential:    election.Confidential,
+		HiddenResults:   election.HiddenResults,
+		MetadataPrivKey: election.MetadataPrivKey,
+	}
+	if election.CensusID.UUID == uuid.Nil {
+		newElection.CensusID = ""
+	}
+	return newElection
 }
