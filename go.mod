@@ -19,6 +19,7 @@ require (
 	go.vocdoni.io/proto v1.13.3-0.20211202161242-17ea8a435be6
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	google.golang.org/protobuf v1.27.1
+	nhooyr.io/websocket v1.8.7 // indirect
 )
 
 // Newer versions of the fuse module removed support for MacOS.
