@@ -32,7 +32,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/processes/{processId}",
+		"/pub/processes/{electionId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getProcessInfoPublicHandler,
@@ -40,7 +40,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/processes/{processId}/auth/{signature}",
+		"/pub/processes/{electionId}/auth/{signature}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getProcessInfoConfidentialHandler,

@@ -124,7 +124,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/processes/{processId}/status",
+		"/priv/processes/{electionId}/status",
 		"PUT",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.setProcessStatusHandler,
@@ -132,7 +132,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/processes/{processId}",
+		"/priv/processes/{electionId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.getProcessHandler,
@@ -526,7 +526,7 @@ func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var vochainProcess *indexertypes.Process
 	var results *types.VochainResults
 	var processMetadata *types.ProcessMetadata
-	if processId, err = util.GetBytesID(ctx, "processId"); err != nil {
+	if processId, err = util.GetBytesID(ctx, "electionId"); err != nil {
 		log.Error(err)
 		return err
 	}
