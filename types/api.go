@@ -81,7 +81,7 @@ type APIProcess struct {
 
 type APIElection struct {
 	OrgEthAddress   types.HexBytes `json:"orgEthAddress,omitempty" db:"organization_eth_address"`
-	ProcessID       types.HexBytes `json:"processId,omitempty" db:"process_id"`
+	OrganizationID  types.HexBytes `json:"organizationId,omitempty" db:"process_id"`
 	Title           string         `json:"title,omitempty" db:"title"`
 	CensusID        string         `json:"censusId,omitempty" db:"census_id"`
 	StartDate       time.Time      `json:"startDate,omitempty" db:"start_date"`

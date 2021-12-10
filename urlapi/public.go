@@ -481,16 +481,16 @@ func aggregateResults(meta *types.ProcessMetadata,
 
 func reflectElectionPublic(election types.Election) types.APIElection {
 	newElection := types.APIElection{
-		OrgEthAddress: election.OrgEthAddress,
-		ProcessID:     election.ProcessID,
-		Title:         election.Title,
-		CensusID:      election.CensusID.UUID.String(),
-		StartDate:     election.StartDate,
-		EndDate:       election.EndDate,
-		StartBlock:    election.StartBlock,
-		EndBlock:      election.EndBlock,
-		Confidential:  election.Confidential,
-		HiddenResults: election.HiddenResults,
+		OrgEthAddress:  election.OrgEthAddress,
+		OrganizationID: election.ProcessID,
+		Title:          election.Title,
+		CensusID:       election.CensusID.UUID.String(),
+		StartDate:      election.StartDate,
+		EndDate:        election.EndDate,
+		StartBlock:     election.StartBlock,
+		EndBlock:       election.EndBlock,
+		Confidential:   election.Confidential,
+		HiddenResults:  election.HiddenResults,
 	}
 	if election.CensusID.UUID == uuid.Nil {
 		newElection.CensusID = ""

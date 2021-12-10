@@ -721,7 +721,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 func reflectElectionPrivate(election types.Election) types.APIElection {
 	newElection := types.APIElection{
 		OrgEthAddress:   election.OrgEthAddress,
-		ProcessID:       election.ProcessID,
+		OrganizationID:  election.ProcessID,
 		Title:           election.Title,
 		CensusID:        election.CensusID.UUID.String(),
 		StartDate:       election.StartDate,
