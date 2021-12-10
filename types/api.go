@@ -51,8 +51,8 @@ type APIResponse struct {
 	Nullifier        string         `json:"nullifier,omitempty"`
 	Ok               bool           `json:"ok,omitempty"`
 	OrganizationID   types.HexBytes `json:"organizationId,omitempty"`
-	PrivateProcesses []Election     `json:"private,omitempty"`
-	PublicProcesses  []Election     `json:"public,omitempty"`
+	PrivateProcesses []APIElection  `json:"private,omitempty"`
+	PublicProcesses  []APIElection  `json:"public,omitempty"`
 }
 
 // APIProcess is the response struct for a getProcess request
@@ -77,6 +77,20 @@ type APIProcess struct {
 	Title      string `json:"title,omitempty"`
 	Type       string `json:"type,omitempty"`
 	VoteCount  uint32 `json:"vote_count,omitempty"`
+}
+
+type APIElection struct {
+	OrgEthAddress   types.HexBytes `json:"orgEthAddress,omitempty" db:"organization_eth_address"`
+	ProcessID       types.HexBytes `json:"processId,omitempty" db:"process_id"`
+	Title           string         `json:"title,omitempty" db:"title"`
+	CensusID        string         `json:"censusId,omitempty" db:"census_id"`
+	StartDate       time.Time      `json:"startDate,omitempty" db:"start_date"`
+	EndDate         time.Time      `json:"endDate,omitempty" db:"end_date"`
+	StartBlock      int            `json:"startBlock,omitempty" db:"start_block"`
+	EndBlock        int            `json:"endBlock,omitempty" db:"end_block"`
+	Confidential    bool           `json:"confidential,omitempty" db:"confidential"`
+	HiddenResults   bool           `json:"hiddenResults,omitempty" db:"hidden_results"`
+	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadata_priv_key"`
 }
 
 type ProcessMetadata struct {

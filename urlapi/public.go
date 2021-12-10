@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
@@ -82,7 +83,6 @@ func (u *URLAPI) registerPublicKeyHandler(msg *bearerstdapi.BearerStandardAPIdat
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
-	var processList []types.Election
 	var entityId []byte
 	var err error
 	var resp types.APIResponse
@@ -119,40 +119,39 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 				var newProcess *types.Election
 				if processIDBytes, err = hex.DecodeString(processID); err != nil {
 					log.Error(err)
-					break
+					continue
 				}
 				if newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes); err != nil {
-					log.Error(err)
-					break
+					log.Warn(fmt.Errorf("could not get public election,"+
+						" process %x may no be in db: %v", processIDBytes, err))
+					continue
 				}
-
-				// Sanitize private fields from election
-				newProcess.IntegratorApiKey = nil
-				newProcess.MetadataPrivKey = nil
+				newProcess.OrgEthAddress = entityId
+				newProcess.ProcessID = processIDBytes
 
 				switch pathSuffix {
 				case "active":
 					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
 						if newProcess.Confidential {
-							resp.PrivateProcesses = append(processList, *newProcess)
+							resp.PrivateProcesses = append(resp.PrivateProcesses, reflectElectionPublic(*newProcess))
 						} else {
-							resp.PublicProcesses = append(processList, *newProcess)
+							resp.PublicProcesses = append(resp.PublicProcesses, reflectElectionPublic(*newProcess))
 						}
 					}
 				case "upcoming":
 					if newProcess.StartBlock > int(currentHeight) {
 						if newProcess.Confidential {
-							resp.PrivateProcesses = append(processList, *newProcess)
+							resp.PrivateProcesses = append(resp.PrivateProcesses, reflectElectionPublic(*newProcess))
 						} else {
-							resp.PublicProcesses = append(processList, *newProcess)
+							resp.PublicProcesses = append(resp.PublicProcesses, reflectElectionPublic(*newProcess))
 						}
 					}
 				case "ended":
 					if newProcess.EndBlock < int(currentHeight) {
 						if newProcess.Confidential {
-							resp.PrivateProcesses = append(processList, *newProcess)
+							resp.PrivateProcesses = append(resp.PrivateProcesses, reflectElectionPublic(*newProcess))
 						} else {
-							resp.PublicProcesses = append(processList, *newProcess)
+							resp.PublicProcesses = append(resp.PublicProcesses, reflectElectionPublic(*newProcess))
 						}
 					}
 				}
@@ -478,4 +477,23 @@ func aggregateResults(meta *types.ProcessMetadata,
 		})
 	}
 	return aggregatedResults, nil
+}
+
+func reflectElectionPublic(election types.Election) types.APIElection {
+	newElection := types.APIElection{
+		OrgEthAddress: election.OrgEthAddress,
+		ProcessID:     election.ProcessID,
+		Title:         election.Title,
+		CensusID:      election.CensusID.UUID.String(),
+		StartDate:     election.StartDate,
+		EndDate:       election.EndDate,
+		StartBlock:    election.StartBlock,
+		EndBlock:      election.EndBlock,
+		Confidential:  election.Confidential,
+		HiddenResults: election.HiddenResults,
+	}
+	if election.CensusID.UUID == uuid.Nil {
+		newElection.CensusID = ""
+	}
+	return newElection
 }
