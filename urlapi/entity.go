@@ -215,7 +215,6 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	resp.APIToken = orgApiToken
 	resp.OrganizationID = ethSignKeys.Address().Bytes()
 
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -251,7 +250,6 @@ func (u *URLAPI) getOrganizationPrivateHandler(msg *bearerstdapi.BearerStandardA
 	resp.Description = organizationMetadata.Description["default"]
 	resp.Avatar = organizationMetadata.Media.Avatar
 	resp.Header = organizationMetadata.Media.Header
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -275,7 +273,6 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return err
 	}
 	u.RevokeToken(organization.PublicAPIToken)
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -301,7 +298,6 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 		log.Error(err)
 		return err
 	}
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -347,7 +343,6 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 
 	resp.OrganizationID = entityID
 	resp.ContentURI = metaURI
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -517,7 +512,6 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 	resp.ProcessID = processID
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 

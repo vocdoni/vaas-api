@@ -92,7 +92,6 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		log.Error(err)
 		return err
 	}
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -122,7 +121,6 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		log.Error(err)
 		return err
 	}
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -148,7 +146,6 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 		log.Error(err)
 		return err
 	}
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -170,7 +167,6 @@ func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPI
 	resp.Name = integrator.Name
 	resp.CspPubKey = integrator.CspPubKey
 	resp.CspUrlPrefix = integrator.CspUrlPrefix
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 
@@ -188,6 +184,5 @@ func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 		log.Error(err)
 		return err
 	}
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }

@@ -188,7 +188,6 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	resp.Description = organizationMetadata.Description["default"]
 	resp.Avatar = organizationMetadata.Media.Avatar
 	resp.Header = organizationMetadata.Media.Header
-	resp.Ok = true
 	return sendResponse(resp, ctx)
 }
 

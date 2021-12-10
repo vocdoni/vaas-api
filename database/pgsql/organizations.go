@@ -83,7 +83,7 @@ func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return fmt.Errorf("invalid arguments")
 	}
-	deleteQuery := `DELETE FROM organizations integrator_api_key=$1 AND eth_address=$2`
+	deleteQuery := `DELETE FROM organizations WHERE integrator_api_key=$1 AND eth_address=$2`
 	result, err := d.db.Exec(deleteQuery, integratorAPIKey, ethAddress)
 	if err != nil {
 		return fmt.Errorf("error deleting organization: %v", err)
