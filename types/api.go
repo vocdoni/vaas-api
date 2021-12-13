@@ -34,28 +34,29 @@ type APIRequest struct {
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIResponse struct {
-	APIKey           string         `json:"apiKey,omitempty"`
-	APIToken         string         `json:"apiToken,omitempty"`
-	Avatar           string         `json:"avatar,omitempty"`
-	CensusID         int            `json:"census_id,omitempty"`
-	ContentURI       string         `json:"contentUri,omitempty"`
-	CspPubKey        types.HexBytes `json:"cspPubKey,omitempty"`
-	CspUrlPrefix     string         `json:"cspUrlPrefix,omitempty"`
-	Description      string         `json:"description,omitempty"`
-	ElectionID       types.HexBytes `json:"electionId,omitempty"`
-	Header           string         `json:"header,omitempty"`
-	ID               int            `json:"id,omitempty"`
-	Message          string         `json:"message,omitempty"`
-	Name             string         `json:"name,omitempty"`
-	Nullifier        string         `json:"nullifier,omitempty"`
-	Ok               bool           `json:"ok,omitempty"`
-	OrganizationID   types.HexBytes `json:"organizationId,omitempty"`
-	PrivateProcesses []APIElection  `json:"private,omitempty"`
-	PublicProcesses  []APIElection  `json:"public,omitempty"`
+	APIKey           string               `json:"apiKey,omitempty"`
+	APIToken         string               `json:"apiToken,omitempty"`
+	Avatar           string               `json:"avatar,omitempty"`
+	CensusID         int                  `json:"census_id,omitempty"`
+	ContentURI       string               `json:"contentUri,omitempty"`
+	CspPubKey        types.HexBytes       `json:"cspPubKey,omitempty"`
+	CspUrlPrefix     string               `json:"cspUrlPrefix,omitempty"`
+	Description      string               `json:"description,omitempty"`
+	ElectionID       types.HexBytes       `json:"electionId,omitempty"`
+	Header           string               `json:"header,omitempty"`
+	ID               int                  `json:"id,omitempty"`
+	Message          string               `json:"message,omitempty"`
+	Name             string               `json:"name,omitempty"`
+	Nullifier        string               `json:"nullifier,omitempty"`
+	Ok               bool                 `json:"ok,omitempty"`
+	OrganizationID   types.HexBytes       `json:"organizationId,omitempty"`
+	PrivateProcesses []APIElectionSummary `json:"private,omitempty"`
+	PublicProcesses  []APIElectionSummary `json:"public,omitempty"`
 }
 
-// APIProcess is the response struct for a getProcess request
-type APIProcess struct {
+// APIElectionInfo is the response struct for a getElection request
+//  including all election information
+type APIElectionInfo struct {
 	Description        string         `json:"description,omitempty"`
 	OrganizationID     types.HexBytes `json:"organizationId,omitempty"`
 	Header             string         `json:"header,omitempty"`
@@ -78,7 +79,8 @@ type APIProcess struct {
 	VoteCount  uint32 `json:"vote_count,omitempty"`
 }
 
-type APIElection struct {
+// APIElectionSummary is the struct for returning election info from the database
+type APIElectionSummary struct {
 	OrgEthAddress   types.HexBytes `json:"orgEthAddress,omitempty" db:"organization_eth_address"`
 	ElectionID      types.HexBytes `json:"electionId,omitempty" db:"process_id"`
 	Title           string         `json:"title,omitempty" db:"title"`
