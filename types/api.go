@@ -43,7 +43,6 @@ type APIResponse struct {
 	CspUrlPrefix     string         `json:"cspUrlPrefix,omitempty"`
 	Description      string         `json:"description,omitempty"`
 	ElectionID       types.HexBytes `json:"electionId,omitempty"`
-	EndBlock         []byte         `json:"end_block,omitempty"`
 	Header           string         `json:"header,omitempty"`
 	ID               int            `json:"id,omitempty"`
 	Message          string         `json:"message,omitempty"`
@@ -70,8 +69,8 @@ type APIProcess struct {
 	EndDate   time.Time `json:"end_date,omitempty"`
 	StartDate time.Time `json:"start_date,omitempty"`
 	// Start/end blocks are source of truth
-	EndBlock   string `json:"end_block,omitempty"`
-	StartBlock string `json:"start_block,omitempty"`
+	EndBlock   uint32 `json:"end_block,omitempty"`
+	StartBlock uint32 `json:"start_block,omitempty"`
 	Status     string `json:"status,omitempty"`
 	StreamURI  string `json:"stream_uri,omitempty"`
 	Title      string `json:"title,omitempty"`
@@ -86,8 +85,8 @@ type APIElection struct {
 	CensusID        string         `json:"censusId,omitempty" db:"census_id"`
 	StartDate       time.Time      `json:"startDate,omitempty" db:"start_date"`
 	EndDate         time.Time      `json:"endDate,omitempty" db:"end_date"`
-	StartBlock      int            `json:"startBlock,omitempty" db:"start_block"`
-	EndBlock        int            `json:"endBlock,omitempty" db:"end_block"`
+	StartBlock      uint32         `json:"startBlock,omitempty" db:"start_block"`
+	EndBlock        uint32         `json:"endBlock,omitempty" db:"end_block"`
 	Confidential    bool           `json:"confidential,omitempty" db:"confidential"`
 	HiddenResults   bool           `json:"hiddenResults,omitempty" db:"hidden_results"`
 	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadata_priv_key"`

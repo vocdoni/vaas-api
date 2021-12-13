@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -61,7 +60,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/organizations/{organizationId}/elections/*",
+		"/priv/organizations/{organizationId}/elections/{type}",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.createProcessHandler,
@@ -69,7 +68,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/organizations/{entityId}/elections/*",
+		"/priv/organizations/{entityId}/elections/{type}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.listProcessesPrivateHandler,
@@ -165,31 +164,26 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	var metaURI string
 	// var organizationMetadataKey []byte
 	if req, err = util.UnmarshalRequest(msg); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createOrganizationHandler: %w", err)
 	}
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createOrganizationHandler: %w", err)
 	}
 	orgApiToken = util.GenerateBearerToken()
 
 	ethSignKeys := ethereum.NewSignKeys()
 	if err = ethSignKeys.Generate(); err != nil {
-		log.Errorf("could not generate ethereum keys: %v", err)
-		return fmt.Errorf("could not generate ethereum keys: %v", err)
+		return fmt.Errorf("createOrganizationHandler: could not generate ethereum keys: %w", err)
 	}
 
 	// Encrypt private key to store in db
 	_, priv := ethSignKeys.HexString()
 	if entityPrivKey, err = hex.DecodeString(priv); err != nil {
-		log.Errorf("could not decode entity private key: %v", err)
-		return fmt.Errorf("could not decode entity private key: %v", err)
+		return fmt.Errorf("createOrganizationHandler: could not decode entity private key: %w", err)
 	}
 
 	if encryptedPrivKey, err = util.EncryptSymmetric(entityPrivKey, integratorPrivKey); err != nil {
-		log.Errorf("could not encrypt organization private key: %v", err)
-		return fmt.Errorf("could not encrypt organization private key: %v", err)
+		return fmt.Errorf("createOrganizationHandler: could not encrypt entity private key: %w", err)
 	}
 
 	// Post metadata to ipfs
@@ -204,21 +198,18 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 			Header: req.Header,
 		},
 	}, ethSignKeys.Address().Bytes()); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createOrganizationHandler: could not set entity metadata: %w", err)
 	}
 
 	// Register organization to database
 	if _, err = u.db.CreateOrganization(integratorPrivKey, ethSignKeys.Address().Bytes(),
 		encryptedPrivKey, uuid.NullUUID{}, 0, orgApiToken, req.Header, req.Avatar); err != nil {
-		log.Errorf("could not create organization: %v", err)
-		return fmt.Errorf("could not create organization: %v", err)
+		return fmt.Errorf("createOrganizationHandler: could not create organization: %w", err)
 	}
 
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
-		log.Errorf("could not create account on the vochain: %v", err)
-		return fmt.Errorf("could not create account on the vochain: %v", err)
+		return fmt.Errorf("createOrganizationHandler: could not create account on the vochain: %w", err)
 	}
 
 	resp.APIToken = orgApiToken
@@ -238,20 +229,17 @@ func (u *URLAPI) getOrganizationPrivateHandler(msg *bearerstdapi.BearerStandardA
 	var metaUri string
 	// authenticate integrator has permission to edit this entity
 	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getOrganizationPrivateHandler: %w", err)
 	}
 
 	// Fetch process from vochain
 	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getOrganizationPrivateHandler: %w", err)
 	}
 
 	// Fetch metadata
 	if organizationMetadata, err = u.vocClient.FetchOrganizationMetadata(metaUri); err != nil {
-		log.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
-		return fmt.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
+		return fmt.Errorf("getOrganizationPrivateHandler: could not get organization metadata with URI\"%s\": %w", metaUri, err)
 	}
 
 	resp.APIToken = organization.PublicAPIToken
@@ -294,16 +282,14 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	// authenticate integrator has permission to edit this entity
 	if integratorPrivKey, entityID, _,
 		err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("resetOrganizationKeyHandler: %w", err)
 	}
 
 	// Now generate a new api key & update integrator
 	resp.APIToken = util.GenerateBearerToken()
 	if _, err = u.db.UpdateOrganizationPublicAPIToken(
 		integratorPrivKey, entityID, resp.APIToken); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("resetOrganizationKeyHandler: could not update public api token %w", err)
 	}
 	return sendResponse(resp, ctx)
 }
@@ -321,8 +307,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 
 	// authenticate integrator has permission to edit this entity
 	if _, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("setOrganizationMetadataHandler: %w", err)
 	}
 
 	// Post metadata to ipfs
@@ -337,15 +322,13 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 			Header: req.Header,
 		},
 	}, entityID); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("setOrganizationMetadataHandler: could not set entity metadata: %w", err)
 	}
 
 	// Update organization in the db to make sure it matches the metadata
 	if _, err = u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
 		req.Header, req.Avatar); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("setOrganizationMetadataHandler: could not update organization: %w", err)
 	}
 
 	resp.OrganizationID = entityID
@@ -370,76 +353,57 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO use blind/signed
 
-	// if strings.HasSuffix(ctx.Request.URL.Path, "signed") {
-	// 	blind = false
-	// } else if strings.HasSuffix(ctx.Request.URL.Path, "blind") {
-	// 	blind = true
-	// } else {
-	// 	log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-	// 	return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-	// }
+	// ctx.URLParam("type")
 
 	// authenticate integrator has permission to edit this entity
 	if integratorPrivKey, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: %w", err)
 	}
 
 	if req, err = util.UnmarshalRequest(msg); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: %w", err)
 	}
 
 	if req.Confidential {
-		log.Errorf("confidential processes are not yet supported")
-		return fmt.Errorf("confidential processes are not yet supported")
+		return fmt.Errorf("createProcessHandler: confidential processes are not yet supported")
 	}
 
 	pid := dvoteutil.RandomHex(32)
 	if processID, err = hex.DecodeString(pid); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: could not decode process ID: %w", err)
 	}
 	entityPrivKey, ok := util.DecryptSymmetric(organization.EthPrivKeyCicpher, integratorPrivKey)
 	if !ok {
-		log.Errorf("could not decrypt entity private key")
-		return fmt.Errorf("could not decrypt entity private key")
+		return fmt.Errorf("createProcessHandler: could not decrypt entity private key")
 	}
 	entitySignKeys := ethereum.NewSignKeys()
 	if err = entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
-		log.Errorf("could not decode entity private key: %v", err)
-		return fmt.Errorf("could not decode entity private key: %v", err)
+		return fmt.Errorf("createProcessHandler: could not decode entity private key: %w", err)
 	}
 
 	startDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.StartDate)
 	if err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: could not parse startDate: %w", err)
 	}
 	endDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.EndDate)
 	if err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: could not parse startDate: %w", err)
 	}
 
 	now := time.Now()
 	if startDate.Before(now) || endDate.Before(now) {
-		log.Errorf("election start and end date cannot be in the past")
-		return fmt.Errorf("election start and end date cannot be in the past")
+		return fmt.Errorf("createProcessHandler: election start and end date cannot be in the past")
 	}
 	if endDate.Before(startDate) {
-		log.Errorf("end date must be after start date")
-		return fmt.Errorf("end date must be after start date")
+		return fmt.Errorf("createProcessHandler: end date must be after start date")
 	}
 	startBlock, err := u.estimateBlockHeight(startDate)
 	if err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: unable to estimate startDate block height: %w", err)
 	}
 	endBlock, err := u.estimateBlockHeight(endDate)
 	if err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: unable to estimate endDate block height: %w", err)
 	}
 	log.Debugf("start block %d end block %d", startBlock, endBlock)
 
@@ -492,7 +456,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		}
 		metadata.Questions = append(metadata.Questions, metaQuestion)
 	}
-	log.Debugf("req eustions: %v", req.Questions)
+	log.Debugf("req questions: %v", req.Questions)
 	log.Debugf("meta qustions: %v", metadata.Questions)
 
 	voteOptions := &models.ProcessVoteOptions{
@@ -504,22 +468,19 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	if metaUri, err = u.vocClient.SetProcessMetadata(metadata, processID); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: could not set process metadata: %w", err)
 	}
 
 	// TODO use encryption priv/pub keys if process is encrypted
 	if startBlock, err = u.vocClient.CreateProcess(processID, entityID, startBlock,
 		endBlock-startBlock, []byte{}, "", envelopeType, processMode,
 		voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri, entitySignKeys); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: could not create process on the vochain: %w", err)
 	}
 
 	if _, err = u.db.CreateElection(integratorPrivKey, entityID, processID, req.Title, startDate,
 		endDate, uuid.NullUUID{}, int(startBlock), int(endBlock), req.Confidential, req.HiddenResults); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("createProcessHandler: could not create election: %w", err)
 	}
 	resp.ElectionID = processID
 	return sendResponse(resp, ctx)
@@ -539,27 +500,23 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 	var resp []types.APIElection
 
 	if integratorPrivKey, entityId, _, err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("listProcessesPrivateHandler: %w", err)
 	}
 
-	path := strings.Split(ctx.Request.URL.Path, "/")
-	pathSuffix := path[len(path)-1]
-	switch pathSuffix {
+	filter := ctx.URLParam("type")
+	switch filter {
 	case "active", "ended", "upcoming":
 		var tempProcessList []string
 		var totalProcs int
 		var currentHeight uint32
 		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
-			log.Errorf("could not get current block height: %v", err)
-			return fmt.Errorf("could not get current block height: %v", err)
+			return fmt.Errorf("listProcessesPrivateHandler: could not get current block height: %w", err)
 		}
 		cont := true
 		for cont {
 			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
 				"", "", "", 0, false, totalProcs, 64); err != nil {
-				log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-				return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+				return fmt.Errorf("listProcessesPrivateHandler: %s not a valid request path", ctx.Request.URL.Path)
 			}
 			if len(tempProcessList) < 64 {
 				cont = false
@@ -574,13 +531,13 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 				}
 				if newProcess, err = u.db.GetElection(integratorPrivKey, entityId, processIDBytes); err != nil {
 					log.Warn(fmt.Errorf("could not get election,"+
-						" process %x may no be in db: %v", processIDBytes, err))
+						" process %x may no be in db: %w", processIDBytes, err))
 					continue
 				}
 				newProcess.OrgEthAddress = entityId
 				newProcess.ProcessID = processIDBytes
 
-				switch pathSuffix {
+				switch filter {
 				case "active":
 					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
 						resp = append(resp, reflectElectionPrivate(*newProcess))
@@ -597,11 +554,9 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 			}
 		}
 	case "blind", "signed":
-		log.Warnf("endpoint %s unimplemented", ctx.Request.URL.Path)
-		return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.Path)
+		return fmt.Errorf("listProcessesPrivateHandler: filter %s unimplemented", filter)
 	default:
-		log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+		return fmt.Errorf("listProcessesPrivateHandler: %s not a valid filter", filter)
 
 	}
 	return sendResponse(resp, ctx)
@@ -618,36 +573,31 @@ func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	var results *types.VochainResults
 	var processMetadata *types.ProcessMetadata
 	if processId, err = util.GetBytesID(ctx, "electionId"); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getProcessHandler: %w", err)
 	}
 
 	// Fetch process from vochain
 	if vochainProcess, err = u.vocClient.GetProcess(processId); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getProcessHandler: unable to fetch process from the vochain: %w", err)
 	}
 
 	// Fetch results
 	if vochainProcess.HaveResults {
 		if results, err = u.vocClient.GetResults(processId); err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("getProcessHandler: could not get results: %w", err)
 		}
 	}
 
 	// Fetch metadata
 	metadataUri := vochainProcess.Metadata
 	if processMetadata, err = u.vocClient.FetchProcessMetadata(metadataUri); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getProcessHandler: could not get process metadata: %w", err)
 	}
 
 	// Parse all the information
 	resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
 
-	sendResponse(resp, ctx)
-	return nil
+	return sendResponse(resp, ctx)
 }
 
 // POST https://server/v1/priv/censuses
@@ -711,7 +661,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 		return nil, nil, nil, err
 	}
 	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db: %v", entityID, err)
+		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db: %w", entityID, err)
 	}
 	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
 		return nil, nil, nil, fmt.Errorf("entity %X does not belong to this integrator", entityID)
@@ -727,8 +677,8 @@ func reflectElectionPrivate(election types.Election) types.APIElection {
 		CensusID:        election.CensusID.UUID.String(),
 		StartDate:       election.StartDate,
 		EndDate:         election.EndDate,
-		StartBlock:      election.StartBlock,
-		EndBlock:        election.EndBlock,
+		StartBlock:      uint32(election.StartBlock),
+		EndBlock:        uint32(election.EndBlock),
 		Confidential:    election.Confidential,
 		HiddenResults:   election.HiddenResults,
 		MetadataPrivKey: election.MetadataPrivKey,

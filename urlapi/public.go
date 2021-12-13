@@ -27,7 +27,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/organizations/{organizationId}/elections/*",
+		"/pub/organizations/{organizationId}/elections/{type}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.listProcessesHandler,
@@ -88,27 +88,23 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var resp types.APIResponse
 
 	if entityId, err = util.GetBytesID(ctx, "organizationId"); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("registerPublicKeyHandler: %w", err)
 	}
 
-	path := strings.Split(ctx.Request.URL.Path, "/")
-	pathSuffix := path[len(path)-1]
-	switch pathSuffix {
+	filter := ctx.URLParam("type")
+	switch filter {
 	case "active", "ended", "upcoming":
 		var tempProcessList []string
 		var totalProcs int
 		var currentHeight uint32
 		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
-			log.Errorf("could not get current block height: %v", err)
-			return fmt.Errorf("could not get current block height: %v", err)
+			return fmt.Errorf("registerPublicKeyHandler: could not get current block height: %w", err)
 		}
 		cont := true
 		for cont {
 			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
 				"", "", "", 0, false, totalProcs, 64); err != nil {
-				log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-				return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+				return fmt.Errorf("registerPublicKeyHandler: %s not a valid filter", filter)
 			}
 			if len(tempProcessList) < 64 {
 				cont = false
@@ -118,18 +114,18 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 				var processIDBytes []byte
 				var newProcess *types.Election
 				if processIDBytes, err = hex.DecodeString(processID); err != nil {
-					log.Error(err)
+					log.Errorf("registerPublicKeyHandler: %w", err)
 					continue
 				}
 				if newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes); err != nil {
-					log.Warn(fmt.Errorf("could not get public election,"+
-						" process %x may no be in db: %v", processIDBytes, err))
+					log.Warn(fmt.Errorf("registerPublicKeyHandler: could not get public election,"+
+						" process %x may not be in db: %w", processIDBytes, err))
 					continue
 				}
 				newProcess.OrgEthAddress = entityId
 				newProcess.ProcessID = processIDBytes
 
-				switch pathSuffix {
+				switch filter {
 				case "active":
 					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
 						if newProcess.Confidential {
@@ -158,11 +154,9 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 			}
 		}
 	case "blind", "signed":
-		log.Warnf("endpoint %s unimplemented", ctx.Request.URL.Path)
-		return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.Path)
+		return fmt.Errorf("registerPublicKeyHandler: filter %s unimplemented", filter)
 	default:
-		log.Errorf("%s not a valid request path", ctx.Request.URL.Path)
-		return fmt.Errorf("%s not a valid request path", ctx.Request.URL.Path)
+		return fmt.Errorf("registerPublicKeyHandler: %s not a valid filter type", filter)
 
 	}
 	return sendResponse(resp, ctx)
@@ -179,29 +173,25 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	var results *types.VochainResults
 	var processMetadata *types.ProcessMetadata
 	if processId, err = util.GetBytesID(ctx, "electionId"); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getProcessInfoPublicHandler: %w", err)
 	}
 
 	// Fetch process from vochain
 	if vochainProcess, err = u.vocClient.GetProcess(processId); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getProcessInfoPublicHandler: unable to get process: %w", err)
 	}
 
 	// Fetch results
 	if vochainProcess.HaveResults {
 		if results, err = u.vocClient.GetResults(processId); err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("getProcessInfoPublicHandler: unable to get results %w", err)
 		}
 	}
 
 	// Fetch metadata
 	metadataUri := vochainProcess.Metadata
 	if processMetadata, err = u.vocClient.FetchProcessMetadata(metadataUri); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getProcessInfoPublicHandler: unable to get metadata: %w", err)
 	}
 
 	// Parse all the information
@@ -215,7 +205,6 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 //  checking the voter's signature for inclusion in the census
 func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
-	log.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
@@ -230,19 +219,16 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var metaUri string
 	// authenticate integrator has permission to edit this entity
 	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getOrganizationHandler: %w", err)
 	}
 	// Fetch process from vochain
 	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("getOrganizationHandler: unable to get account: %w", err)
 	}
 
 	// Fetch metadata
 	if organizationMetadata, err = u.vocClient.FetchOrganizationMetadata(metaUri); err != nil {
-		log.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
-		return fmt.Errorf("could not get organization metadata with URI\"%s\": %v", metaUri, err)
+		return fmt.Errorf("getOrganizationHandler: could not get organization metadata with URI\"%s\": %w", metaUri, err)
 	}
 
 	resp.Name = organizationMetadata.Name["default"]
@@ -259,17 +245,14 @@ func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata
 	var req types.APIRequest
 	log.Debugf("query to submit vote for process %s", ctx.URLParam("electionId"))
 	if req, err = util.UnmarshalRequest(msg); err != nil {
-		log.Error(err)
-		return err
+		return fmt.Errorf("submitVotePublicHandler: %w", err)
 	}
 	var votePkg []byte
 	if votePkg, err = base64.StdEncoding.DecodeString(req.Vote); err != nil {
-		log.Errorf("could not decode vote pkg to base64: %v", err)
-		return fmt.Errorf("could not decode vote pkg to base64: %v", err)
+		return fmt.Errorf("submitVotePublicHandler: could not decode vote pkg to base64: %w", err)
 	}
 	if resp.Nullifier, err = u.vocClient.RelayTx(votePkg); err != nil {
-		log.Errorf("could not submit vote tx: %v", err)
-		return fmt.Errorf("could not submit vote tx: %v", err)
+		return fmt.Errorf("submitVotePublicHandler: could not submit vote tx: %w", err)
 	}
 
 	return sendResponse(resp, ctx)
@@ -319,21 +302,21 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	if results != nil {
 		process.VoteCount = results.Height
 		if process.Results, err = aggregateResults(meta, results); err != nil {
-			log.Errorf("could not aggregate results: %v", err)
+			log.Errorf("could not aggregate results: %w", err)
 		}
 	}
 	process.OrganizationID = vc.EntityID
 	process.ElectionID = vc.ID
 
-	process.StartBlock = fmt.Sprintf("%d", vc.StartBlock)
-	process.EndBlock = fmt.Sprintf("%d", vc.EndBlock)
+	process.StartBlock = vc.StartBlock
+	process.EndBlock = vc.EndBlock
 
 	if process.StartDate, err = u.estimateBlockTime(vc.StartBlock); err != nil {
-		log.Warnf("could not estimate startDate at %d: %v", vc.StartBlock, err)
+		log.Warnf("could not estimate startDate at %d: %w", vc.StartBlock, err)
 	}
 
 	if process.EndDate, err = u.estimateBlockTime(vc.EndBlock); err != nil {
-		log.Warnf("could not estimate endDate at %d: %v", vc.EndBlock, err)
+		log.Warnf("could not estimate endDate at %d: %w", vc.EndBlock, err)
 	}
 
 	process.ResultsAggregation = meta.Results.Aggregation
@@ -487,8 +470,8 @@ func reflectElectionPublic(election types.Election) types.APIElection {
 		CensusID:      election.CensusID.UUID.String(),
 		StartDate:     election.StartDate,
 		EndDate:       election.EndDate,
-		StartBlock:    election.StartBlock,
-		EndBlock:      election.EndBlock,
+		StartBlock:    uint32(election.StartBlock),
+		EndBlock:      uint32(election.EndBlock),
 		Confidential:  election.Confidential,
 		HiddenResults: election.HiddenResults,
 	}
