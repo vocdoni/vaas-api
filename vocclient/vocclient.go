@@ -484,6 +484,38 @@ func (c *Client) CreateProcess(process *models.Process,
 	return p.Process.StartBlock, nil
 }
 
+func (c *Client) SetProcessStatus(pid []byte, status models.ProcessStatus, signingKey *ethereum.SignKeys) error {
+	var req api.APIrequest
+	var err error
+	req.Method = "submitRawTx"
+	p := &models.SetProcessTx{
+		Txtype:    models.TxType_SET_PROCESS_STATUS,
+		ProcessId: pid,
+		Status:    &status,
+		Nonce:     util.RandomBytes(32),
+	}
+	stx := &models.SignedTx{}
+	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &models.Tx_SetProcess{SetProcess: p}})
+	if err != nil {
+		return err
+	}
+	if stx.Signature, err = signingKey.Sign(stx.Tx); err != nil {
+		return err
+	}
+	if req.Payload, err = proto.Marshal(stx); err != nil {
+		return err
+	}
+
+	resp, err := c.pool.Request(req, nil)
+	if err != nil {
+		return err
+	}
+	if !resp.Ok {
+		return fmt.Errorf("%s failed: %s", req.Method, resp.Message)
+	}
+	return nil
+}
+
 // RelayVote relays a given raw vote transaction to the vochain and returns its nullifier
 func (c *Client) RelayVote(signedTx []byte) (string, error) {
 	resp, err := c.pool.Request(api.APIrequest{
