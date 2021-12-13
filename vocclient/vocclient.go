@@ -1,18 +1,15 @@
 package vocclient
 
 import (
-	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
 	"time"
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	"go.vocdoni.io/dvote/httprouter/jsonrpcapi"
 	"go.vocdoni.io/dvote/log"
 	dvoteTypes "go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
@@ -440,50 +437,25 @@ func (c *Client) CreateProcess(
 	return p.Process.StartBlock, nil
 }
 
-func (c *Client) RelayTx(reqBody []byte) (string, error) {
+func (c *Client) RelayVote(signedTx []byte) (string, error) {
 	var err error
-	var gw Gateway
-	if gw, err = c.pool.activeGateway(); err != nil {
+	var resp *api.APIresponse
+	var req api.APIrequest
+
+	req.Method = "submitRawTx"
+	req.Payload = signedTx
+
+	if resp, err = c.pool.Request(req, c.signingKey); err != nil {
 		return "", err
 	}
 
-	var reqOuter jsonrpcapi.RequestMessage
-	if err := json.Unmarshal(reqBody, &reqOuter); err != nil {
-		return "", fmt.Errorf("submitRawTx error: %v", err)
-	}
-	reqId := reqOuter.ID
-
-	message := []byte{}
-	if gw.client.HTTP != nil {
-		resp, err := gw.client.HTTP.Post(gw.client.Addr, "application/json", bytes.NewBuffer(reqBody))
-		if err != nil {
-			return "", err
-		}
-		message, err = io.ReadAll(resp.Body)
-		if err != nil {
-			return "", err
-		}
-		resp.Body.Close()
-	}
-	log.Debugf("response: %s", message)
-	var respOuter jsonrpcapi.ResponseMessage
-	if err := json.Unmarshal(message, &respOuter); err != nil {
-		return "", fmt.Errorf("%s: %v", "relayTx", err)
-	}
-	if respOuter.ID != reqId {
-		return "", fmt.Errorf("%s: %v", "relayTx", "request ID doesn't match")
-	}
-	if len(respOuter.Signature) == 0 {
-		return "", fmt.Errorf("%s: empty signature in response: %s", "relayTx", message)
-	}
-	var respInner api.APIresponse
-	if err := json.Unmarshal(respOuter.MessageAPI, &respInner); err != nil {
-		return "", fmt.Errorf("%s: %v", "relayTx", err)
+	if !resp.Ok {
+		return "", fmt.Errorf("could not cast voteTx to the vochain: %s", resp.Message)
 	}
 
-	if len(respInner.Nullifier) < 1 {
-		return "", fmt.Errorf("%s", "did not received nullifier")
+	if len(resp.Nullifier) < 1 {
+		return "", fmt.Errorf("RelayVote: did not revieve nullifier")
 	}
 
-	return respInner.Nullifier, nil
+	return resp.Nullifier, nil
 }
