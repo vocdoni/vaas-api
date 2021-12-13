@@ -131,7 +131,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/elections/{electionId}/status",
+		"/priv/elections/{electionId}/{status}",
 		"PUT",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.setProcessStatusHandler,
@@ -597,8 +597,40 @@ func (u *URLAPI) importPublicKeysHandler(msg *bearerstdapi.BearerStandardAPIdata
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
 }
 
-// PUT https://server/v1/priv/elections/<processId>/status
+// PUT https://server/v1/priv/elections/<electionId>/status
 // setProcessStatusHandler sets the process status (READY, PAUSED, ENDED, CANCELED)
 func (u *URLAPI) setProcessStatusHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+	var err error
+	var resp types.APIResponse
+	var orgInfo orgPermissionsInfo
+	var status models.ProcessStatus
+	var processID []byte
+
+	filter := ctx.URLParam("status")
+
+	entityPrivKey, ok := util.DecryptSymmetric(orgInfo.organization.EthPrivKeyCicpher, orgInfo.integratorPrivKey)
+	if !ok {
+		return fmt.Errorf("could not decrypt entity private key")
+	}
+	entitySignKeys := ethereum.NewSignKeys()
+	if err = entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
+		return fmt.Errorf("could not decode entity private key: %w", err)
+	}
+
+	switch filter {
+	case "READY":
+		status = models.ProcessStatus_READY
+	case "PAUSED":
+		status = models.ProcessStatus_PAUSED
+	case "ENDED":
+		status = models.ProcessStatus_ENDED
+	case "CANCELLED":
+		status = models.ProcessStatus_CANCELED
+	}
+
+	if err = u.vocClient.SetProcessStatus(processID, status, entitySignKeys); err != nil {
+		return fmt.Errorf("could not set process status: %w", err)
+	}
+
+	return sendResponse(resp, ctx)
 }
