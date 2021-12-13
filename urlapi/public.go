@@ -146,15 +146,15 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
-	var organization *types.Organization
+	var orgInfo orgPermissionsInfo
 	var organizationMetadata *types.EntityMetadata
 	var metaUri string
 	// authenticate integrator has permission to edit this entity
-	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
 	// Fetch process from vochain
-	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
+	if metaUri, _, _, err = u.vocClient.GetAccount(orgInfo.organization.EthAddress); err != nil {
 		return fmt.Errorf("unable to get account: %w", err)
 	}
 

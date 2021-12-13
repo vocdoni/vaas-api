@@ -223,16 +223,16 @@ func (u *URLAPI) getOrganizationPrivateHandler(msg *bearerstdapi.BearerStandardA
 	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
-	var organization *types.Organization
 	var organizationMetadata *types.EntityMetadata
+	var orgInfo orgPermissionsInfo
 	var metaUri string
 	// authenticate integrator has permission to edit this entity
-	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
 
 	// Fetch process from vochain
-	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
+	if metaUri, _, _, err = u.vocClient.GetAccount(orgInfo.organization.EthAddress); err != nil {
 		return err
 	}
 
@@ -241,7 +241,7 @@ func (u *URLAPI) getOrganizationPrivateHandler(msg *bearerstdapi.BearerStandardA
 		return fmt.Errorf("could not get organization metadata with URI\"%s\": %w", metaUri, err)
 	}
 
-	resp.APIToken = organization.PublicAPIToken
+	resp.APIToken = orgInfo.organization.PublicAPIToken
 	resp.Name = organizationMetadata.Name["default"]
 	resp.Description = organizationMetadata.Description["default"]
 	resp.Avatar = organizationMetadata.Media.Avatar
@@ -255,15 +255,14 @@ func (u *URLAPI) deleteOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
-	var integratorPrivKey []byte
-	var entityID []byte
+	var orgInfo orgPermissionsInfo
+
 	// authenticate integrator has permission to edit this entity
-	if integratorPrivKey, entityID, _, err = u.authEntityPermissions(msg, ctx); err != nil {
-		log.Warn(err)
-		return sendResponse(resp, ctx)
+	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
+		return err
 	}
 
-	if err = u.db.DeleteOrganization(integratorPrivKey, entityID); err != nil {
+	if err = u.db.DeleteOrganization(orgInfo.integratorPrivKey, orgInfo.entityID); err != nil {
 		log.Warn(err)
 		return sendResponse(resp, ctx)
 	}
@@ -276,18 +275,17 @@ func (u *URLAPI) resetOrganizationKeyHandler(msg *bearerstdapi.BearerStandardAPI
 	ctx *httprouter.HTTPContext) error {
 	var err error
 	var resp types.APIResponse
-	var integratorPrivKey []byte
-	var entityID []byte
+	var orgInfo orgPermissionsInfo
+
 	// authenticate integrator has permission to edit this entity
-	if integratorPrivKey, entityID, _,
-		err = u.authEntityPermissions(msg, ctx); err != nil {
+	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
 
 	// Now generate a new api key & update integrator
 	resp.APIToken = util.GenerateBearerToken()
 	if _, err = u.db.UpdateOrganizationPublicAPIToken(
-		integratorPrivKey, entityID, resp.APIToken); err != nil {
+		orgInfo.integratorPrivKey, orgInfo.entityID, resp.APIToken); err != nil {
 		return fmt.Errorf("could not update public api token %w", err)
 	}
 	return sendResponse(resp, ctx)
@@ -300,12 +298,11 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	var err error
 	var resp types.APIResponse
 	var req types.APIRequest
-	var organization *types.Organization
-	var entityID []byte
+	var orgInfo orgPermissionsInfo
 	var metaURI string
 
 	// authenticate integrator has permission to edit this entity
-	if _, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
 
@@ -320,17 +317,17 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 			Avatar: req.Avatar,
 			Header: req.Header,
 		},
-	}, entityID); err != nil {
+	}, orgInfo.entityID); err != nil {
 		return fmt.Errorf("could not set entity metadata: %w", err)
 	}
 
 	// Update organization in the db to make sure it matches the metadata
-	if _, err = u.db.UpdateOrganization(organization.IntegratorApiKey, organization.EthAddress,
+	if _, err = u.db.UpdateOrganization(orgInfo.organization.IntegratorApiKey, orgInfo.organization.EthAddress,
 		req.Header, req.Avatar); err != nil {
 		return fmt.Errorf("could not update organization: %w", err)
 	}
 
-	resp.OrganizationID = entityID
+	resp.OrganizationID = orgInfo.entityID
 	resp.ContentURI = metaURI
 	return sendResponse(resp, ctx)
 }
@@ -343,11 +340,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var err error
 	var resp types.APIResponse
 	var req types.APIRequest
-	var organization *types.Organization
-	// var blind bool
-	var entityID []byte
+	var orgInfo orgPermissionsInfo
 	var processID []byte
-	var integratorPrivKey []byte
 	var metaUri string
 
 	// TODO use blind/signed
@@ -355,7 +349,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// ctx.URLParam("type")
 
 	// authenticate integrator has permission to edit this entity
-	if integratorPrivKey, entityID, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
+	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
 
@@ -371,7 +365,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if processID, err = hex.DecodeString(pid); err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
 	}
-	entityPrivKey, ok := util.DecryptSymmetric(organization.EthPrivKeyCicpher, integratorPrivKey)
+	entityPrivKey, ok := util.DecryptSymmetric(orgInfo.organization.EthPrivKeyCicpher, orgInfo.integratorPrivKey)
 	if !ok {
 		return fmt.Errorf("could not decrypt entity private key")
 	}
@@ -471,13 +465,13 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// TODO use encryption priv/pub keys if process is encrypted
-	if startBlock, err = u.vocClient.CreateProcess(processID, entityID, startBlock,
+	if startBlock, err = u.vocClient.CreateProcess(processID, orgInfo.entityID, startBlock,
 		endBlock-startBlock, []byte{}, "", envelopeType, processMode,
 		voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri, entitySignKeys); err != nil {
 		return fmt.Errorf("could not create process on the vochain: %w", err)
 	}
 
-	if _, err = u.db.CreateElection(integratorPrivKey, entityID, processID, req.Title, startDate,
+	if _, err = u.db.CreateElection(orgInfo.integratorPrivKey, orgInfo.entityID, processID, req.Title, startDate,
 		endDate, uuid.NullUUID{}, int(startBlock), int(endBlock), req.Confidential, req.HiddenResults); err != nil {
 		return fmt.Errorf("could not create election: %w", err)
 	}
@@ -493,17 +487,16 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 // listProcessesPrivateHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
-	var entityId []byte
-	var integratorPrivKey []byte
+	var orgInfo orgPermissionsInfo
 	var pub []types.APIElectionSummary
 	var err error
 
-	if integratorPrivKey, entityId, _, err = u.authEntityPermissions(msg, ctx); err != nil {
+	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return err
 	}
 
 	filter := ctx.URLParam("type")
-	if pub, _, err = u.getProcessList(filter, integratorPrivKey, entityId, true); err != nil {
+	if pub, _, err = u.getProcessList(filter, orgInfo.integratorPrivKey, orgInfo.entityID, true); err != nil {
 		return err
 	}
 	return sendResponse(pub, ctx)

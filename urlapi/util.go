@@ -17,26 +17,36 @@ import (
 	"go.vocdoni.io/proto/build/go/models"
 )
 
+type orgPermissionsInfo struct {
+	integratorPrivKey []byte
+	entityID          []byte
+	organization      *types.Organization
+}
+
 func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
-	ctx *httprouter.HTTPContext) ([]byte, []byte, *types.Organization, error) {
+	ctx *httprouter.HTTPContext) (orgPermissionsInfo, error) {
 	var err error
 	var entityID []byte
 	var integratorPrivKey []byte
 	var organization *types.Organization
 
 	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
-		return nil, nil, nil, err
+		return orgPermissionsInfo{}, err
 	}
 	if entityID, err = util.GetBytesID(ctx, "organizationId"); err != nil {
-		return nil, nil, nil, err
+		return orgPermissionsInfo{}, err
 	}
 	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db: %w", entityID, err)
+		return orgPermissionsInfo{}, fmt.Errorf("entity %X could not be fetched from the db: %w", entityID, err)
 	}
 	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
-		return nil, nil, nil, fmt.Errorf("entity %X does not belong to this integrator", entityID)
+		return orgPermissionsInfo{}, fmt.Errorf("entity %X does not belong to this integrator", entityID)
 	}
-	return integratorPrivKey, entityID, organization, nil
+	return orgPermissionsInfo{
+		integratorPrivKey: integratorPrivKey,
+		entityID:          entityID,
+		organization:      organization,
+	}, nil
 }
 func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
 	currentHeight, err := u.vocClient.GetCurrentBlock()
