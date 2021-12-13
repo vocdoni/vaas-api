@@ -95,7 +95,7 @@ func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
 	return time.Now().Add(time.Duration(diffHeight*int64(t)) * time.Millisecond), nil
 }
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
-	results *types.VochainResults, meta *types.ProcessMetadata) types.APIElectionInfo {
+	results *types.VochainResults, meta *types.ProcessMetadata) (types.APIElectionInfo, error) {
 	var err error
 
 	process := types.APIElectionInfo{
@@ -138,27 +138,26 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 		}
 		process.Questions = append(process.Questions, newQuestion)
 	}
-	process.Status = strings.ToTitle(models.ProcessStatus_name[vc.Status])[0:1] +
-		strings.ToLower(models.ProcessStatus_name[vc.Status])[1:]
+	if len(models.ProcessStatus_name[vc.Status]) > 1 {
+		process.Status = strings.ToTitle(models.ProcessStatus_name[vc.Status])[0:1] +
+			strings.ToLower(models.ProcessStatus_name[vc.Status])[1:]
+	}
 
 	if results != nil {
 		process.VoteCount = results.Height
 		if process.Results, err = aggregateResults(meta, results); err != nil {
-			log.Errorf("could not aggregate results: %v", err)
+			return process, fmt.Errorf("could not aggregate results: %v", err)
 		}
 	}
 
 	if process.StartDate, err = u.estimateBlockTime(vc.StartBlock); err != nil {
-		log.Warnf("could not estimate startDate at %d: %v", vc.StartBlock, err)
+		return process, fmt.Errorf("could not estimate startDate at %d: %w", vc.StartBlock, err)
 	}
 
 	if process.EndDate, err = u.estimateBlockTime(vc.EndBlock); err != nil {
-		log.Warnf("could not estimate endDate at %d: %v", vc.EndBlock, err)
+		return process, fmt.Errorf("could not estimate endDate at %d: %w", vc.EndBlock, err)
 	}
-
-	process.Ok = true
-
-	return process
+	return process, nil
 }
 
 func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {

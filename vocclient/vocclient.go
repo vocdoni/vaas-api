@@ -52,6 +52,7 @@ func (c *Client) ActiveEndpoint() string {
 // FETCHING INFO APIS
 
 func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
+	// TODO cache current block height in vocclient, update periodically
 	var req api.APIrequest
 	req.Method = "getBlockHeight"
 	resp, err := c.pool.Request(req, c.signingKey)
