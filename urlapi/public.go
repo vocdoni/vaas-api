@@ -366,55 +366,58 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 	switch filter {
 	case "active", "ended", "upcoming":
 		var tempProcessList []string
-		var totalProcs int
+		var fullProcessList []string
 		var currentHeight uint32
 		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
 			return nil, nil, fmt.Errorf("could not get current block height: %w", err)
 		}
+		// loop to fetch all processes
 		for {
 			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
-				"", "", "", 0, false, totalProcs, 64); err != nil {
+				"", "", "", 0, false, len(fullProcessList), 64); err != nil {
 				return nil, nil, fmt.Errorf("%s not a valid filter", filter)
 			}
-			totalProcs += len(tempProcessList)
-			for _, processID := range tempProcessList {
-				var processIDBytes []byte
-				var newProcess *types.Election
-				if processIDBytes, err = hex.DecodeString(processID); err != nil {
-					log.Error(err)
-					continue
-				}
-				if private {
-					newProcess, err = u.db.GetElection(integratorPrivKey,
-						entityId, processIDBytes)
-				} else {
-					newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
-				}
-				if err != nil {
-					log.Warn(fmt.Errorf("could not get election,"+
-						" process %x may no be in db: %w", processIDBytes, err))
-					continue
-				}
-				newProcess.OrgEthAddress = entityId
-				newProcess.ProcessID = processIDBytes
-
-				switch filter {
-				case "active":
-					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-						priv, pub = appendProcess(priv, pub, newProcess, private)
-					}
-				case "upcoming":
-					if newProcess.StartBlock > int(currentHeight) {
-						priv, pub = appendProcess(priv, pub, newProcess, private)
-					}
-				case "ended":
-					if newProcess.EndBlock < int(currentHeight) {
-						priv, pub = appendProcess(priv, pub, newProcess, private)
-					}
-				}
-			}
+			fullProcessList = append(fullProcessList, tempProcessList...)
 			if len(tempProcessList) < 64 {
 				break
+			}
+		}
+		// loop to fetch processes from db, filter by date
+		for _, processID := range fullProcessList {
+			var processIDBytes []byte
+			var newProcess *types.Election
+			if processIDBytes, err = hex.DecodeString(processID); err != nil {
+				log.Error(err)
+				continue
+			}
+			if private {
+				newProcess, err = u.db.GetElection(integratorPrivKey,
+					entityId, processIDBytes)
+			} else {
+				newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
+			}
+			if err != nil {
+				log.Warn(fmt.Errorf("could not get election,"+
+					" process %x may no be in db: %w", processIDBytes, err))
+				continue
+			}
+			newProcess.OrgEthAddress = entityId
+			newProcess.ProcessID = processIDBytes
+
+			// filter processes by date
+			switch filter {
+			case "active":
+				if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
+					priv, pub = appendProcess(priv, pub, newProcess, private)
+				}
+			case "upcoming":
+				if newProcess.StartBlock > int(currentHeight) {
+					priv, pub = appendProcess(priv, pub, newProcess, private)
+				}
+			case "ended":
+				if newProcess.EndBlock < int(currentHeight) {
+					priv, pub = appendProcess(priv, pub, newProcess, private)
+				}
 			}
 		}
 	case "blind", "signed":
