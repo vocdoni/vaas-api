@@ -136,7 +136,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	if results != nil {
 		process.VoteCount = results.Height
 		if process.Results, err = aggregateResults(meta, results); err != nil {
-			log.Error(fmt.Errorf("could not aggregate results: %w", err))
+			log.Errorf("could not aggregate results: %v", err)
 		}
 	}
 	process.OrganizationID = vc.EntityID
@@ -146,11 +146,11 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	process.EndBlock = vc.EndBlock
 
 	if process.StartDate, err = u.estimateBlockTime(vc.StartBlock); err != nil {
-		log.Warnf("could not estimate startDate at %d: %s", vc.StartBlock, err.Error())
+		log.Warnf("could not estimate startDate at %d: %v", vc.StartBlock, err)
 	}
 
 	if process.EndDate, err = u.estimateBlockTime(vc.EndBlock); err != nil {
-		log.Warnf("could not estimate endDate at %d: %s", vc.EndBlock, err.Error())
+		log.Warnf("could not estimate endDate at %d: %v", vc.EndBlock, err)
 	}
 
 	process.ResultsAggregation = meta.Results.Aggregation
@@ -225,7 +225,7 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 		for {
 			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
 				"", "", "", 0, false, len(fullProcessList), 64); err != nil {
-				return nil, nil, fmt.Errorf("%s not a valid filter", filter)
+				return nil, nil, fmt.Errorf("unable to get process list from vochain: %w", err)
 			}
 			fullProcessList = append(fullProcessList, tempProcessList...)
 			if len(tempProcessList) < 64 {
@@ -237,7 +237,7 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			var processIDBytes []byte
 			var newProcess *types.Election
 			if processIDBytes, err = hex.DecodeString(processID); err != nil {
-				log.Error(err)
+				log.Errorf("cannot decode process id %s: %w", processID, err)
 				continue
 			}
 			if private {
@@ -247,8 +247,8 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 				newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
 			}
 			if err != nil {
-				log.Warn(fmt.Errorf("could not get election,"+
-					" process %x may no be in db: %w", processIDBytes, err))
+				log.Warnf("could not get election,"+
+					" process %x may no be in db: %v", processIDBytes, err)
 				continue
 			}
 			newProcess.OrgEthAddress = entityId

@@ -442,7 +442,6 @@ func (c *Client) CreateProcess(
 
 func (c *Client) RelayTx(reqBody []byte) (string, error) {
 	var err error
-
 	var gw Gateway
 	if gw, err = c.pool.activeGateway(); err != nil {
 		return "", err
@@ -450,7 +449,7 @@ func (c *Client) RelayTx(reqBody []byte) (string, error) {
 
 	var reqOuter jsonrpcapi.RequestMessage
 	if err := json.Unmarshal(reqBody, &reqOuter); err != nil {
-		return "", fmt.Errorf("%s: %v", "sumbitRawTx", err)
+		return "", fmt.Errorf("submitRawTx error: %v", err)
 	}
 	reqId := reqOuter.ID
 
