@@ -88,13 +88,13 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var resp types.APIResponse
 
 	if entityId, err = util.GetBytesID(ctx, "organizationId"); err != nil {
-		return fmt.Errorf("registerPublicKeyHandler: %w", err)
+		return err
 	}
 
 	filter := ctx.URLParam("type")
 	if resp.PrivateProcesses, resp.PublicProcesses, err = u.getProcessList(filter,
 		[]byte{}, entityId, false); err != nil {
-		return fmt.Errorf("listProcessesHandler: %w", err)
+		return err
 	}
 	return sendResponse(resp, ctx)
 }
@@ -110,25 +110,25 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 	var results *types.VochainResults
 	var processMetadata *types.ProcessMetadata
 	if processId, err = util.GetBytesID(ctx, "electionId"); err != nil {
-		return fmt.Errorf("getProcessInfoPublicHandler: %w", err)
+		return err
 	}
 
 	// Fetch process from vochain
 	if vochainProcess, err = u.vocClient.GetProcess(processId); err != nil {
-		return fmt.Errorf("getProcessInfoPublicHandler: unable to get process: %w", err)
+		return fmt.Errorf("unable to get process: %w", err)
 	}
 
 	// Fetch results
 	if vochainProcess.HaveResults {
 		if results, err = u.vocClient.GetResults(processId); err != nil {
-			return fmt.Errorf("getProcessInfoPublicHandler: unable to get results %w", err)
+			return fmt.Errorf("unable to get results %w", err)
 		}
 	}
 
 	// Fetch metadata
 	metadataUri := vochainProcess.Metadata
 	if processMetadata, err = u.vocClient.FetchProcessMetadata(metadataUri); err != nil {
-		return fmt.Errorf("getProcessInfoPublicHandler: unable to get metadata: %w", err)
+		return fmt.Errorf("unable to get metadata: %w", err)
 	}
 
 	// Parse all the information
@@ -156,16 +156,16 @@ func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var metaUri string
 	// authenticate integrator has permission to edit this entity
 	if _, _, organization, err = u.authEntityPermissions(msg, ctx); err != nil {
-		return fmt.Errorf("getOrganizationHandler: %w", err)
+		return err
 	}
 	// Fetch process from vochain
 	if metaUri, _, _, err = u.vocClient.GetAccount(organization.EthAddress); err != nil {
-		return fmt.Errorf("getOrganizationHandler: unable to get account: %w", err)
+		return fmt.Errorf("unable to get account: %w", err)
 	}
 
 	// Fetch metadata
 	if organizationMetadata, err = u.vocClient.FetchOrganizationMetadata(metaUri); err != nil {
-		return fmt.Errorf("getOrganizationHandler: could not get organization metadata with URI\"%s\": %w", metaUri, err)
+		return fmt.Errorf("could not get organization metadata with URI\"%s\": %w", metaUri, err)
 	}
 
 	resp.Name = organizationMetadata.Name["default"]
@@ -182,14 +182,14 @@ func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata
 	var req types.APIRequest
 	log.Debugf("query to submit vote for process %s", ctx.URLParam("electionId"))
 	if req, err = util.UnmarshalRequest(msg); err != nil {
-		return fmt.Errorf("submitVotePublicHandler: %w", err)
+		return err
 	}
 	var votePkg []byte
 	if votePkg, err = base64.StdEncoding.DecodeString(req.Vote); err != nil {
-		return fmt.Errorf("submitVotePublicHandler: could not decode vote pkg to base64: %w", err)
+		return fmt.Errorf("could not decode vote pkg to base64: %w", err)
 	}
 	if resp.Nullifier, err = u.vocClient.RelayTx(votePkg); err != nil {
-		return fmt.Errorf("submitVotePublicHandler: could not submit vote tx: %w", err)
+		return fmt.Errorf("could not submit vote tx: %w", err)
 	}
 
 	return sendResponse(resp, ctx)
@@ -418,9 +418,9 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			}
 		}
 	case "blind", "signed":
-		return nil, nil, fmt.Errorf("listProcessesPrivateHandler: filter %s unimplemented", filter)
+		return nil, nil, fmt.Errorf("filter %s unimplemented", filter)
 	default:
-		return nil, nil, fmt.Errorf("listProcessesPrivateHandler: %s not a valid filter", filter)
+		return nil, nil, fmt.Errorf("%s not a valid filter", filter)
 
 	}
 	return priv, pub, nil

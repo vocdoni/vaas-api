@@ -72,11 +72,12 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var req types.APIRequest
 	var resp types.APIResponse
 	if req, err = util.UnmarshalRequest(msg); err != nil {
-		return fmt.Errorf("createIntegratorAccountHandler: %w", err)
+		return err
+
 	}
 	resp.APIKey = util.GenerateBearerToken()
 	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
-		return fmt.Errorf("error generating private key: %w", err)
+		return err
 	}
 
 	var cspPubKey dvoteTypes.HexBytes
@@ -86,7 +87,7 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	}
 	if resp.ID, err = u.db.CreateIntegrator(apiKey,
 		cspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
-		return fmt.Errorf("createIntegratorAccountHandler: unable to create integrator: %w", err)
+		return err
 	}
 	return sendResponse(resp, ctx)
 }
@@ -99,19 +100,19 @@ func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
-		return fmt.Errorf("updateIntegratorAccountHandler: %w", err)
+		return err
 	}
 	if req, err = util.UnmarshalRequest(msg); err != nil {
-		return fmt.Errorf("updateIntegratorAccountHandler: %w", err)
+		return err
 	}
 
 	var cspPubKey dvoteTypes.HexBytes
 	cspPubKey, err = hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
 	if err != nil {
-		return fmt.Errorf("updateIntegratorAccountHandler: error decoding csp pub key: %w", err)
+		return err
 	}
 	if _, err = u.db.UpdateIntegrator(id, cspPubKey, req.Name, req.CspUrlPrefix); err != nil {
-		return fmt.Errorf("updateIntegratorAccountHandler: unable to update integrator: %w", err)
+		return err
 	}
 	return sendResponse(resp, ctx)
 }
@@ -124,16 +125,16 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
-		return fmt.Errorf("resetIntegratorKeyHandler: %w", err)
+		return err
 	}
 
 	// Now generate a new api key & update integrator
 	resp.APIKey = util.GenerateBearerToken()
 	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
-		return fmt.Errorf("resetIntegratorKeyHandler: error generating private key: %w", err)
+		return err
 	}
 	if _, err = u.db.UpdateIntegratorApiKey(id, apiKey); err != nil {
-		return fmt.Errorf("resetIntegratorKeyHandler: unable to update integrator api key: %w", err)
+		return err
 	}
 	return sendResponse(resp, ctx)
 }
@@ -146,10 +147,10 @@ func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPI
 	var integrator *types.Integrator
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
-		return fmt.Errorf("getIntegratorAccountHandler: %w", err)
+		return err
 	}
 	if integrator, err = u.db.GetIntegrator(id); err != nil {
-		return fmt.Errorf("getIntegratorAccountHandler: %w", err)
+		return err
 	}
 	resp.Name = integrator.Name
 	resp.CspPubKey = integrator.CspPubKey
@@ -164,10 +165,10 @@ func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 	var resp types.APIResponse
 	var id int
 	if id, err = util.GetIntID(ctx, "id"); err != nil {
-		return fmt.Errorf("deleteIntegratorAccountHandler: %w", err)
+		return err
 	}
 	if err = u.db.DeleteIntegrator(id); err != nil {
-		return fmt.Errorf("deleteIntegratorAccountHandler: unable to delete integrator: %w", err)
+		return err
 	}
 	return sendResponse(resp, ctx)
 }
