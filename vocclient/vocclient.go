@@ -2,7 +2,6 @@ package vocclient
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -20,8 +19,9 @@ import (
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 	"google.golang.org/protobuf/proto"
-	"nhooyr.io/websocket"
 )
+
+const TIMEOUT_TIME = 1 * time.Minute
 
 var MAX_CENSUS_SIZE = uint64(1024)
 
@@ -454,17 +454,6 @@ func (c *Client) RelayTx(reqBody []byte) (string, error) {
 	reqId := reqOuter.ID
 
 	message := []byte{}
-	if gw.client.WS != nil {
-		tctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-		if err := gw.client.WS.Write(tctx, websocket.MessageText, reqBody); err != nil {
-			return "", fmt.Errorf("%s: %v", "relayTx", err)
-		}
-		_, message, err = gw.client.WS.Read(tctx)
-		if err != nil {
-			return "", fmt.Errorf("%s: %v", "relayTx", err)
-		}
-	}
 	if gw.client.HTTP != nil {
 		resp, err := gw.client.HTTP.Post(gw.client.Addr, "application/json", bytes.NewBuffer(reqBody))
 		if err != nil {

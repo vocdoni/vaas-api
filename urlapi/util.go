@@ -95,8 +95,21 @@ func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
 	return time.Now().Add(time.Duration(diffHeight*int64(t)) * time.Millisecond), nil
 }
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
-	results *types.VochainResults, meta *types.ProcessMetadata) (process types.APIElectionInfo) {
+	results *types.VochainResults, meta *types.ProcessMetadata) types.APIElectionInfo {
 	var err error
+
+	process := types.APIElectionInfo{
+		Description:        meta.Description["default"],
+		OrganizationID:     vc.EntityID,
+		Header:             meta.Media.Header,
+		ElectionID:         vc.ID,
+		ResultsAggregation: meta.Results.Aggregation,
+		ResultsDisplay:     meta.Results.Display,
+		EndBlock:           vc.EndBlock,
+		StartBlock:         vc.StartBlock,
+		StreamURI:          meta.Media.StreamURI,
+		Title:              meta.Title["default"],
+	}
 
 	// TODO update when blind is added to election
 	// if db.Blind {
@@ -114,11 +127,6 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	} else {
 		process.Type += "rolling-results"
 	}
-
-	process.Title = meta.Title["default"]
-	process.Description = meta.Description["default"]
-	process.Header = meta.Media.Header
-	process.StreamURI = meta.Media.StreamURI
 
 	for _, question := range meta.Questions {
 		newQuestion := types.Question{
@@ -139,11 +147,6 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 			log.Errorf("could not aggregate results: %v", err)
 		}
 	}
-	process.OrganizationID = vc.EntityID
-	process.ElectionID = vc.ID
-
-	process.StartBlock = vc.StartBlock
-	process.EndBlock = vc.EndBlock
 
 	if process.StartDate, err = u.estimateBlockTime(vc.StartBlock); err != nil {
 		log.Warnf("could not estimate startDate at %d: %v", vc.StartBlock, err)
@@ -152,9 +155,6 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	if process.EndDate, err = u.estimateBlockTime(vc.EndBlock); err != nil {
 		log.Warnf("could not estimate endDate at %d: %v", vc.EndBlock, err)
 	}
-
-	process.ResultsAggregation = meta.Results.Aggregation
-	process.ResultsDisplay = meta.Results.Display
 
 	process.Ok = true
 
@@ -211,8 +211,14 @@ func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
 	return currentHeight + uint32(blockDiff), nil
 }
 
+// getProcessList gets a list of process summaries for given filters.
+// if `private`, all processes are returned, including metadataPrivKeys, in the first return var.
+// otherwise, confidential processes are returned first and public ones second.
 func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byte,
-	private bool) (pub []types.APIElectionSummary, priv []types.APIElectionSummary, err error) {
+	private bool) ([]types.APIElectionSummary, []types.APIElectionSummary, error) {
+	var err error
+	var priv []types.APIElectionSummary
+	var pub []types.APIElectionSummary
 	switch filter {
 	case "active", "ended", "upcoming":
 		var tempProcessList []string
@@ -237,7 +243,7 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			var processIDBytes []byte
 			var newProcess *types.Election
 			if processIDBytes, err = hex.DecodeString(processID); err != nil {
-				log.Errorf("cannot decode process id %s: %w", processID, err)
+				log.Errorf("cannot decode process id %s: %v", processID, err)
 				continue
 			}
 			if private {
@@ -258,15 +264,15 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			switch filter {
 			case "active":
 				if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-					priv, pub = appendProcess(priv, pub, newProcess, private)
+					appendProcess(&priv, &pub, newProcess, private)
 				}
 			case "upcoming":
 				if newProcess.StartBlock > int(currentHeight) {
-					priv, pub = appendProcess(priv, pub, newProcess, private)
+					appendProcess(&priv, &pub, newProcess, private)
 				}
 			case "ended":
 				if newProcess.EndBlock < int(currentHeight) {
-					priv, pub = appendProcess(priv, pub, newProcess, private)
+					appendProcess(&priv, &pub, newProcess, private)
 				}
 			}
 		}
@@ -316,19 +322,18 @@ func aggregateResults(meta *types.ProcessMetadata,
 	}
 	return aggregatedResults, nil
 }
-func appendProcess(priv, pub []types.APIElectionSummary, newProcess *types.Election,
-	private bool) (privateElections []types.APIElectionSummary,
-	publicElections []types.APIElectionSummary) {
+
+func appendProcess(priv, pub *[]types.APIElectionSummary, newProcess *types.Election,
+	private bool) {
 	if private {
-		priv = append(priv, reflectElectionPrivate(*newProcess))
+		*priv = append(*priv, reflectElectionPrivate(*newProcess))
 	} else {
 		if newProcess.Confidential {
-			priv = append(priv, reflectElectionPublic(*newProcess))
+			*priv = append(*priv, reflectElectionPublic(*newProcess))
 		} else {
-			pub = append(pub, reflectElectionPublic(*newProcess))
+			*pub = append(*pub, reflectElectionPublic(*newProcess))
 		}
 	}
-	return priv, pub
 }
 
 func reflectElectionPrivate(election types.Election) types.APIElectionSummary {
