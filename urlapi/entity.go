@@ -1,7 +1,6 @@
 package urlapi
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"time"
@@ -593,46 +592,4 @@ func (u *URLAPI) importPublicKeysHandler(msg *bearerstdapi.BearerStandardAPIdata
 // setProcessStatusHandler sets the process status (READY, PAUSED, ENDED, CANCELED)
 func (u *URLAPI) setProcessStatusHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
-}
-
-func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
-	ctx *httprouter.HTTPContext) ([]byte, []byte, *types.Organization, error) {
-	var err error
-	var entityID []byte
-	var integratorPrivKey []byte
-	var organization *types.Organization
-
-	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
-		return nil, nil, nil, err
-	}
-	if entityID, err = util.GetBytesID(ctx, "organizationId"); err != nil {
-		return nil, nil, nil, err
-	}
-	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return nil, nil, nil, fmt.Errorf("entity %X could not be fetched from the db: %w", entityID, err)
-	}
-	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
-		return nil, nil, nil, fmt.Errorf("entity %X does not belong to this integrator", entityID)
-	}
-	return integratorPrivKey, entityID, organization, nil
-}
-
-func reflectElectionPrivate(election types.Election) types.APIElectionSummary {
-	newElection := types.APIElectionSummary{
-		OrgEthAddress:   election.OrgEthAddress,
-		ElectionID:      election.ProcessID,
-		Title:           election.Title,
-		CensusID:        election.CensusID.UUID.String(),
-		StartDate:       election.StartDate,
-		EndDate:         election.EndDate,
-		StartBlock:      uint32(election.StartBlock),
-		EndBlock:        uint32(election.EndBlock),
-		Confidential:    election.Confidential,
-		HiddenResults:   election.HiddenResults,
-		MetadataPrivKey: election.MetadataPrivKey,
-	}
-	if election.CensusID.UUID == uuid.Nil {
-		newElection.CensusID = ""
-	}
-	return newElection
 }

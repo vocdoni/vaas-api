@@ -56,12 +56,7 @@ func (d *Database) GetElectionPublic(organizationEthAddress, processID []byte) (
 	selectIntegrator := `SELECT title, start_date, end_date, start_block, end_block, confidential, hidden_results
 						FROM elections WHERE organization_eth_address=$1 AND process_id=$2`
 	row := d.db.QueryRowx(selectIntegrator, organizationEthAddress, processID)
-	err := row.StructScan(&election)
-	if err != nil {
-		return nil, err
-	}
-
-	return &election, nil
+	return &election, row.StructScan(&election)
 }
 
 func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error) {
@@ -84,10 +79,5 @@ func (d *Database) ListElections(integratorAPIKey, orgEthAddress []byte) ([]type
 	selectIntegrator := `SELECT title, start_date, end_date, start_block, end_block, confidential, hidden_results, 
 							created_at, updated_at
 						FROM elections WHERE organization_eth_address =$1 AND integrator_api_key=$2`
-	err := d.db.Select(&election, selectIntegrator, orgEthAddress, integratorAPIKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return election, nil
+	return election, d.db.Select(&election, selectIntegrator, orgEthAddress, integratorAPIKey)
 }
