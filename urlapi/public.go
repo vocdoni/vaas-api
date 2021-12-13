@@ -114,7 +114,7 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 				var processIDBytes []byte
 				var newProcess *types.Election
 				if processIDBytes, err = hex.DecodeString(processID); err != nil {
-					log.Errorf("registerPublicKeyHandler: %w", err)
+					log.Error(fmt.Errorf("registerPublicKeyHandler: %w", err))
 					continue
 				}
 				if newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes); err != nil {
@@ -302,7 +302,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	if results != nil {
 		process.VoteCount = results.Height
 		if process.Results, err = aggregateResults(meta, results); err != nil {
-			log.Errorf("could not aggregate results: %w", err)
+			log.Error(fmt.Errorf("could not aggregate results: %w", err))
 		}
 	}
 	process.OrganizationID = vc.EntityID
@@ -312,11 +312,11 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	process.EndBlock = vc.EndBlock
 
 	if process.StartDate, err = u.estimateBlockTime(vc.StartBlock); err != nil {
-		log.Warnf("could not estimate startDate at %d: %w", vc.StartBlock, err)
+		log.Warnf("could not estimate startDate at %d: %s", vc.StartBlock, err.Error())
 	}
 
 	if process.EndDate, err = u.estimateBlockTime(vc.EndBlock); err != nil {
-		log.Warnf("could not estimate endDate at %d: %w", vc.EndBlock, err)
+		log.Warnf("could not estimate endDate at %d: %s", vc.EndBlock, err.Error())
 	}
 
 	process.ResultsAggregation = meta.Results.Aggregation
