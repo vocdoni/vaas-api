@@ -37,12 +37,13 @@ type APIResponse struct {
 	APIKey           string               `json:"apiKey,omitempty"`
 	APIToken         string               `json:"apiToken,omitempty"`
 	Avatar           string               `json:"avatar,omitempty"`
-	CensusID         int                  `json:"census_id,omitempty"`
+	CensusID         int                  `json:"censusId,omitempty"`
 	ContentURI       string               `json:"contentUri,omitempty"`
 	CspPubKey        types.HexBytes       `json:"cspPubKey,omitempty"`
 	CspUrlPrefix     string               `json:"cspUrlPrefix,omitempty"`
 	Description      string               `json:"description,omitempty"`
 	ElectionID       types.HexBytes       `json:"electionId,omitempty"`
+	ExplorerUrl      string               `json:"explorerUrl,omitempty"`
 	Header           string               `json:"header,omitempty"`
 	ID               int                  `json:"id,omitempty"`
 	Message          string               `json:"message,omitempty"`
@@ -51,7 +52,9 @@ type APIResponse struct {
 	Ok               bool                 `json:"ok,omitempty"`
 	OrganizationID   types.HexBytes       `json:"organizationId,omitempty"`
 	PrivateProcesses []APIElectionSummary `json:"private,omitempty"`
+	ProcessID        types.HexBytes       `json:"processId,omitempty"`
 	PublicProcesses  []APIElectionSummary `json:"public,omitempty"`
+	Registered       bool                 `json:"registered,omitempty"`
 }
 
 // APIElectionInfo is the response struct for a getElection request
@@ -64,34 +67,34 @@ type APIElectionInfo struct {
 	ElectionID         types.HexBytes `json:"electionId,omitempty"`
 	Questions          []Question     `json:"questions,omitempty"`
 	Results            []Result       `json:"results,omitempty"`
-	ResultsAggregation string         `json:"results_aggregation,omitempty"`
-	ResultsDisplay     string         `json:"results_display,omitempty"`
+	ResultsAggregation string         `json:"resultsAggregation,omitempty"`
+	ResultsDisplay     string         `json:"resultsDisplay,omitempty"`
 	// Estimated start/end dates
-	EndDate   time.Time `json:"end_date,omitempty"`
-	StartDate time.Time `json:"start_date,omitempty"`
+	EndDate   time.Time `json:"endDate,omitempty"`
+	StartDate time.Time `json:"startDate,omitempty"`
 	// Start/end blocks are source of truth
-	EndBlock   uint32 `json:"end_block,omitempty"`
-	StartBlock uint32 `json:"start_block,omitempty"`
+	EndBlock   uint32 `json:"endBlock,omitempty"`
+	StartBlock uint32 `json:"startBlock,omitempty"`
 	Status     string `json:"status,omitempty"`
-	StreamURI  string `json:"stream_uri,omitempty"`
+	StreamURI  string `json:"streamUri,omitempty"`
 	Title      string `json:"title,omitempty"`
 	Type       string `json:"type,omitempty"`
-	VoteCount  uint32 `json:"vote_count,omitempty"`
+	VoteCount  uint32 `json:"voteCount,omitempty"`
 }
 
 // APIElectionSummary is the struct for returning election info from the database
 type APIElectionSummary struct {
-	OrgEthAddress   types.HexBytes `json:"orgEthAddress,omitempty" db:"organization_eth_address"`
-	ElectionID      types.HexBytes `json:"electionId,omitempty" db:"process_id"`
+	OrgEthAddress   types.HexBytes `json:"orgEthAddress,omitempty" db:"organizationEthAddress"`
+	ElectionID      types.HexBytes `json:"electionId,omitempty" db:"processId"`
 	Title           string         `json:"title,omitempty" db:"title"`
-	CensusID        string         `json:"censusId,omitempty" db:"census_id"`
-	StartDate       time.Time      `json:"startDate,omitempty" db:"start_date"`
-	EndDate         time.Time      `json:"endDate,omitempty" db:"end_date"`
-	StartBlock      uint32         `json:"startBlock,omitempty" db:"start_block"`
-	EndBlock        uint32         `json:"endBlock,omitempty" db:"end_block"`
+	CensusID        string         `json:"censusId,omitempty" db:"censusId"`
+	StartDate       time.Time      `json:"startDate,omitempty" db:"startDate"`
+	EndDate         time.Time      `json:"endDate,omitempty" db:"endDate"`
+	StartBlock      uint32         `json:"startBlock,omitempty" db:"startBlock"`
+	EndBlock        uint32         `json:"endBlock,omitempty" db:"endBlock"`
 	Confidential    bool           `json:"confidential,omitempty" db:"confidential"`
-	HiddenResults   bool           `json:"hiddenResults,omitempty" db:"hidden_results"`
-	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadata_priv_key"`
+	HiddenResults   bool           `json:"hiddenResults,omitempty" db:"hiddenResults"`
+	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadataPrivKey"`
 }
 
 type ProcessMetadata struct {
@@ -108,7 +111,7 @@ type LanguageString map[string]string
 
 type ProcessMedia struct {
 	Header    string `json:"header,omitempty"`
-	StreamURI string `json:"stream_uri,omitempty"`
+	StreamURI string `json:"streamUri,omitempty"`
 }
 
 type ProcessResultsDetails struct {
@@ -132,7 +135,7 @@ type EntityMetadata struct {
 	Languages   []string       `json:"languages,omitempty"`
 	Name        LanguageString `json:"name,omitempty"`
 	Description LanguageString `json:"description,omitempty"`
-	NewsFeed    LanguageString `json:"news_feed,omitempty"`
+	NewsFeed    LanguageString `json:"newsFeed,omitempty"`
 	Media       EntityMedia    `json:"media,omitempty"`
 	Meta        interface{}    `json:"meta,omitempty"`
 	Actions     interface{}    `json:"actions,omitempty"`

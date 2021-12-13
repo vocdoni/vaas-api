@@ -17,6 +17,8 @@ import (
 	"go.vocdoni.io/proto/build/go/models"
 )
 
+const EXPLORER_NULLIFIER_URL = "https://vaas.explorer.vote/envelope/"
+
 type orgPermissionsInfo struct {
 	integratorPrivKey []byte
 	entityID          []byte

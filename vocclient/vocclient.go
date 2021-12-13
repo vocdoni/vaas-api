@@ -72,6 +72,20 @@ func (c *Client) ActiveEndpoint() string {
 
 // FETCHING INFO APIS
 
+func (c *Client) GetVoteStatus(nullifier []byte) ([]byte, bool, error) {
+	var req api.APIrequest
+	req.Method = "getEnvelopeStatus"
+	req.Nullifier = nullifier
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return nil, false, err
+	}
+	if resp.Registered == nil {
+		return nil, false, fmt.Errorf("vote registered is nil")
+	}
+	return resp.ProcessID, *resp.Registered, nil
+}
+
 func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
 	var req api.APIrequest
 	req.Method = "getBlockHeight"
@@ -149,7 +163,8 @@ func (c *Client) GetResults(pid []byte) (results *types.VochainResults, _ error)
 	return results, nil
 }
 
-func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm string, namespace uint32, withResults bool, from, listSize int) (processList []string, _ error) {
+func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm string,
+	namespace uint32, withResults bool, from, listSize int) (processList []string, _ error) {
 	var req api.APIrequest
 	req.Method = "getProcessList"
 	req.EntityId = entityId
@@ -261,7 +276,6 @@ func (c *Client) AddCensus() (CensusID string, _ error) {
 	log.Infof("Create census")
 	req.Method = "addCensus"
 	req.CensusType = models.Census_ARBO_BLAKE2B
-	// TODO does rand.Int provide sufficient entropy?
 	req.CensusID = fmt.Sprintf("census%d", rand.Int())
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
@@ -270,7 +284,8 @@ func (c *Client) AddCensus() (CensusID string, _ error) {
 	return resp.CensusID, nil
 }
 
-func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string, censusValue []byte) (root dvoteTypes.HexBytes, _ error) {
+func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string,
+	censusValue []byte) (root dvoteTypes.HexBytes, _ error) {
 	var req api.APIrequest
 	var hexpub string
 	req.Method = "addClaim"
@@ -294,9 +309,8 @@ func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, cens
 	return resp.Root, nil
 }
 
-func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys,
-	censusPubKeys []string, censusValues []*dvoteTypes.BigInt) (root dvoteTypes.HexBytes,
-	invalidClaims []int, _ error) {
+func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string,
+	censusValues []*dvoteTypes.BigInt) (root dvoteTypes.HexBytes, invalidClaims []int, _ error) {
 	var req api.APIrequest
 	req.CensusID = censusID
 	censusSize := 0
@@ -348,7 +362,8 @@ func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKey
 	return root, invalidClaims, nil
 }
 
-func (c *Client) PublishCensus(censusID string, rootHash dvoteTypes.HexBytes) (uri string, _ error) {
+func (c *Client) PublishCensus(censusID string,
+	rootHash dvoteTypes.HexBytes) (uri string, _ error) {
 	var req api.APIrequest
 	req.Method = "publish"
 	req.CensusID = censusID
@@ -406,9 +421,10 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 }
 
 func (c *Client) CreateProcess(
-	pid []byte, entityID []byte, startBlock, duration uint32, censusRoot []byte, censusURI string, envelopeType *models.EnvelopeType,
-	processMode *models.ProcessMode, voteOptions *models.ProcessVoteOptions,
-	censusOrigin models.CensusOrigin, metadataUri string, signingKey *ethereum.SignKeys) (blockHeight uint32, _ error) {
+	pid []byte, entityID []byte, startBlock, duration uint32, censusRoot []byte, censusURI string,
+	envelopeType *models.EnvelopeType, processMode *models.ProcessMode,
+	voteOptions *models.ProcessVoteOptions, censusOrigin models.CensusOrigin, metadataUri string,
+	signingKey *ethereum.SignKeys) (blockHeight uint32, _ error) {
 	var resp *api.APIresponse
 	var req api.APIrequest
 	var err error
