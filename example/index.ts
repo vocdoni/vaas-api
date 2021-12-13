@@ -1,6 +1,7 @@
 import { createAnonymousElection, createOrganization, createSignedElection, deleteOrganization, getElectionPriv, getOrganizationPriv, listElectionsPriv, setOrganizationMetadata } from "./sections/integrator"
 import { createIntegrator, deleteIntegrator } from "./sections/superadmin"
-import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature } from "./sections/voter"
+import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot } from "./sections/voter"
+import { Wallet } from "@ethersproject/wallet"
 
 async function main() {
     // VOCDONI INTERNAL
@@ -40,11 +41,17 @@ async function main() {
     // ANONYMOUS AUTH
     // const tokenR = await getCspSigningTokenBlind(electionId1, signedElectionId, orgApiToken)
     const tokenR = await getCspSigningTokenBlindCustom(electionId1, { param1: "123", param2: "234" }, orgApiToken)
-    const blindSignature = await getCspBlindSignature(electionId1, tokenR, payload, orgApiToken)
-    // const signature = unblind(blindSignature, tokenR)
 
-    // submitBallot()
-    // getBallot()
+    const wallet = Wallet.createRandom()
+    const { hexBlinded: blindedPayload, userSecretData } = getBlindedPayload(electionId1, tokenR, wallet)
+
+    const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
+    const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
+
+    const ballot = getBallotPayload(electionId1, proof, false, { encryptionPubKeys: [] })
+
+    const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
+    const ballotDetails = await getBallot(nullifier, orgApiToken)
 
     // cleanup
 

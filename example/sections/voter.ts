@@ -1,5 +1,15 @@
 import "isomorphic-unfetch"
 import { getConfig } from "../util/config"
+import { hexStringToBuffer, strip0x } from "@vocdoni/common"
+import { CAbundle, IProofCA, ProofCaSignatureTypes, SignedTx, Tx, VoteEnvelope } from "@vocdoni/data-models"
+import { CensusBlind } from "@vocdoni/census"
+import { ProcessKeys, Voting } from "@vocdoni/voting"
+import { ProcessCensusOrigin } from "@vocdoni/contract-wrappers"
+import { BytesSignature } from "@vocdoni/signing"
+import { Wallet } from "@ethersproject/wallet"
+import { hexlify } from "@ethersproject/bytes"
+import { keccak256 } from "@ethersproject/keccak256"
+import { UserSecretData } from "blindsecp256k1";
 
 const config = getConfig()
 
@@ -129,6 +139,58 @@ export async function getElectionSecretInfoPub(electionId: string, cspSharedKey:
 
   console.log("Get election", electionId, ":", responseBody)
   return responseBody as ElectionDetail
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Vote and proof computation
+//////////////////////////////////////////////////////////////////////////
+
+export function getBlindedPayload(electionId: string, hexTokenR: string, ephemeralWallet: Wallet) {
+  const tokenR = CensusBlind.decodePoint(hexTokenR)
+  const caBundle = CAbundle.fromPartial({
+    processId: new Uint8Array(hexStringToBuffer(electionId)),
+    address: new Uint8Array(hexStringToBuffer(ephemeralWallet.address)),
+  })
+
+  // hash(bundle)
+  const hexCaBundle = hexlify(CAbundle.encode(caBundle).finish())
+  const hexCaHashedBundle = strip0x(keccak256(hexCaBundle))
+
+  const { hexBlinded, userSecretData } = CensusBlind.blind(hexCaHashedBundle, tokenR)
+  return { hexBlinded, userSecretData }
+}
+
+export function getProofFromBlindSignature(hexBlindSignature: string, userSecretData: UserSecretData, wallet: Wallet) {
+  const unblindedSignature = CensusBlind.unblind(hexBlindSignature, userSecretData)
+
+  const proof: IProofCA = {
+    type: ProofCaSignatureTypes.ECDSA_BLIND,
+    signature: unblindedSignature,
+    voterAddress: wallet.address
+  }
+
+  return proof
+}
+
+export function getBallotPayload(processId: string, proof: IProofCA, hasEncryptedVotes: boolean, processKeys: ProcessKeys) {
+  const choices = [1, 2, 3]
+
+  if (hasEncryptedVotes) {
+    return Voting.packageSignedEnvelope({
+      censusOrigin: ProcessCensusOrigin.OFF_CHAIN_CA,
+      votes: choices,
+      censusProof: proof,
+      processId,
+      processKeys
+    })
+  }
+
+  return Voting.packageSignedEnvelope({
+    censusOrigin: ProcessCensusOrigin.OFF_CHAIN_CA,
+    votes: choices,
+    censusProof: proof,
+    processId
+  })
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -403,4 +465,80 @@ export async function getCspSigningTokenBlindCustom(electionId: string, proof: {
 
   console.log("Get election shared key", tokenR)
   return tokenR
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Vote delivery
+//////////////////////////////////////////////////////////////////////////
+
+export async function submitBallot(electionId: string, ballot: VoteEnvelope, ephemeralWallet: Wallet, orgApiToken: string) {
+  // Prepare
+  const tx = Tx.encode({ payload: { $case: "vote", vote: ballot } })
+  const txBytes = tx.finish()
+
+  const hexSignature = await BytesSignature.sign(txBytes, ephemeralWallet)
+  const signature = new Uint8Array(Buffer.from(strip0x(hexSignature), "hex"))
+
+  const signedTx = SignedTx.encode({ tx: txBytes, signature })
+  const signedTxBytes = signedTx.finish()
+
+  const base64Payload = Buffer.from(signedTxBytes).toString("base64")
+
+  // Submit
+  const url = config.apiUrlPrefix + "/v1/pub/elections/" + electionId + "/vote"
+
+  const body = {
+    "vote": [base64Payload]
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + orgApiToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+    // mode: 'cors', // no-cors, *cors, same-origin
+    // credentials: 'same-origin', // include, *same-origin, omit
+  })
+
+  if (response.status != 200) {
+    throw new Error(await response.text())
+  }
+
+  const responseBody = await response.json()
+
+  const { error } = responseBody
+  if (error) throw new Error(error)
+
+  const { nullifier } = responseBody
+
+  console.log("Submitted ballot", nullifier)
+  return { nullifier }
+}
+
+export async function getBallot(nullifier: string, orgApiToken: string) {
+  const url = config.apiUrlPrefix + "/v1/pub/nullifiers/" + nullifier
+
+  const response = await fetch(url, {
+    headers: {
+      "Authorization": "Bearer " + orgApiToken,
+    },
+    // mode: 'cors', // no-cors, *cors, same-origin
+    // credentials: 'same-origin', // include, *same-origin, omit
+  })
+
+  if (response.status != 200) {
+    throw new Error(await response.text())
+  }
+
+  const responseBody = await response.json()
+
+  const { error } = responseBody
+  if (error) throw new Error(error)
+
+  const { electionId, registered, explorerUrl } = responseBody
+
+  console.log("Get nullifier", nullifier, ":", responseBody)
+  return { electionId, registered, explorerUrl }
 }
