@@ -92,72 +92,9 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	filter := ctx.URLParam("type")
-	switch filter {
-	case "active", "ended", "upcoming":
-		var tempProcessList []string
-		var totalProcs int
-		var currentHeight uint32
-		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
-			return fmt.Errorf("registerPublicKeyHandler: could not get current block height: %w", err)
-		}
-		cont := true
-		for cont {
-			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
-				"", "", "", 0, false, totalProcs, 64); err != nil {
-				return fmt.Errorf("registerPublicKeyHandler: %s not a valid filter", filter)
-			}
-			if len(tempProcessList) < 64 {
-				cont = false
-			}
-			totalProcs += len(tempProcessList)
-			for _, processID := range tempProcessList {
-				var processIDBytes []byte
-				var newProcess *types.Election
-				if processIDBytes, err = hex.DecodeString(processID); err != nil {
-					log.Error(fmt.Errorf("registerPublicKeyHandler: %w", err))
-					continue
-				}
-				if newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes); err != nil {
-					log.Warn(fmt.Errorf("registerPublicKeyHandler: could not get public election,"+
-						" process %x may not be in db: %w", processIDBytes, err))
-					continue
-				}
-				newProcess.OrgEthAddress = entityId
-				newProcess.ProcessID = processIDBytes
-
-				switch filter {
-				case "active":
-					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-						if newProcess.Confidential {
-							resp.PrivateProcesses = append(resp.PrivateProcesses, reflectElectionPublic(*newProcess))
-						} else {
-							resp.PublicProcesses = append(resp.PublicProcesses, reflectElectionPublic(*newProcess))
-						}
-					}
-				case "upcoming":
-					if newProcess.StartBlock > int(currentHeight) {
-						if newProcess.Confidential {
-							resp.PrivateProcesses = append(resp.PrivateProcesses, reflectElectionPublic(*newProcess))
-						} else {
-							resp.PublicProcesses = append(resp.PublicProcesses, reflectElectionPublic(*newProcess))
-						}
-					}
-				case "ended":
-					if newProcess.EndBlock < int(currentHeight) {
-						if newProcess.Confidential {
-							resp.PrivateProcesses = append(resp.PrivateProcesses, reflectElectionPublic(*newProcess))
-						} else {
-							resp.PublicProcesses = append(resp.PublicProcesses, reflectElectionPublic(*newProcess))
-						}
-					}
-				}
-			}
-		}
-	case "blind", "signed":
-		return fmt.Errorf("registerPublicKeyHandler: filter %s unimplemented", filter)
-	default:
-		return fmt.Errorf("registerPublicKeyHandler: %s not a valid filter type", filter)
-
+	if resp.PrivateProcesses, resp.PublicProcesses, err = u.getProcessList(filter,
+		[]byte{}, entityId, false); err != nil {
+		return fmt.Errorf("listProcessesHandler: %w", err)
 	}
 	return sendResponse(resp, ctx)
 }
@@ -167,7 +104,7 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
 	var err error
-	var resp types.APIProcess
+	var resp types.APIElectionInfo
 	var processId []byte
 	var vochainProcess *indexertypes.Process
 	var results *types.VochainResults
@@ -261,7 +198,7 @@ func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata
 // TODO add listProcessesInfoHandler
 
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
-	results *types.VochainResults, meta *types.ProcessMetadata) (process types.APIProcess) {
+	results *types.VochainResults, meta *types.ProcessMetadata) (process types.APIElectionInfo) {
 	var err error
 
 	// TODO update when blind is added to election
@@ -424,6 +361,86 @@ func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
 	return currentHeight + uint32(blockDiff), nil
 }
 
+func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byte,
+	private bool) (pub []types.APIElectionSummary, priv []types.APIElectionSummary, err error) {
+	switch filter {
+	case "active", "ended", "upcoming":
+		var tempProcessList []string
+		var totalProcs int
+		var currentHeight uint32
+		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
+			return nil, nil, fmt.Errorf("could not get current block height: %w", err)
+		}
+		for {
+			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
+				"", "", "", 0, false, totalProcs, 64); err != nil {
+				return nil, nil, fmt.Errorf("%s not a valid filter", filter)
+			}
+			totalProcs += len(tempProcessList)
+			for _, processID := range tempProcessList {
+				var processIDBytes []byte
+				var newProcess *types.Election
+				if processIDBytes, err = hex.DecodeString(processID); err != nil {
+					log.Error(err)
+					continue
+				}
+				if private {
+					newProcess, err = u.db.GetElection(integratorPrivKey,
+						entityId, processIDBytes)
+				} else {
+					newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
+				}
+				if err != nil {
+					log.Warn(fmt.Errorf("could not get election,"+
+						" process %x may no be in db: %w", processIDBytes, err))
+					continue
+				}
+				newProcess.OrgEthAddress = entityId
+				newProcess.ProcessID = processIDBytes
+
+				switch filter {
+				case "active":
+					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
+						priv, pub = appendProcess(priv, pub, newProcess, private)
+					}
+				case "upcoming":
+					if newProcess.StartBlock > int(currentHeight) {
+						priv, pub = appendProcess(priv, pub, newProcess, private)
+					}
+				case "ended":
+					if newProcess.EndBlock < int(currentHeight) {
+						priv, pub = appendProcess(priv, pub, newProcess, private)
+					}
+				}
+			}
+			if len(tempProcessList) < 64 {
+				break
+			}
+		}
+	case "blind", "signed":
+		return nil, nil, fmt.Errorf("listProcessesPrivateHandler: filter %s unimplemented", filter)
+	default:
+		return nil, nil, fmt.Errorf("listProcessesPrivateHandler: %s not a valid filter", filter)
+
+	}
+	return priv, pub, nil
+}
+
+func appendProcess(priv, pub []types.APIElectionSummary, newProcess *types.Election,
+	private bool) (privateElections []types.APIElectionSummary,
+	publicElections []types.APIElectionSummary) {
+	if private {
+		priv = append(priv, reflectElectionPrivate(*newProcess))
+	} else {
+		if newProcess.Confidential {
+			priv = append(priv, reflectElectionPublic(*newProcess))
+		} else {
+			pub = append(pub, reflectElectionPublic(*newProcess))
+		}
+	}
+	return priv, pub
+}
+
 func aggregateResults(meta *types.ProcessMetadata,
 	results *types.VochainResults) ([]types.Result, error) {
 	var aggregatedResults []types.Result
@@ -462,8 +479,8 @@ func aggregateResults(meta *types.ProcessMetadata,
 	return aggregatedResults, nil
 }
 
-func reflectElectionPublic(election types.Election) types.APIElection {
-	newElection := types.APIElection{
+func reflectElectionPublic(election types.Election) types.APIElectionSummary {
+	newElection := types.APIElectionSummary{
 		OrgEthAddress: election.OrgEthAddress,
 		ElectionID:    election.ProcessID,
 		Title:         election.Title,

@@ -496,70 +496,18 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 	ctx *httprouter.HTTPContext) error {
 	var entityId []byte
 	var integratorPrivKey []byte
+	var pub []types.APIElectionSummary
 	var err error
-	var resp []types.APIElection
 
 	if integratorPrivKey, entityId, _, err = u.authEntityPermissions(msg, ctx); err != nil {
 		return fmt.Errorf("listProcessesPrivateHandler: %w", err)
 	}
 
 	filter := ctx.URLParam("type")
-	switch filter {
-	case "active", "ended", "upcoming":
-		var tempProcessList []string
-		var totalProcs int
-		var currentHeight uint32
-		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
-			return fmt.Errorf("listProcessesPrivateHandler: could not get current block height: %w", err)
-		}
-		cont := true
-		for cont {
-			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
-				"", "", "", 0, false, totalProcs, 64); err != nil {
-				return fmt.Errorf("listProcessesPrivateHandler: %s not a valid request path", ctx.Request.URL.Path)
-			}
-			if len(tempProcessList) < 64 {
-				cont = false
-			}
-			totalProcs += len(tempProcessList)
-			for _, processID := range tempProcessList {
-				var processIDBytes []byte
-				var newProcess *types.Election
-				if processIDBytes, err = hex.DecodeString(processID); err != nil {
-					log.Error(err)
-					continue
-				}
-				if newProcess, err = u.db.GetElection(integratorPrivKey, entityId, processIDBytes); err != nil {
-					log.Warn(fmt.Errorf("could not get election,"+
-						" process %x may no be in db: %w", processIDBytes, err))
-					continue
-				}
-				newProcess.OrgEthAddress = entityId
-				newProcess.ProcessID = processIDBytes
-
-				switch filter {
-				case "active":
-					if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-						resp = append(resp, reflectElectionPrivate(*newProcess))
-					}
-				case "upcoming":
-					if newProcess.StartBlock > int(currentHeight) {
-						resp = append(resp, reflectElectionPrivate(*newProcess))
-					}
-				case "ended":
-					if newProcess.EndBlock < int(currentHeight) {
-						resp = append(resp, reflectElectionPrivate(*newProcess))
-					}
-				}
-			}
-		}
-	case "blind", "signed":
-		return fmt.Errorf("listProcessesPrivateHandler: filter %s unimplemented", filter)
-	default:
-		return fmt.Errorf("listProcessesPrivateHandler: %s not a valid filter", filter)
-
+	if pub, _, err = u.getProcessList(filter, integratorPrivKey, entityId, true); err != nil {
+		return fmt.Errorf("listProcessesPrivateHandler: %w", err)
 	}
-	return sendResponse(resp, ctx)
+	return sendResponse(pub, ctx)
 }
 
 // GET https://server/v1/priv/elections/<processId>
@@ -567,7 +515,7 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 // confidential processes need no extra step, only the api key
 func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
 	var err error
-	var resp types.APIProcess
+	var resp types.APIElectionInfo
 	var processId []byte
 	var vochainProcess *indexertypes.Process
 	var results *types.VochainResults
@@ -669,8 +617,8 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	return integratorPrivKey, entityID, organization, nil
 }
 
-func reflectElectionPrivate(election types.Election) types.APIElection {
-	newElection := types.APIElection{
+func reflectElectionPrivate(election types.Election) types.APIElectionSummary {
+	newElection := types.APIElectionSummary{
 		OrgEthAddress:   election.OrgEthAddress,
 		ElectionID:      election.ProcessID,
 		Title:           election.Title,
