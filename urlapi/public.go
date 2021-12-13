@@ -61,6 +61,14 @@ func (u *URLAPI) enablePublicHandlers() error {
 	); err != nil {
 		return err
 	}
+	if err := u.api.RegisterMethod(
+		"/pub/nullifiers/{nullifier}",
+		"GET",
+		bearerstdapi.MethodAccessTypePublic,
+		u.getVoteHandler,
+	); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -189,5 +197,25 @@ func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata
 		return fmt.Errorf("could not submit vote tx: %w", err)
 	}
 
+	return sendResponse(resp, ctx)
+}
+
+// GET https://server/v1//pub/nullifiers/{nullifier}
+// getVoteHandler returns a single vote envelope for the given nullifier
+func (u *URLAPI) getVoteHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	var nullifier []byte
+	var err error
+	var resp types.APIResponse
+
+	if nullifier, err = util.GetBytesID(ctx, "nullifier"); err != nil {
+		return err
+	}
+	if resp.ProcessID, resp.Registered, err = u.vocClient.GetVoteStatus(nullifier); err != nil {
+		return fmt.Errorf("could not get envelope status for vote with nullifier %x: %w", nullifier, err)
+	}
+	if resp.Registered {
+		resp.ExplorerUrl = EXPLORER_NULLIFIER_URL + fmt.Sprintf("%x", nullifier)
+	}
 	return sendResponse(resp, ctx)
 }
