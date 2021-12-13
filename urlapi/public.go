@@ -183,7 +183,7 @@ func (u *URLAPI) submitVotePublicHandler(msg *bearerstdapi.BearerStandardAPIdata
 	if votePkg, err = base64.StdEncoding.DecodeString(req.Vote); err != nil {
 		return fmt.Errorf("could not decode vote pkg to base64: %w", err)
 	}
-	if resp.Nullifier, err = u.vocClient.RelayTx(votePkg); err != nil {
+	if resp.Nullifier, err = u.vocClient.RelayVote(votePkg); err != nil {
 		return fmt.Errorf("could not submit vote tx: %w", err)
 	}
 
