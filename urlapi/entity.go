@@ -535,7 +535,9 @@ func (u *URLAPI) getProcessHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx 
 	}
 
 	// Parse all the information
-	resp = u.parseProcessInfo(vochainProcess, results, processMetadata)
+	if resp, err = u.parseProcessInfo(vochainProcess, results, processMetadata); err != nil {
+		return fmt.Errorf("could not parse information for process %x: %w", processId, err)
+	}
 
 	return sendResponse(resp, ctx)
 }
