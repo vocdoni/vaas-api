@@ -454,12 +454,10 @@ func (c *Client) CreateProcess(
 func (c *Client) RelayVote(signedTx []byte) (string, error) {
 	var err error
 	var resp *api.APIresponse
-	var req api.APIrequest
-
-	req.Method = "submitRawTx"
-	req.Payload = signedTx
-
-	if resp, err = c.pool.Request(req, c.signingKey); err != nil {
+	if resp, err = c.pool.Request(api.APIrequest{
+		Method:  "submitRawTx",
+		Payload: signedTx,
+	}, c.signingKey); err != nil {
 		return "", err
 	}
 
@@ -475,22 +473,21 @@ func (c *Client) RelayVote(signedTx []byte) (string, error) {
 }
 
 func (c *Client) getVocHeight() error {
-	defer c.blockHeight.lock.Lock()
-
-	req := api.APIrequest{
+	resp, err := c.pool.Request(api.APIrequest{
 		Method: "getBlockHeight",
-	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	}, c.signingKey)
 	if err != nil {
 		return err
 	}
 	if resp.Height == nil {
 		return fmt.Errorf("height is nil")
 	}
+	defer c.blockHeight.lock.Lock()
 	c.blockHeight.height = *resp.Height
 
-	req.Method = "getBlockStatus"
-	resp, err = c.pool.Request(req, c.signingKey)
+	resp, err = c.pool.Request(api.APIrequest{
+		Method: "getBlockStatus",
+	}, c.signingKey)
 	if err != nil {
 		return err
 	}
