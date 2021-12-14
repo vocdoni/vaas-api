@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -19,8 +18,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const TIMEOUT_TIME = 1 * time.Minute
-const HEIGHT_REQUEST_TIME = 10 * time.Second
+const (
+	TIMEOUT_TIME        = time.Minute
+	HEIGHT_REQUEST_TIME = 10 * time.Second
+)
 
 type vocBlockHeight struct {
 	height    uint32
@@ -296,7 +297,7 @@ func (c *Client) AddCensus() (string, error) {
 	req := api.APIrequest{
 		Method:     "addCensus",
 		CensusType: models.Census_ARBO_BLAKE2B,
-		CensusID:   fmt.Sprintf("census%d", rand.Int()),
+		CensusID:   fmt.Sprintf("census%d", util.RandomInt(0, 2<<32)),
 	}
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
@@ -453,7 +454,8 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 
 // CreateProcess submits a transaction to the vochain to
 //  create a process with the given configuration and returns its starting block height
-func (c *Client) CreateProcess(process *models.Process, signingKey *ethereum.SignKeys) (uint32, error) {
+func (c *Client) CreateProcess(process *models.Process,
+	signingKey *ethereum.SignKeys) (uint32, error) {
 	req := api.APIrequest{Method: "submitRawTx"}
 	p := &models.NewProcessTx{
 		Txtype:  models.TxType_NEW_PROCESS,
