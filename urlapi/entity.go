@@ -628,7 +628,7 @@ func (u *URLAPI) setProcessStatusHandler(msg *bearerstdapi.BearerStandardAPIdata
 		status = models.ProcessStatus_CANCELED
 	}
 
-	if err = u.vocClient.SetProcessStatus(processID, status, entitySignKeys); err != nil {
+	if err = u.vocClient.SetProcessStatus(processID, &status, entitySignKeys); err != nil {
 		return fmt.Errorf("could not set process status: %w", err)
 	}
 
