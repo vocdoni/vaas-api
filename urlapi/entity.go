@@ -365,7 +365,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if processID, err = hex.DecodeString(pid); err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
 	}
-	entityPrivKey, ok := util.DecryptSymmetric(orgInfo.organization.EthPrivKeyCicpher, orgInfo.integratorPrivKey)
+	entityPrivKey, ok := util.DecryptSymmetric(
+		orgInfo.organization.EthPrivKeyCicpher, orgInfo.integratorPrivKey)
 	if !ok {
 		return fmt.Errorf("could not decrypt entity private key")
 	}
@@ -464,8 +465,6 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not set process metadata: %w", err)
 	}
 
-	var MAX_CENSUS_SIZE = uint64(1024)
-
 	// TODO use encryption priv/pub keys if process is encrypted
 	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
 		ProcessId:     processID,
@@ -480,13 +479,14 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		VoteOptions:   voteOptions,
 		CensusOrigin:  models.CensusOrigin_OFF_CHAIN_CA,
 		Metadata:      &metaUri,
-		MaxCensusSize: &MAX_CENSUS_SIZE,
+		MaxCensusSize: &u.config.MaxCensusSize,
 	}, entitySignKeys); err != nil {
 		return fmt.Errorf("could not create process on the vochain: %w", err)
 	}
 
-	if _, err = u.db.CreateElection(orgInfo.integratorPrivKey, orgInfo.entityID, processID, req.Title, startDate,
-		endDate, uuid.NullUUID{}, int(startBlock), int(endBlock), req.Confidential, req.HiddenResults); err != nil {
+	if _, err = u.db.CreateElection(orgInfo.integratorPrivKey, orgInfo.entityID, processID,
+		req.Title, startDate, endDate, uuid.NullUUID{}, int(startBlock), int(endBlock),
+		req.Confidential, req.HiddenResults); err != nil {
 		return fmt.Errorf("could not create election: %w", err)
 	}
 	resp.ElectionID = processID
