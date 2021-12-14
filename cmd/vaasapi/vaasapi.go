@@ -41,6 +41,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	cfg.SaveConfig = *flag.Bool("saveConfig", false, "overwrites an existing config file with the CLI provided flags")
 	cfg.SigningKey = *flag.String("signingKey", "", "signing private Keys (if not specified, a new one will be created), the first one is the oracle public key")
 	cfg.AdminToken = *flag.String("adminToken", "", "hexString token for admin api calls")
+	cfg.ExplorerVoteUrl = *flag.String("explorerVoteUrl", "https://vaas.explorer.vote/envelope/", "explorer url for vote envelope pages")
 	cfg.GatewayUrls = *flag.StringArray("gatewayUrls", []string{"https://gw1.vocdoni.net/dvote"}, "urls to use as gateway api endpoints")
 	cfg.API.Route = *flag.String("apiRoute", "/", "dvote API route")
 	cfg.API.ListenHost = *flag.String("listenHost", "0.0.0.0", "API endpoint listen address")
@@ -80,6 +81,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("logOutput", flag.Lookup("logOutput"))
 	viper.BindPFlag("signingKey", flag.Lookup("signingKey"))
 	viper.BindPFlag("adminToken", flag.Lookup("adminToken"))
+	viper.BindPFlag("explorerVoteUrl", flag.Lookup("explorerVoteUrl"))
 	viper.BindPFlag("gatewayUrls", flag.Lookup("gatewayUrls"))
 	viper.BindPFlag("api.route", flag.Lookup("apiRoute"))
 	viper.BindPFlag("api.listenHost", flag.Lookup("listenHost"))
@@ -251,7 +253,7 @@ func main() {
 
 	// Vaas api
 	log.Infof("enabling VaaS API methods")
-	if err := urlApi.EnableVotingServiceHandlers(db, client, cfg.AdminToken); err != nil {
+	if err := urlApi.EnableVotingServiceHandlers(db, client, cfg.AdminToken, cfg.ExplorerVoteUrl); err != nil {
 		log.Fatal(err)
 	}
 

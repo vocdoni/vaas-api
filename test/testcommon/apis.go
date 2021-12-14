@@ -65,7 +65,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateways []stri
 
 		// Vaas api
 		log.Infof("enabling VaaS API methods")
-		if err := urlApi.EnableVotingServiceHandlers(t.DB, client, "test"); err != nil {
+		if err := urlApi.EnableVotingServiceHandlers(t.DB, client, "test", ""); err != nil {
 			log.Fatal(err)
 		}
 		t.URL = fmt.Sprintf("http://127.0.0.1:%d/api", port)
