@@ -40,9 +40,10 @@ func newConfig() (*config.Vaas, config.Error) {
 	cfg.LogErrorFile = *flag.String("logErrorFile", "", "Log errors and warnings to a file")
 	cfg.SaveConfig = *flag.Bool("saveConfig", false, "overwrites an existing config file with the CLI provided flags")
 	cfg.SigningKey = *flag.String("signingKey", "", "signing private Keys (if not specified, a new one will be created), the first one is the oracle public key")
-	cfg.AdminToken = *flag.String("adminToken", "", "hexString token for admin api calls")
-	cfg.ExplorerVoteUrl = *flag.String("explorerVoteUrl", "https://vaas.explorer.vote/envelope/", "explorer url for vote envelope pages")
-	cfg.GatewayUrls = *flag.StringArray("gatewayUrls", []string{"https://gw1.vocdoni.net/dvote"}, "urls to use as gateway api endpoints")
+	cfg.API.AdminToken = *flag.String("adminToken", "", "hexString token for admin api calls")
+	cfg.API.ExplorerVoteUrl = *flag.String("explorerVoteUrl", "https://vaas.explorer.vote/envelope/", "explorer url for vote envelope pages")
+	cfg.API.GatewayUrls = *flag.StringArray("gatewayUrls", []string{"https://gw1.vocdoni.net/dvote"}, "urls to use as gateway api endpoints")
+	cfg.API.MaxCensusSize = *flag.Uint64("maxCensusSize", 2<<32, "maximum size of a voter census")
 	cfg.API.Route = *flag.String("apiRoute", "/", "dvote API route")
 	cfg.API.ListenHost = *flag.String("listenHost", "0.0.0.0", "API endpoint listen address")
 	cfg.API.ListenPort = *flag.Int("listenPort", 8000, "API endpoint http port")
@@ -80,9 +81,10 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("logErrorFile", flag.Lookup("logErrorFile"))
 	viper.BindPFlag("logOutput", flag.Lookup("logOutput"))
 	viper.BindPFlag("signingKey", flag.Lookup("signingKey"))
-	viper.BindPFlag("adminToken", flag.Lookup("adminToken"))
-	viper.BindPFlag("explorerVoteUrl", flag.Lookup("explorerVoteUrl"))
-	viper.BindPFlag("gatewayUrls", flag.Lookup("gatewayUrls"))
+	viper.BindPFlag("api.adminToken", flag.Lookup("adminToken"))
+	viper.BindPFlag("api.maxCensusSize", flag.Lookup("maxCensusSize"))
+	viper.BindPFlag("api.explorerVoteUrl", flag.Lookup("explorerVoteUrl"))
+	viper.BindPFlag("api.gatewayUrls", flag.Lookup("gatewayUrls"))
 	viper.BindPFlag("api.route", flag.Lookup("apiRoute"))
 	viper.BindPFlag("api.listenHost", flag.Lookup("listenHost"))
 	viper.BindPFlag("api.listenPort", flag.Lookup("listenPort"))
@@ -193,11 +195,11 @@ func main() {
 	log.Infof("my address: %s", signer.AddressString())
 
 	// Gateways
-	for idx, url := range cfg.GatewayUrls {
-		cfg.GatewayUrls[idx] = strings.Trim(url, `"[]`)
+	for idx, url := range cfg.API.GatewayUrls {
+		cfg.API.GatewayUrls[idx] = strings.Trim(url, `"[]`)
 	}
 
-	client, err := vocclient.New(cfg.GatewayUrls, signer)
+	client, err := vocclient.New(cfg.API.GatewayUrls, signer)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -246,14 +248,14 @@ func main() {
 	}
 
 	// Rest api
-	urlApi, err := urlapi.NewURLAPI(&httpRouter, cfg.API.Route, metricsAgent)
+	urlApi, err := urlapi.NewURLAPI(&httpRouter, cfg.API, metricsAgent)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Vaas api
 	log.Infof("enabling VaaS API methods")
-	if err := urlApi.EnableVotingServiceHandlers(db, client, cfg.AdminToken, cfg.ExplorerVoteUrl); err != nil {
+	if err := urlApi.EnableVotingServiceHandlers(db, client); err != nil {
 		log.Fatal(err)
 	}
 

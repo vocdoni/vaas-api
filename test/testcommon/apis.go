@@ -58,14 +58,19 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateways []stri
 			log.Fatal(err)
 		}
 		// Rest api
-		urlApi, err := urlapi.NewURLAPI(&httpRouter, route, nil)
+		urlApi, err := urlapi.NewURLAPI(&httpRouter, &config.API{
+			Route:       route,
+			ListenPort:  port,
+			AdminToken:  "test",
+			GatewayUrls: gateways,
+		}, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		// Vaas api
 		log.Infof("enabling VaaS API methods")
-		if err := urlApi.EnableVotingServiceHandlers(t.DB, client, "test", ""); err != nil {
+		if err := urlApi.EnableVotingServiceHandlers(t.DB, client); err != nil {
 			log.Fatal(err)
 		}
 		t.URL = fmt.Sprintf("http://127.0.0.1:%d/api", port)
