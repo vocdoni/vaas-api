@@ -68,6 +68,8 @@ type Vaas struct {
 	SigningKey string
 	// AdminToken is the hexString bearer token for superadmin API methods
 	AdminToken string
+	// ExplorerVoteUrl is the url for explorer vote packages
+	ExplorerVoteUrl string
 	// Urls to use for gateway api
 	GatewayUrls []string
 	// Plans to be imported
@@ -77,8 +79,8 @@ type Vaas struct {
 }
 
 func (v *Vaas) String() string {
-	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, GatewayUrls: %v, Plan: %v, Migrate: %+v",
-		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKey, v.GatewayUrls, *v.DefaultPlan, *v.Migrate)
+	return fmt.Sprintf("API: %+v,  DB: %+v, LogLevel: %s, LogOutput: %s, LogErrorFile: %s,  Metrics: %+v, DataDir: %s, SaveConfig: %v, SigningKey: %s, AdminToken: %s, ExplorerVoteUrl: %x, GatewayUrls: %v, Plan: %v, Migrate: %+v",
+		*v.API, *v.DB, v.LogLevel, v.LogOutput, v.LogErrorFile, *v.Metrics, v.DataDir, v.SaveConfig, v.SigningKey, v.AdminToken, v.ExplorerVoteUrl, v.GatewayUrls, *v.DefaultPlan, *v.Migrate)
 }
 
 // NewVaasConfig initializes the fields in the config stuct

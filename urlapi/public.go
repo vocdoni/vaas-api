@@ -215,7 +215,7 @@ func (u *URLAPI) getVoteHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not get envelope status for vote with nullifier %x: %w", nullifier, err)
 	}
 	if resp.Registered {
-		resp.ExplorerUrl = EXPLORER_NULLIFIER_URL + fmt.Sprintf("%x", nullifier)
+		resp.ExplorerUrl = fmt.Sprintf("%s%x", u.explorerVoteUrl, nullifier)
 	}
 	return sendResponse(resp, ctx)
 }

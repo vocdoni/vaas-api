@@ -22,11 +22,12 @@ type URLAPI struct {
 	PublicCalls  uint64
 	BaseRoute    string
 
-	router       *httprouter.HTTProuter
-	api          *bearerstdapi.BearerStandardAPI
-	metricsagent *metrics.Agent
-	db           database.Database
-	vocClient    *vocclient.Client
+	explorerVoteUrl string
+	router          *httprouter.HTTProuter
+	api             *bearerstdapi.BearerStandardAPI
+	metricsagent    *metrics.Agent
+	db              database.Database
+	vocClient       *vocclient.Client
 }
 
 func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *metrics.Agent) (*URLAPI, error) {
@@ -58,7 +59,7 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 }
 
 func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
-	client *vocclient.Client, adminToken string) error {
+	client *vocclient.Client, adminToken, explorerVoteUrl string) error {
 	if db == nil {
 		return fmt.Errorf("database is nil")
 	}
@@ -67,6 +68,7 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 	}
 	u.db = db
 	u.vocClient = client
+	u.explorerVoteUrl = explorerVoteUrl
 
 	// Register auth tokens from the DB
 	err := u.syncAuthTokens()
