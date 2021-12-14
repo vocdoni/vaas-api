@@ -48,47 +48,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 		organization:      organization,
 	}, nil
 }
-func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
-	currentHeight, times, _, err := u.vocClient.GetBlockTimes()
-	if err != nil {
-		return time.Time{}, err
-	}
-	diffHeight := int64(height) - int64(currentHeight)
 
-	if diffHeight < 0 {
-		blk, err := u.vocClient.GetBlock(height)
-		if err != nil {
-			return time.Time{}, err
-		}
-		if blk == nil {
-			return time.Time{}, fmt.Errorf("cannot get block height %d", height)
-		}
-		return blk.Timestamp, nil
-	}
-
-	getMaxTimeFrom := func(i int) uint32 {
-		for ; i >= 0; i-- {
-			if times[i] != 0 {
-				return uint32(times[i])
-			}
-		}
-		return 10000 // fallback
-	}
-
-	t := uint32(0)
-	switch {
-	// if less than around 15 minutes missing
-	case diffHeight < 100:
-		t = getMaxTimeFrom(1)
-	// if less than around 6 hours missing
-	case diffHeight < 1000:
-		t = getMaxTimeFrom(3)
-	// if less than around 6 hours missing
-	case diffHeight >= 1000:
-		t = getMaxTimeFrom(4)
-	}
-	return time.Now().Add(time.Duration(diffHeight*int64(t)) * time.Millisecond), nil
-}
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	results *types.VochainResults, meta *types.ProcessMetadata) (types.APIElectionInfo, error) {
 	var err error
@@ -153,6 +113,42 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 		return process, fmt.Errorf("could not estimate endDate at %d: %w", vc.EndBlock, err)
 	}
 	return process, nil
+}
+
+func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
+	currentHeight, times, _, err := u.vocClient.GetBlockTimes()
+	if err != nil {
+		return time.Time{}, err
+	}
+	diffHeight := int64(height) - int64(currentHeight)
+	inPast := diffHeight < 0
+	absDiff := diffHeight
+	if inPast {
+		absDiff = -absDiff
+	}
+
+	getMaxTimeFrom := func(i int) uint32 {
+		for ; i >= 0; i-- {
+			if times[i] != 0 {
+				return uint32(times[i])
+			}
+		}
+		return 10000 // fallback
+	}
+
+	t := uint32(0)
+	switch {
+	// if less than around 15 minutes missing
+	case absDiff < 100:
+		t = getMaxTimeFrom(1)
+	// if less than around 6 hours missing
+	case absDiff < 1000:
+		t = getMaxTimeFrom(3)
+	// if less than around 6 hours missing
+	case absDiff >= 1000:
+		t = getMaxTimeFrom(4)
+	}
+	return time.Now().Add(time.Duration(diffHeight*int64(t)) * time.Millisecond), nil
 }
 
 func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
