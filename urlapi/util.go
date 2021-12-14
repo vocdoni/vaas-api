@@ -27,19 +27,18 @@ type orgPermissionsInfo struct {
 
 func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) (orgPermissionsInfo, error) {
-	var err error
-	var entityID []byte
-	var integratorPrivKey []byte
-	var organization *types.Organization
-
-	if integratorPrivKey, err = util.GetAuthToken(msg); err != nil {
+	integratorPrivKey, err := util.GetAuthToken(msg)
+	if err != nil {
 		return orgPermissionsInfo{}, err
 	}
-	if entityID, err = util.GetBytesID(ctx, "organizationId"); err != nil {
+	entityID, err := util.GetBytesID(ctx, "organizationId")
+	if err != nil {
 		return orgPermissionsInfo{}, err
 	}
-	if organization, err = u.db.GetOrganization(integratorPrivKey, entityID); err != nil {
-		return orgPermissionsInfo{}, fmt.Errorf("entity %X could not be fetched from the db: %w", entityID, err)
+	organization, err := u.db.GetOrganization(integratorPrivKey, entityID)
+	if err != nil {
+		return orgPermissionsInfo{},
+			fmt.Errorf("entity %X could not be fetched from the db: %w", entityID, err)
 	}
 	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
 		return orgPermissionsInfo{}, fmt.Errorf("entity %X does not belong to this integrator", entityID)
@@ -53,8 +52,6 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	results *types.VochainResults, meta *types.ProcessMetadata) (types.APIElectionInfo, error) {
-	var err error
-
 	process := types.APIElectionInfo{
 		Description:        meta.Description["default"],
 		OrganizationID:     vc.EntityID,
@@ -100,6 +97,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 			strings.ToLower(models.ProcessStatus_name[vc.Status])[1:]
 	}
 
+	var err error
 	if results != nil {
 		process.VoteCount = results.Height
 		if process.Results, err = aggregateResults(meta, results); err != nil {
@@ -203,21 +201,20 @@ func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
 // otherwise, confidential processes are returned first and public ones second.
 func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byte,
 	private bool) ([]types.APIElectionSummary, []types.APIElectionSummary, error) {
-	var err error
 	var priv []types.APIElectionSummary
 	var pub []types.APIElectionSummary
 	switch filter {
 	case "active", "ended", "upcoming":
-		var tempProcessList []string
 		var fullProcessList []string
-		var currentHeight uint32
-		if currentHeight, _, _, err = u.vocClient.GetBlockTimes(); err != nil {
+		currentHeight, _, _, err := u.vocClient.GetBlockTimes()
+		if err != nil {
 			return nil, nil, fmt.Errorf("could not get current block height: %w", err)
 		}
 		// loop to fetch all processes
 		for {
-			if tempProcessList, err = u.vocClient.GetProcessList(entityId,
-				"", "", "", 0, false, len(fullProcessList), 64); err != nil {
+			tempProcessList, err := u.vocClient.GetProcessList(entityId,
+				"", "", "", 0, false, len(fullProcessList), 64)
+			if err != nil {
 				return nil, nil, fmt.Errorf("unable to get process list from vochain: %w", err)
 			}
 			fullProcessList = append(fullProcessList, tempProcessList...)
@@ -274,7 +271,6 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 
 func aggregateResults(meta *types.ProcessMetadata,
 	results *types.VochainResults) ([]types.Result, error) {
-	var aggregatedResults []types.Result
 	if meta == nil {
 		return nil, fmt.Errorf("no process metadata provided")
 	}
@@ -283,7 +279,6 @@ func aggregateResults(meta *types.ProcessMetadata,
 	}
 	if results == nil || len(results.Results) == 0 {
 		return nil, fmt.Errorf("process results struct is empty")
-
 	}
 	if len(meta.Questions) != len(results.Results) {
 		return nil, fmt.Errorf("number of results does not match number of questions")
@@ -292,6 +287,7 @@ func aggregateResults(meta *types.ProcessMetadata,
 		meta.Results.Aggregation != "index-weighted" {
 		return nil, fmt.Errorf("process aggregation method %s not supported", meta.Results.Aggregation)
 	}
+	var aggregatedResults []types.Result
 	for i, question := range meta.Questions {
 		var titles []string
 		var values []string

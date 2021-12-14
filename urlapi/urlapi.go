@@ -31,7 +31,8 @@ type URLAPI struct {
 	vocClient    *vocclient.Client
 }
 
-func NewURLAPI(router *httprouter.HTTProuter, cfg *config.API, metricsAgent *metrics.Agent) (*URLAPI, error) {
+func NewURLAPI(router *httprouter.HTTProuter,
+	cfg *config.API, metricsAgent *metrics.Agent) (*URLAPI, error) {
 	if router == nil {
 		return nil, fmt.Errorf("httprouter is nil")
 	}

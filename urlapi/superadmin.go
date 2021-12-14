@@ -9,12 +9,11 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
-	dvoteTypes "go.vocdoni.io/dvote/types"
 	dvoteUtil "go.vocdoni.io/dvote/util"
 )
 
 const (
-	// TODO determine corred max requests for integrators
+	// TODO determine correct max requests for integrators
 	INTEGRATOR_MAX_REQUESTS = 2 << 16
 )
 
@@ -66,22 +65,19 @@ func (u *URLAPI) enableSuperadminHandlers(adminToken string) error {
 
 // POST https://server/v1/admin/accounts
 // createIntegratorAccountHandler creates a new integrator account
-func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var err error
-	var apiKey dvoteTypes.HexBytes
-	var req types.APIRequest
-	var resp types.APIResponse
-	if req, err = util.UnmarshalRequest(msg); err != nil {
+func (u *URLAPI) createIntegratorAccountHandler(
+	msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	req, err := util.UnmarshalRequest(msg)
+	if err != nil {
 		return err
-
 	}
-	resp.APIKey = util.GenerateBearerToken()
-	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
+	resp := types.APIResponse{APIKey: util.GenerateBearerToken()}
+	apiKey, err := hex.DecodeString(resp.APIKey)
+	if err != nil {
 		return err
 	}
 
-	var cspPubKey dvoteTypes.HexBytes
-	cspPubKey, err = hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
+	cspPubKey, err := hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
 	if err != nil {
 		return fmt.Errorf("error decoding csp pub key")
 	}
@@ -94,43 +90,40 @@ func (u *URLAPI) createIntegratorAccountHandler(msg *bearerstdapi.BearerStandard
 
 // PUT https://server/v1/admin/accounts/<id>
 // updateIntegratorAccountHandler updates an existing integrator account
-func (u *URLAPI) updateIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var err error
-	var req types.APIRequest
-	var resp types.APIResponse
-	var id int
-	if id, err = util.GetIntID(ctx, "id"); err != nil {
+func (u *URLAPI) updateIntegratorAccountHandler(
+	msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	id, err := util.GetIntID(ctx, "id")
+	if err != nil {
 		return err
 	}
-	if req, err = util.UnmarshalRequest(msg); err != nil {
+	req, err := util.UnmarshalRequest(msg)
+	if err != nil {
 		return err
 	}
 
-	var cspPubKey dvoteTypes.HexBytes
-	cspPubKey, err = hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
+	cspPubKey, err := hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
 	if err != nil {
 		return err
 	}
 	if _, err = u.db.UpdateIntegrator(id, cspPubKey, req.CspUrlPrefix, req.Name); err != nil {
 		return err
 	}
-	return sendResponse(resp, ctx)
+	return sendResponse(types.APIResponse{}, ctx)
 }
 
 // PATCH https://server/v1/admin/accounts/<id>/key
 // resetIntegratorKeyHandler resets an integrator api key
-func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var err error
-	var apiKey dvoteTypes.HexBytes
-	var resp types.APIResponse
-	var id int
-	if id, err = util.GetIntID(ctx, "id"); err != nil {
+func (u *URLAPI) resetIntegratorKeyHandler(
+	msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	id, err := util.GetIntID(ctx, "id")
+	if err != nil {
 		return err
 	}
 
 	// Now generate a new api key & update integrator
-	resp.APIKey = util.GenerateBearerToken()
-	if apiKey, err = hex.DecodeString(resp.APIKey); err != nil {
+	resp := types.APIResponse{APIKey: util.GenerateBearerToken()}
+	apiKey, err := hex.DecodeString(resp.APIKey)
+	if err != nil {
 		return err
 	}
 	if _, err = u.db.UpdateIntegratorApiKey(id, apiKey); err != nil {
@@ -141,34 +134,34 @@ func (u *URLAPI) resetIntegratorKeyHandler(msg *bearerstdapi.BearerStandardAPIda
 
 // GET https://server/v1/admin/accounts/<id>
 // getIntegratorAccountHandler fetches an integrator account
-func (u *URLAPI) getIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var err error
-	var resp types.APIResponse
-	var integrator *types.Integrator
-	var id int
-	if id, err = util.GetIntID(ctx, "id"); err != nil {
+func (u *URLAPI) getIntegratorAccountHandler(
+	msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	id, err := util.GetIntID(ctx, "id")
+	if err != nil {
 		return err
 	}
-	if integrator, err = u.db.GetIntegrator(id); err != nil {
+	integrator, err := u.db.GetIntegrator(id)
+	if err != nil {
 		return err
 	}
-	resp.Name = integrator.Name
-	resp.CspPubKey = integrator.CspPubKey
-	resp.CspUrlPrefix = integrator.CspUrlPrefix
+	resp := types.APIResponse{
+		Name:         integrator.Name,
+		CspPubKey:    integrator.CspPubKey,
+		CspUrlPrefix: integrator.CspUrlPrefix,
+	}
 	return sendResponse(resp, ctx)
 }
 
 // DELETE https://server/v1/admin/accounts/<id>
 // deleteIntegratorAccountHandler deletes an integrator account
-func (u *URLAPI) deleteIntegratorAccountHandler(msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	var err error
-	var resp types.APIResponse
-	var id int
-	if id, err = util.GetIntID(ctx, "id"); err != nil {
+func (u *URLAPI) deleteIntegratorAccountHandler(
+	msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
+	id, err := util.GetIntID(ctx, "id")
+	if err != nil {
 		return err
 	}
 	if err = u.db.DeleteIntegrator(id); err != nil {
 		return err
 	}
-	return sendResponse(resp, ctx)
+	return sendResponse(types.APIResponse{}, ctx)
 }
