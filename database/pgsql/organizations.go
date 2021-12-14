@@ -173,7 +173,7 @@ func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddre
 				eth_priv_key_cipher = COALESCE(NULLIF(:eth_priv_key_cipher, '' ::::bytea ),  eth_priv_key_cipher),
 				updated_at = now()
 				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
-				AND  (//TODO)`
+				AND  (TEXT(:eth_priv_key_cipher) IS DISTINCT FROM TEXT(eth_priv_key_cipher))`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
 		return 0, fmt.Errorf("error updating organization: %v", err)
@@ -193,10 +193,10 @@ func (d *Database) UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress
 	}
 	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, PublicAPIToken: newPublicApiToken}
 	update := `UPDATE organizations SET
-				public_api_token = COALESCE(NULLIF(:public_api_token, '' ::::bytea ),  public_api_token),
+				public_api_token = COALESCE(NULLIF(:public_api_token, ''),  public_api_token),
 				updated_at = now()
 				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
-				AND  (//TODO)`
+				AND  (:public_api_token IS DISTINCT FROM public_api_token)`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
 		return 0, fmt.Errorf("error updating organization: %v", err)

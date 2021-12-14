@@ -88,7 +88,7 @@ func (d *Database) DeleteIntegrator(id int) error {
 	return nil
 }
 
-func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error) {
+func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newCspUrlPrefix, newName string) (int, error) {
 	integrator := &types.Integrator{ID: id, CspPubKey: newCspPubKey, Name: newName, CspUrlPrefix: newCspUrlPrefix}
 	update := `UPDATE integrators SET
 				name = COALESCE(NULLIF(:name, ''), name),

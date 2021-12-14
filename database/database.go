@@ -11,7 +11,7 @@ import (
 type Database interface {
 	// Integrator
 	CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name, email string) (int, error)
-	UpdateIntegrator(id int, newCspPubKey []byte, newName, newCspUrlPrefix string) (int, error)
+	UpdateIntegrator(id int, newCspPubKey []byte, newCspUrlPrefix, newName string) (int, error)
 	UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, error)
 	GetIntegrator(id int) (*types.Integrator, error)
 	GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, error)

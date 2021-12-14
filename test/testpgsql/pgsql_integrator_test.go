@@ -23,6 +23,22 @@ func TestIntegrator(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", integrator.SecretApiKey), qt.DeepEquals, fmt.Sprintf("%x", integrators[0].SecretApiKey))
 
+	count, err := API.DB.UpdateIntegrator(integrators[0].ID, []byte{}, "", "New Name")
+	c.Assert(err, qt.IsNil)
+	c.Assert(count, qt.Equals, 1)
+	integrator, err = API.DB.GetIntegrator(integrators[0].ID)
+	c.Assert(err, qt.IsNil)
+	c.Assert(integrator.CspUrlPrefix, qt.Equals, integrators[0].CspUrlPrefix)
+	c.Assert(integrator.Name, qt.Equals, "New Name")
+	c.Assert(fmt.Sprintf("%x", integrator.CspPubKey), qt.Equals, fmt.Sprintf("%x", integrators[0].CspPubKey))
+
+	count, err = API.DB.UpdateIntegratorApiKey(integrators[0].ID, []byte("bb"))
+	c.Assert(err, qt.IsNil)
+	c.Assert(count, qt.Equals, 1)
+	integrator, err = API.DB.GetIntegrator(integrators[0].ID)
+	c.Assert(err, qt.IsNil)
+	c.Assert(fmt.Sprintf("%x", integrator.SecretApiKey), qt.Equals, fmt.Sprintf("%x", []byte("bb")))
+
 	keys, err := API.DB.GetIntegratorApiKeysList()
 	log.Infof("%s", keys)
 	// cleaning up
