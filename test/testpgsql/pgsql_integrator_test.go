@@ -39,8 +39,8 @@ func TestIntegrator(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", integrator.SecretApiKey), qt.Equals, fmt.Sprintf("%x", []byte("bb")))
 
-	keys, err := API.DB.GetIntegratorApiKeysList()
-	log.Infof("%s", keys)
+	_, err = API.DB.GetIntegratorApiKeysList()
+	c.Assert(err, qt.IsNil)
 	// cleaning up
 	for _, integrator := range integrators {
 		if err := API.DB.DeleteIntegrator(integrator.ID); err != nil {
