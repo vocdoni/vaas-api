@@ -45,11 +45,6 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateways []stri
 		if t.DB, err = pgsql.New(dbc); err != nil {
 			return err
 		}
-	} else {
-		// Mock database
-		// if t.DB, err = testdb.New(); err != nil {
-		// 	return err
-		// }
 	}
 
 	if route != "" {

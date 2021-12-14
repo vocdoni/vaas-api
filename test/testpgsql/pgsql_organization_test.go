@@ -38,7 +38,7 @@ func TestOrganization(t *testing.T) {
 
 	count, err := API.DB.UpdateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress, "header", "avatar")
 	c.Assert(err, qt.IsNil)
-	c.Assert(int(id), qt.Not(qt.Equals), 0)
+	c.Assert(count, qt.Equals, 1)
 
 	count, err = API.DB.CountOrganizations(integrators[0].SecretApiKey)
 	c.Assert(err, qt.IsNil)

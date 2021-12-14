@@ -64,6 +64,7 @@ func DoRequest(t *testing.T, url, authToken, method string, request types.APIReq
 	resp, err := http.DefaultClient.Do(req)
 	qt.Check(t, err, qt.IsNil)
 	respBody, err := io.ReadAll(resp.Body)
+	qt.Check(t, err, qt.IsNil)
 	var response types.APIResponse
 	err = json.Unmarshal([]byte(respBody), &response)
 	qt.Check(t, err, qt.IsNil)

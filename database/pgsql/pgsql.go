@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -70,55 +69,6 @@ func (d *Database) Close() error {
 	// defer d.pgx.Close()
 	return nil
 	// return d.db.Close()
-}
-
-func bulkInsert(tx *sqlx.Tx, bulkQuery string, bulkData interface{}, numField int) error {
-	// This function allows to solve the postgresql limit of max 65535 parameters in a query
-	// The number of placeholders allowed in a query is capped at 2^16, therefore,
-	// divide 2^16 by the number of fields in the struct, and that is the max
-	// number of bulk inserts possible. Use that number to chunk the inserts.
-	maxBulkInsert := ((1 << 16) / numField) - 1
-
-	s := reflect.ValueOf(bulkData)
-	if s.Kind() != reflect.Slice {
-		return fmt.Errorf(" given a non-slice type")
-	}
-	bulkSlice := make([]interface{}, s.Len())
-	for i := 0; i < s.Len(); i++ {
-		bulkSlice[i] = s.Index(i).Interface()
-	}
-
-	// send batch requests
-	for i := 0; i < len(bulkSlice); i += maxBulkInsert {
-		// set limit to i + chunk size or to max
-		limit := i + maxBulkInsert
-		if len(bulkSlice) < limit {
-			limit = len(bulkSlice)
-		}
-		batch := bulkSlice[i:limit]
-		result, err := tx.NamedExec(bulkQuery, batch)
-		if err != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				return fmt.Errorf("something is very wrong: could not rollback performing batch insert %s %w", bulkQuery, rollbackErr)
-			}
-			return fmt.Errorf("error during batch insert %s %w", bulkQuery, err)
-		}
-		addedRows, err := result.RowsAffected()
-		if err != nil {
-			if rollErr := tx.Rollback(); err != nil {
-				return fmt.Errorf("something is very wrong: could not rollback performing batch insert: %v after error on counting affected rows: %w", rollErr, err)
-			}
-			return fmt.Errorf("could not verify updated rows: %w", err)
-		}
-		if addedRows != int64(len(batch)) {
-			if rollErr := tx.Rollback(); err != nil {
-				return fmt.Errorf("something is very wrong: error rolling back: %v expected to have inserted %d rows but inserted %d", rollErr, addedRows, len(batch))
-			}
-			return fmt.Errorf("expected to have inserted %d rows but inserted %d", addedRows, len(batch))
-		}
-
-	}
-	return nil
 }
 
 func (d *Database) Ping() error {
