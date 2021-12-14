@@ -37,6 +37,8 @@ type Client struct {
 	blockHeight *vocBlockHeight
 }
 
+// New initializes a new gatewayPool with the gatewayUrls, in order of health
+// returns the new Client
 func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
 	gwPool, err := DiscoverGateways(gatewayUrls)
 	if err != nil {
@@ -59,6 +61,7 @@ func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
 	return c, nil
 }
 
+// ActiveEndpoint returns the address of the current active endpoint, if one exists
 func (c *Client) ActiveEndpoint() string {
 	gw, err := c.pool.activeGateway()
 	if err != nil {
@@ -72,6 +75,8 @@ func (c *Client) ActiveEndpoint() string {
 
 // FETCHING INFO APIS
 
+// GetVoteStatus returns the processID and registration
+//  status for a given nullifier from the vochain
 func (c *Client) GetVoteStatus(nullifier []byte) ([]byte, bool, error) {
 	var req api.APIrequest
 	req.Method = "getEnvelopeStatus"
@@ -86,6 +91,7 @@ func (c *Client) GetVoteStatus(nullifier []byte) ([]byte, bool, error) {
 	return resp.ProcessID, *resp.Registered, nil
 }
 
+// GetCurrentBlock returns the height of the current vochain block
 func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
 	var req api.APIrequest
 	req.Method = "getBlockHeight"
@@ -99,12 +105,16 @@ func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
 	return *resp.Height, nil
 }
 
-func (c *Client) GetBlockTimes() (blockHeight uint32, blockTimes [5]int32, blockTimestamp int32, _ error) {
+// GetBlockTimes returns the current block height, average block times, and recent block timestamp
+// from the vochain. It queries the blockHeight cache updated by the client
+func (c *Client) GetBlockTimes() (blockHeight uint32,
+	blockTimes [5]int32, blockTimestamp int32, _ error) {
 	c.blockHeight.lock.RLock()
 	defer c.blockHeight.lock.RUnlock()
 	return c.blockHeight.height, c.blockHeight.avgTimes, c.blockHeight.timestamp, nil
 }
 
+// GetBlock fetches the vochain block at the given height and returns its summary
 func (c *Client) GetBlock(height uint32) (*indexertypes.BlockMetadata, error) {
 	var req api.APIrequest
 	req.Method = "getBlock"
@@ -116,6 +126,7 @@ func (c *Client) GetBlock(height uint32) (*indexertypes.BlockMetadata, error) {
 	return resp.Block, nil
 }
 
+// GetProcess returns the process parameters for the given process id
 func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	var req api.APIrequest
 	req.Method = "getProcessInfo"
@@ -127,6 +138,8 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	return resp.Process, nil
 }
 
+// GetAccount returns the metadata URI, token balance, and nonce for the
+//  given account ID on the vochain
 func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
 	var req api.APIrequest
 	req.Method = "getAccount"
@@ -144,6 +157,7 @@ func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
 	return resp.InfoURI, *resp.Balance, *resp.Nonce, nil
 }
 
+// GetResults returns the results for the given processID, if available
 func (c *Client) GetResults(pid []byte) (results *types.VochainResults, _ error) {
 	var req api.APIrequest
 	results = new(types.VochainResults)
@@ -163,6 +177,12 @@ func (c *Client) GetResults(pid []byte) (results *types.VochainResults, _ error)
 	return results, nil
 }
 
+// GetProcessList queries for a list of process ids from the vochain.
+// filters include entityID, status ("READY", "ENDED", "CANCELED", "PAUSED", "RESULTS"),
+//  source network ID (for processes created on ethereum or other source-of-truth blockchains),
+//  searchTerm (partial or whole processID match), namespace, and results availability.
+// listSize can be between 0 and 64. To query for a process list longer than 64,
+//  iteratively increment `from` by `listSize` until no more processes are retrieved
 func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm string,
 	namespace uint32, withResults bool, from, listSize int) (processList []string, _ error) {
 	var req api.APIrequest
@@ -187,6 +207,7 @@ func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm st
 
 // FILE APIS
 
+// SetEntityMetadata pins the given entity metadata to IPFS and returns its URI
 func (c *Client) SetEntityMetadata(meta types.EntityMetadata,
 	entityID []byte) (metaURI string, _ error) {
 	var metaBytes []byte
@@ -202,6 +223,7 @@ func (c *Client) SetEntityMetadata(meta types.EntityMetadata,
 	return metaURI, nil
 }
 
+// SetProcessMetadata pins the given process metadata to IPFS and returns its URI
 func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 	processId []byte) (metaURI string, _ error) {
 	var metaBytes []byte
@@ -218,6 +240,8 @@ func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 	return metaURI, nil
 }
 
+// AddFile pins the given content to the gateway's storage mechanism,
+//  specified by contentType, and returns its URI
 func (c *Client) AddFile(content []byte, contentType, name string) (URI string, _ error) {
 	resp, err := c.pool.Request(api.APIrequest{
 		Method:  "addFile",
@@ -231,6 +255,8 @@ func (c *Client) AddFile(content []byte, contentType, name string) (URI string, 
 	return resp.URI, nil
 }
 
+// FetchProcessMetadata fetches and attempts to unmarshal & return
+//  the process metadata from the given URI
 func (c *Client) FetchProcessMetadata(URI string) (process *types.ProcessMetadata, _ error) {
 	content, err := c.FetchFile(URI)
 	if err != nil {
@@ -242,6 +268,8 @@ func (c *Client) FetchProcessMetadata(URI string) (process *types.ProcessMetadat
 	return process, nil
 }
 
+// FetchOrganizationMetadata fetches and attempts to unmarshal & return
+//   the organization metadata from the given URI
 func (c *Client) FetchOrganizationMetadata(URI string) (entity *types.EntityMetadata, _ error) {
 	content, err := c.FetchFile(URI)
 	if err != nil {
@@ -253,6 +281,7 @@ func (c *Client) FetchOrganizationMetadata(URI string) (entity *types.EntityMeta
 	return entity, nil
 }
 
+// FetchFile fetches and returns a raw file from the given URI, via the gateway
 func (c *Client) FetchFile(URI string) (content []byte, _ error) {
 	resp, err := c.pool.Request(api.APIrequest{
 		Method: "fetchFile",
@@ -269,6 +298,7 @@ func (c *Client) FetchFile(URI string) (content []byte, _ error) {
 
 // CENSUS APIS
 
+// AddCensus creates a new census and returns its ID
 func (c *Client) AddCensus() (CensusID string, _ error) {
 	var req api.APIrequest
 
@@ -284,6 +314,7 @@ func (c *Client) AddCensus() (CensusID string, _ error) {
 	return resp.CensusID, nil
 }
 
+// AddClaim adds a new publickey to the existing census specified by censusID and returns its root
 func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, censusPubKey string,
 	censusValue []byte) (root dvoteTypes.HexBytes, _ error) {
 	var req api.APIrequest
@@ -309,8 +340,11 @@ func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, cens
 	return resp.Root, nil
 }
 
-func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string,
-	censusValues []*dvoteTypes.BigInt) (root dvoteTypes.HexBytes, invalidClaims []int, _ error) {
+// AddClaimBulk adds many new publickeys to the existing census specified by censusID
+//  and returns the census root and returns the number of invalid claims
+func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys,
+	censusPubKeys []string, censusValues []*dvoteTypes.BigInt) (root dvoteTypes.HexBytes,
+	invalidClaims []int, _ error) {
 	var req api.APIrequest
 	req.CensusID = censusID
 	censusSize := 0
@@ -362,6 +396,7 @@ func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKey
 	return root, invalidClaims, nil
 }
 
+// PublishCensus publishes the census with the given rootHash and returns its URI
 func (c *Client) PublishCensus(censusID string,
 	rootHash dvoteTypes.HexBytes) (uri string, _ error) {
 	var req api.APIrequest
@@ -379,6 +414,7 @@ func (c *Client) PublishCensus(censusID string,
 	return resp.URI, nil
 }
 
+// GetRoot returns the root for the given censusID
 func (c *Client) GetRoot(censusID string) (root dvoteTypes.HexBytes, _ error) {
 	var req api.APIrequest
 	req.Method = "getRoot"
@@ -392,6 +428,8 @@ func (c *Client) GetRoot(censusID string) (root dvoteTypes.HexBytes, _ error) {
 
 // Transaction APIs
 
+// SetAccountInfo submits a transaction to set an account with the given
+//  ethereum wallet address and metadata URI on the vochain
 func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 	var tx models.Tx_SetAccountInfo
 	var req api.APIrequest
@@ -420,6 +458,8 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 	return nil
 }
 
+// CreateProcess submits a transaction to the vochain to
+//  create a process with the given configuration and returns its starting block height
 func (c *Client) CreateProcess(
 	pid []byte, entityID []byte, startBlock, duration uint32, censusRoot []byte, censusURI string,
 	envelopeType *models.EnvelopeType, processMode *models.ProcessMode,
@@ -469,6 +509,7 @@ func (c *Client) CreateProcess(
 	return p.Process.StartBlock, nil
 }
 
+// RelayVote relays a raw vote transaction to the vochain and returns its nullifier
 func (c *Client) RelayVote(signedTx []byte) (string, error) {
 	var err error
 	var resp *api.APIresponse
