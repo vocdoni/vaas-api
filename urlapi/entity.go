@@ -464,10 +464,24 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not set process metadata: %w", err)
 	}
 
+	var MAX_CENSUS_SIZE = uint64(1024)
+
 	// TODO use encryption priv/pub keys if process is encrypted
-	if startBlock, err = u.vocClient.CreateProcess(processID, orgInfo.entityID, startBlock,
-		endBlock-startBlock, []byte{}, "", envelopeType, processMode,
-		voteOptions, models.CensusOrigin_OFF_CHAIN_CA, metaUri, entitySignKeys); err != nil {
+	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
+		ProcessId:     processID,
+		EntityId:      orgInfo.entityID,
+		StartBlock:    startBlock,
+		BlockCount:    endBlock - startBlock,
+		CensusRoot:    []byte{},
+		CensusURI:     new(string),
+		Status:        models.ProcessStatus_READY,
+		EnvelopeType:  envelopeType,
+		Mode:          processMode,
+		VoteOptions:   voteOptions,
+		CensusOrigin:  models.CensusOrigin_OFF_CHAIN_CA,
+		Metadata:      &metaUri,
+		MaxCensusSize: &MAX_CENSUS_SIZE,
+	}, entitySignKeys); err != nil {
 		return fmt.Errorf("could not create process on the vochain: %w", err)
 	}
 
