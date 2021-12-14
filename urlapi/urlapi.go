@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/vocclient"
@@ -22,18 +23,19 @@ type URLAPI struct {
 	PublicCalls  uint64
 	BaseRoute    string
 
-	explorerVoteUrl string
-	router          *httprouter.HTTProuter
-	api             *bearerstdapi.BearerStandardAPI
-	metricsagent    *metrics.Agent
-	db              database.Database
-	vocClient       *vocclient.Client
+	config       *config.API
+	router       *httprouter.HTTProuter
+	api          *bearerstdapi.BearerStandardAPI
+	metricsagent *metrics.Agent
+	db           database.Database
+	vocClient    *vocclient.Client
 }
 
-func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *metrics.Agent) (*URLAPI, error) {
+func NewURLAPI(router *httprouter.HTTProuter, cfg *config.API, metricsAgent *metrics.Agent) (*URLAPI, error) {
 	if router == nil {
 		return nil, fmt.Errorf("httprouter is nil")
 	}
+	baseRoute := cfg.Route
 	if len(baseRoute) == 0 || baseRoute[0] != '/' {
 		return nil, fmt.Errorf("invalid base route (%s), it must start with /", baseRoute)
 	}
@@ -43,6 +45,7 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 	}
 	baseRoute += "/" + API_VERSION
 	urlapi := URLAPI{
+		config:       cfg,
 		BaseRoute:    baseRoute,
 		router:       router,
 		metricsagent: metricsAgent,
@@ -59,7 +62,7 @@ func NewURLAPI(router *httprouter.HTTProuter, baseRoute string, metricsAgent *me
 }
 
 func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
-	client *vocclient.Client, adminToken, explorerVoteUrl string) error {
+	client *vocclient.Client) error {
 	if db == nil {
 		return fmt.Errorf("database is nil")
 	}
@@ -68,7 +71,6 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 	}
 	u.db = db
 	u.vocClient = client
-	u.explorerVoteUrl = explorerVoteUrl
 
 	// Register auth tokens from the DB
 	err := u.syncAuthTokens()
@@ -76,7 +78,7 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 		return fmt.Errorf("could not sync auth tokens with db: %v", err)
 	}
 
-	if err := u.enableSuperadminHandlers(adminToken); err != nil {
+	if err := u.enableSuperadminHandlers(u.config.AdminToken); err != nil {
 		return err
 	}
 	if err := u.enableEntityHandlers(); err != nil {
