@@ -487,12 +487,12 @@ func (c *Client) CreateProcess(process *models.Process,
 // SetProcessStatus updates the process given by `pid` status to `status`
 //  using the organization's `signkeys`
 func (c *Client) SetProcessStatus(pid []byte,
-	status models.ProcessStatus, signingKey *ethereum.SignKeys) error {
+	status *models.ProcessStatus, signingKey *ethereum.SignKeys) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 	p := &models.SetProcessTx{
 		Txtype:    models.TxType_SET_PROCESS_STATUS,
 		ProcessId: pid,
-		Status:    &status,
+		Status:    status,
 		Nonce:     util.RandomBytes(32),
 	}
 	stx := &models.SignedTx{}
