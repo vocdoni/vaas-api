@@ -484,10 +484,11 @@ func (c *Client) CreateProcess(process *models.Process,
 	return p.Process.StartBlock, nil
 }
 
-func (c *Client) SetProcessStatus(pid []byte, status models.ProcessStatus, signingKey *ethereum.SignKeys) error {
-	var req api.APIrequest
-	var err error
-	req.Method = "submitRawTx"
+// SetProcessStatus updates the process given by `pid` status to `status`
+//  using the organization's `signkeys`
+func (c *Client) SetProcessStatus(pid []byte,
+	status models.ProcessStatus, signingKey *ethereum.SignKeys) error {
+	req := api.APIrequest{Method: "submitRawTx"}
 	p := &models.SetProcessTx{
 		Txtype:    models.TxType_SET_PROCESS_STATUS,
 		ProcessId: pid,
@@ -495,6 +496,7 @@ func (c *Client) SetProcessStatus(pid []byte, status models.ProcessStatus, signi
 		Nonce:     util.RandomBytes(32),
 	}
 	stx := &models.SignedTx{}
+	var err error
 	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &models.Tx_SetProcess{SetProcess: p}})
 	if err != nil {
 		return err
