@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 
 	"go.vocdoni.io/api/types"
@@ -19,12 +20,21 @@ import (
 )
 
 const TIMEOUT_TIME = 1 * time.Minute
+const HEIGHT_REQUEST_TIME = 10 * time.Second
 
 var MAX_CENSUS_SIZE = uint64(1024)
 
+type vocBlockHeight struct {
+	height    uint32
+	timestamp int32
+	avgTimes  [5]int32
+	lock      sync.RWMutex
+}
+
 type Client struct {
-	pool       GatewayPool
-	signingKey *ethereum.SignKeys
+	pool        GatewayPool
+	signingKey  *ethereum.SignKeys
+	blockHeight *vocBlockHeight
 }
 
 func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
@@ -32,10 +42,21 @@ func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{
-		pool:       gwPool,
-		signingKey: signingKey,
-	}, nil
+
+	c := &Client{
+		pool:        gwPool,
+		signingKey:  signingKey,
+		blockHeight: &vocBlockHeight{},
+	}
+
+	go func() {
+		for {
+			time.Sleep(HEIGHT_REQUEST_TIME)
+			c.getVocHeight()
+		}
+	}()
+
+	return c, nil
 }
 
 func (c *Client) ActiveEndpoint() string {
@@ -52,7 +73,6 @@ func (c *Client) ActiveEndpoint() string {
 // FETCHING INFO APIS
 
 func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
-	// TODO cache current block height in vocclient, update periodically
 	var req api.APIrequest
 	req.Method = "getBlockHeight"
 	resp, err := c.pool.Request(req, c.signingKey)
@@ -65,17 +85,10 @@ func (c *Client) GetCurrentBlock() (blockHeight uint32, _ error) {
 	return *resp.Height, nil
 }
 
-func (c *Client) GetBlockTimes() (blockTimes [5]int32, _ error) {
-	var req api.APIrequest
-	req.Method = "getBlockStatus"
-	resp, err := c.pool.Request(req, c.signingKey)
-	if err != nil {
-		return [5]int32{}, err
-	}
-	if resp.BlockTime == nil {
-		return [5]int32{}, fmt.Errorf("blockTime is nil")
-	}
-	return *resp.BlockTime, nil
+func (c *Client) GetBlockTimes() (blockHeight uint32, blockTimes [5]int32, blockTimestamp int32, _ error) {
+	c.blockHeight.lock.RLock()
+	defer c.blockHeight.lock.RUnlock()
+	return c.blockHeight.height, c.blockHeight.avgTimes, c.blockHeight.timestamp, nil
 }
 
 func (c *Client) GetBlock(height uint32) (*indexertypes.BlockMetadata, error) {
@@ -459,4 +472,36 @@ func (c *Client) RelayVote(signedTx []byte) (string, error) {
 	}
 
 	return resp.Nullifier, nil
+}
+
+func (c *Client) getVocHeight() error {
+	defer c.blockHeight.lock.Lock()
+
+	req := api.APIrequest{
+		Method: "getBlockHeight",
+	}
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return err
+	}
+	if resp.Height == nil {
+		return fmt.Errorf("height is nil")
+	}
+	c.blockHeight.height = *resp.Height
+
+	req.Method = "getBlockStatus"
+	resp, err = c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return err
+	}
+	if resp.BlockTime == nil {
+		return fmt.Errorf("blockTime is nil")
+	}
+	c.blockHeight.avgTimes = *resp.BlockTime
+	if resp.BlockTimestamp == 0 {
+		return fmt.Errorf("blockTimestamp is 0")
+	}
+	c.blockHeight.timestamp = resp.BlockTimestamp
+	log.Debugf("Block info %v", c.blockHeight)
+	return nil
 }

@@ -49,7 +49,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	}, nil
 }
 func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
-	currentHeight, err := u.vocClient.GetCurrentBlock()
+	currentHeight, times, _, err := u.vocClient.GetBlockTimes()
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -64,11 +64,6 @@ func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
 			return time.Time{}, fmt.Errorf("cannot get block height %d", height)
 		}
 		return blk.Timestamp, nil
-	}
-
-	times, err := u.vocClient.GetBlockTimes()
-	if err != nil {
-		return time.Time{}, err
 	}
 
 	getMaxTimeFrom := func(i int) uint32 {
@@ -161,18 +156,13 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 }
 
 func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
-	currentHeight, err := u.vocClient.GetCurrentBlock()
+	currentHeight, times, _, err := u.vocClient.GetBlockTimes()
 	if err != nil {
 		return 0, err
 	}
 	currentTime := time.Now()
 	// diff time in seconds
 	diffTime := target.Unix() - currentTime.Unix()
-
-	times, err := u.vocClient.GetBlockTimes()
-	if err != nil {
-		return 0, err
-	}
 
 	// block time in ms
 	getMaxTimeFrom := func(i int) uint32 {
@@ -223,7 +213,7 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 		var tempProcessList []string
 		var fullProcessList []string
 		var currentHeight uint32
-		if currentHeight, err = u.vocClient.GetCurrentBlock(); err != nil {
+		if currentHeight, _, _, err = u.vocClient.GetBlockTimes(); err != nil {
 			return nil, nil, fmt.Errorf("could not get current block height: %w", err)
 		}
 		// loop to fetch all processes
