@@ -294,7 +294,9 @@ func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, cens
 	return resp.Root, nil
 }
 
-func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys, censusPubKeys []string, censusValues []*dvoteTypes.BigInt) (root dvoteTypes.HexBytes, invalidClaims []int, _ error) {
+func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKeys,
+	censusPubKeys []string, censusValues []*dvoteTypes.BigInt) (root dvoteTypes.HexBytes,
+	invalidClaims []int, _ error) {
 	var req api.APIrequest
 	req.CensusID = censusID
 	censusSize := 0
@@ -482,7 +484,8 @@ func (c *Client) getVocHeight() error {
 	if resp.Height == nil {
 		return fmt.Errorf("height is nil")
 	}
-	defer c.blockHeight.lock.Lock()
+	c.blockHeight.lock.Lock()
+	defer c.blockHeight.lock.Unlock()
 	c.blockHeight.height = *resp.Height
 
 	resp, err = c.pool.Request(api.APIrequest{
