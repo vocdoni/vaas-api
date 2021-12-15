@@ -13,7 +13,8 @@ import (
 	"go.vocdoni.io/dvote/crypto/ethereum"
 )
 
-var testUrls = []string{"https://gw1.dev.vocdoni.net/dvote", "https://gw2.dev.vocdoni.net/dvote", "https://gw3.dev.vocdoni.net/dvote"}
+var testUrls = []string{"https://api-dev.vocdoni.net", "https://gw2.vocdoni.net",
+	"https://gw2.dev.vocdoni.net/dvote", "https://gw3.dev.vocdoni.net/dvote"}
 
 var testBadUrls = []string{"https://invalidUrl.vocdoni.net/dvote", "https://wrooooo.vocdoni.net/dvote", "https://Wroooo0ooo.vocdoni.net/dvote"}
 
