@@ -288,12 +288,12 @@ type ElectionDetails = {
   header: string
   streamUri: string
   questions: {
-    title: "Question 1",
-    description: "(optional)",
-    choices: ["Yes", "No", "Maybe"]
+    title: string,
+    description: string,
+    choices: string[]
   }[],
-  confidential: true,
-  hiddenResults: true,
+  confidential: boolean,
+  hiddenResults: boolean,
   census: string
   status: string
 }
