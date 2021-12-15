@@ -13,9 +13,20 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
+	dvoteutil "go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 )
+
+const (
+	PROCESS_PREFIX_BLIND = "0"
+	PROCESS_PREFIX_ECDSA = "1"
+)
+
+var processProofTypeMap = map[string]string{
+	PROCESS_PREFIX_BLIND: "blind",
+	PROCESS_PREFIX_ECDSA: "ecdsa",
+}
 
 type orgPermissionsInfo struct {
 	integratorPrivKey []byte
@@ -66,12 +77,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 		Title:              meta.Title["default"],
 	}
 
-	// TODO update when blind is added to election
-	// if db.Blind {
-	process.Type = "blind-"
-	// 	} else {
-	// 	resp.Type = "signed-"
-	// }
+	process.Type = GetProcessProofType(hex.EncodeToString(vc.ID)) + "-"
 	if vc.Mode.EncryptedMetaData {
 		process.Type += "confidential-"
 	} else {
@@ -362,4 +368,22 @@ func reflectElectionPublic(election types.Election) types.APIElectionSummary {
 		newElection.CensusID = ""
 	}
 	return newElection
+}
+
+func generateProcessId(blind bool) string {
+	if blind {
+		return PROCESS_PREFIX_BLIND + dvoteutil.RandomHex(31)
+	}
+	return PROCESS_PREFIX_ECDSA + dvoteutil.RandomHex(31)
+}
+
+func GetProcessProofType(processId string) string {
+	if len(processId) < 1 {
+		return "unknown"
+	}
+	processType, ok := processProofTypeMap[processId[0:1]]
+	if !ok {
+		return "unknown"
+	}
+	return processType
 }

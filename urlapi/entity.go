@@ -12,7 +12,6 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
-	dvoteutil "go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 )
@@ -344,9 +343,15 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	var processID []byte
 	var metaUri string
 
-	// TODO use blind/signed
-
-	// ctx.URLParam("type")
+	var blind bool
+	switch ctx.URLParam("type") {
+	case "blind":
+		blind = true
+	case "signed":
+		blind = false
+	default:
+		return fmt.Errorf("%s not a valid process type", ctx.URLParam("type"))
+	}
 
 	// authenticate integrator has permission to edit this entity
 	if orgInfo, err = u.authEntityPermissions(msg, ctx); err != nil {
@@ -361,7 +366,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("confidential processes are not yet supported")
 	}
 
-	pid := dvoteutil.RandomHex(32)
+	pid := generateProcessId(blind)
 	if processID, err = hex.DecodeString(pid); err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
 	}
