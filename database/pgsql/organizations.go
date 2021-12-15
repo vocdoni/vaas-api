@@ -173,7 +173,7 @@ func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddre
 				eth_priv_key_cipher = COALESCE(NULLIF(:eth_priv_key_cipher, '' ::::bytea ),  eth_priv_key_cipher),
 				updated_at = now()
 				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
-				AND  (TEXT(:eth_priv_key_cipher) IS DISTINCT FROM TEXT(eth_priv_key_cipher))`
+				AND  (encode(:eth_priv_key_cipher,'hex') IS DISTINCT FROM encode(eth_priv_key_cipher,'hex'))`
 	result, err := d.db.NamedExec(update, organization)
 	if err != nil {
 		return 0, fmt.Errorf("error updating organization: %v", err)

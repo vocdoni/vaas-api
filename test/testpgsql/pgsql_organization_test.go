@@ -1,6 +1,7 @@
 package testpgsql
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -86,12 +87,14 @@ func TestOrganizationUpdate(t *testing.T) {
 	c.Assert(organization.HeaderURI, qt.Equals, "header")
 	c.Assert(organization.AvatarURI, qt.Equals, "avatar")
 
-	count, err = API.DB.UpdateOrganizationEthPrivKeyCipher(integrators[0].SecretApiKey, organizations[0].EthAddress, []byte("bb"))
+	ethPrivKeyCipher, err := hex.DecodeString("bb")
+	c.Assert(err, qt.IsNil)
+	count, err = API.DB.UpdateOrganizationEthPrivKeyCipher(integrators[0].SecretApiKey, organizations[0].EthAddress, ethPrivKeyCipher)
 	c.Assert(err, qt.IsNil)
 	c.Assert(count, qt.Equals, 1)
 	organization, err = API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
-	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", []byte("bb")))
+	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", ethPrivKeyCipher))
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
 	c.Assert(organization.QuotaPlanID, qt.Equals, organizations[0].QuotaPlanID)
 	c.Assert(organization.PublicAPIQuota, qt.Equals, organizations[0].PublicAPIQuota)
@@ -105,7 +108,7 @@ func TestOrganizationUpdate(t *testing.T) {
 	organization, err = API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
 	c.Assert(organization.PublicAPIToken, qt.Equals, "bb")
-	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", []byte("bb")))
+	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", ethPrivKeyCipher))
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
 	c.Assert(organization.QuotaPlanID, qt.Equals, organizations[0].QuotaPlanID)
 	c.Assert(organization.PublicAPIQuota, qt.Equals, organizations[0].PublicAPIQuota)

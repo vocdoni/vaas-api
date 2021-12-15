@@ -99,7 +99,7 @@ func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newCspUrlPrefix
 				WHERE (id = :id )
 				AND  (:name IS DISTINCT FROM name 
 					OR :csp_url_prefix IS DISTINCT FROM csp_url_prefix 					
-					OR TEXT(:csp_pub_key) IS DISTINCT FROM TEXT(csp_pub_key)
+					OR encode(:csp_pub_key,'hex') IS DISTINCT FROM encode(csp_pub_key,'hex')
 					)`
 	result, err := d.db.NamedExec(update, integrator)
 	if err != nil {
@@ -124,7 +124,7 @@ func (d *Database) UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, 
 				secret_api_key = COALESCE(NULLIF(:secret_api_key, '' ::::bytea ),  secret_api_key),
 				updated_at = now()
 				WHERE (id = :id )
-				AND  (TEXT(:secret_api_key) IS DISTINCT FROM TEXT(secret_api_key))`
+				AND  (encode(:secret_api_key,'hex') IS DISTINCT FROM encode(secret_api_key,'hex'))`
 	result, err := d.db.NamedExec(update, integrator)
 	if err != nil {
 		return 0, fmt.Errorf("error updating integrator: %v", err)

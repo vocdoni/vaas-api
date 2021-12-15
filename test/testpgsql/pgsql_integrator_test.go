@@ -1,6 +1,7 @@
 package testpgsql
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 
@@ -32,12 +33,14 @@ func TestIntegrator(t *testing.T) {
 	c.Assert(integrator.Name, qt.Equals, "New Name")
 	c.Assert(fmt.Sprintf("%x", integrator.CspPubKey), qt.Equals, fmt.Sprintf("%x", integrators[0].CspPubKey))
 
-	count, err = API.DB.UpdateIntegratorApiKey(integrators[0].ID, []byte("bb"))
+	apiKey, err := hex.DecodeString("bb")
+	c.Assert(err, qt.IsNil)
+	count, err = API.DB.UpdateIntegratorApiKey(integrators[0].ID, apiKey)
 	c.Assert(err, qt.IsNil)
 	c.Assert(count, qt.Equals, 1)
 	integrator, err = API.DB.GetIntegrator(integrators[0].ID)
 	c.Assert(err, qt.IsNil)
-	c.Assert(fmt.Sprintf("%x", integrator.SecretApiKey), qt.Equals, fmt.Sprintf("%x", []byte("bb")))
+	c.Assert(fmt.Sprintf("%x", integrator.SecretApiKey), qt.Equals, fmt.Sprintf("%x", apiKey))
 
 	_, err = API.DB.GetIntegratorApiKeysList()
 	c.Assert(err, qt.IsNil)
