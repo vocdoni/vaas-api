@@ -99,7 +99,7 @@ ALTER TABLE ONLY organizations
     ADD CONSTRAINT organizations_integrator_id_fkey FOREIGN KEY (integrator_id) REFERENCES integrators(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY organizations
-    ADD CONSTRAINT organizations_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE;
+    ADD CONSTRAINT organizations_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY organizations
     ADD CONSTRAINT organizations_quota_plan_id_fkey FOREIGN KEY (quota_plan_id) REFERENCES quota_plans(id);
@@ -158,7 +158,9 @@ CREATE TABLE elections (
     end_block INT NOT NULL,
     confidential  BOOLEAN DEFAULT false NOT NULL,
     hidden_results  BOOLEAN DEFAULT false NOT NULL,
-    metadata_priv_key BYTEA
+    metadata_priv_key BYTEA,
+    json_metadata_bytes BYTEA,
+    json_metadata_hash BYTEA
 );
 
 ALTER TABLE ONLY elections
@@ -172,6 +174,8 @@ ALTER TABLE ONLY elections
 
 ALTER TABLE ONLY elections
     ADD CONSTRAINT elections_census_id_fkey FOREIGN KEY (census_id) REFERENCES censuses(id);
+
+CREATE INDEX election_json_keccak_index ON elections (json_metadata_hash);
 
 --------------------------- Functions
 
@@ -210,12 +214,12 @@ LISTEN trigger_integrator_tokens_update;
 `
 
 const migration1down = `
-DROP TABLE integrators;
-DROP TABLE organizations;
 DROP TABLE elections;
-DROP TABLE censuses;
 DROP TABLE census_members;
+DROP TABLE censuses;
+DROP TABLE organizations;
 DROP TABLE quota_plans;
+DROP TABLE integrators;
 DROP EXTENSION IF EXISTS pgcrypto;
 `
 

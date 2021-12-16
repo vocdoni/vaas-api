@@ -46,23 +46,45 @@ func CreateOrganizations(size int) []*types.Organization {
 }
 
 // Create a given number of random Elections
-func CreateElections(size int) []*types.Election {
+func CreateElections(size int, integrator_api_key, organization_eth_address []byte) []*types.Election {
 	var duration time.Duration
 	var err error
 	if duration, err = time.ParseDuration("1.5h"); err != nil {
 		log.Error("unexpected, cannot parse duration")
 	}
+
 	mp := make([]*types.Election, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
+		title := fmt.Sprintf("Test%d", randomID)
+		metadata := types.ProcessMetadata{
+			Description: map[string]string{"default": ""},
+			Media: types.ProcessMedia{
+				Header:    "",
+				StreamURI: "",
+			},
+			Meta:      nil,
+			Questions: []types.QuestionMeta{},
+			Results: types.ProcessResultsDetails{
+				Aggregation: "discrete-values",
+				Display:     "multiple-choice",
+			},
+			Title:   map[string]string{"default": title},
+			Version: "1.0",
+		}
+		jsonMetadataBytes := []byte(fmt.Sprintf("%v", metadata))
 		mp[i] = &types.Election{
-			ProcessID:       []byte(fmt.Sprintf("%d", randomID)),
-			Title:           fmt.Sprintf("Test%d", randomID),
-			StartDate:       time.Now(),
-			EndDate:         time.Now().Add(duration),
-			Confidential:    true,
-			HiddenResults:   true,
-			MetadataPrivKey: nil,
+			IntegratorApiKey:  integrator_api_key,
+			OrgEthAddress:     organization_eth_address,
+			ProcessID:         []byte(fmt.Sprintf("%d", randomID)),
+			Title:             title,
+			StartDate:         time.Now(),
+			EndDate:           time.Now().Add(duration),
+			Confidential:      true,
+			HiddenResults:     true,
+			MetadataPrivKey:   nil,
+			JsonMetadataBytes: jsonMetadataBytes,
+			JsonMetadataHash:  ethereum.HashRaw(jsonMetadataBytes),
 		}
 	}
 	return mp

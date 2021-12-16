@@ -1,8 +1,6 @@
 package database
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 	migrate "github.com/rubenv/sql-migrate"
 	"go.vocdoni.io/api/types"
@@ -36,7 +34,7 @@ type Database interface {
 	ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error)
 	CountOrganizations(integratorAPIKey []byte) (int, error)
 	// Election
-	CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error)
+	CreateElection(election types.Election) (int, error)
 	GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error)
 	GetElectionPublic(organizationEthAddress, processID []byte) (*types.Election, error)
 	ListElections(integratorAPIKey, orgEthAddress []byte) ([]types.Election, error)

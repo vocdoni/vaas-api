@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	qt "github.com/frankban/quicktest"
-	"github.com/google/uuid"
 	"go.vocdoni.io/api/test/testcommon"
 )
 
@@ -22,9 +21,8 @@ func TestElection(t *testing.T) {
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
 	c.Assert(err, qt.IsNil)
 
-	elections := testcommon.CreateElections(2)
-	id, err := API.DB.CreateElection(integrators[0].SecretApiKey, organizations[0].EthAddress, elections[0].ProcessID,
-		elections[0].Title, elections[0].StartDate, elections[0].EndDate, uuid.NullUUID{}, 0, 0, true, true)
+	elections := testcommon.CreateElections(2, integrators[0].SecretApiKey, organizations[0].EthAddress)
+	id, err := API.DB.CreateElection(*elections[0])
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
 	elections[0].ID = id

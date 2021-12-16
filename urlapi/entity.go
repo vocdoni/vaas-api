@@ -343,8 +343,12 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("confidential processes are not yet supported")
 	}
 
-	processID, err := hex.DecodeString(dvoteutil.RandomHex(32))
-	if err != nil {
+	election := types.Election{
+		IntegratorApiKey: orgInfo.integratorPrivKey,
+		OrgEthAddress:    orgInfo.entityID,
+	}
+
+	if election.ProcessID, err = hex.DecodeString(dvoteutil.RandomHex(32)); err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
 	}
 	entityPrivKey, ok := util.DecryptSymmetric(
@@ -357,27 +361,25 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not decode entity private key: %w", err)
 	}
 
-	startDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.StartDate)
-	if err != nil {
+	if election.StartDate, err = time.Parse("2006-01-02T15:04:05.000Z", req.StartDate); err != nil {
 		return fmt.Errorf("could not parse startDate: %w", err)
 	}
-	endDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.EndDate)
-	if err != nil {
-		return fmt.Errorf("could not parse startDate: %w", err)
+	if election.EndDate, err = time.Parse("2006-01-02T15:04:05.000Z", req.EndDate); err != nil {
+		return fmt.Errorf("could not parse endDate: %w", err)
 	}
 
 	now := time.Now()
-	if startDate.Before(now) || endDate.Before(now) {
+	if election.StartDate.Before(now) || election.EndDate.Before(now) {
 		return fmt.Errorf("election start and end date cannot be in the past")
 	}
-	if endDate.Before(startDate) {
+	if election.EndDate.Before(election.StartDate) {
 		return fmt.Errorf("end date must be after start date")
 	}
-	startBlock, err := u.estimateBlockHeight(startDate)
+	startBlock, err := u.estimateBlockHeight(election.StartDate)
 	if err != nil {
 		return fmt.Errorf("unable to estimate startDate block height: %w", err)
 	}
-	endBlock, err := u.estimateBlockHeight(endDate)
+	endBlock, err := u.estimateBlockHeight(election.EndDate)
 	if err != nil {
 		return fmt.Errorf("unable to estimate endDate block height: %w", err)
 	}
@@ -442,14 +444,21 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		CostExponent:      1,
 	}
 
-	metaUri, err := u.vocClient.SetProcessMetadata(metadata, processID)
-	if err != nil {
-		return fmt.Errorf("could not set process metadata: %w", err)
+	election.JsonMetadataBytes = []byte(fmt.Sprintf("%v", metadata))
+	election.JsonMetadataHash = ethereum.HashRaw(election.JsonMetadataBytes)
+	var metaURI string
+	if req.Confidential {
+		//TODO add domain somehow (from ssl?)
+		metaURI = "/file/" + hex.EncodeToString((election.JsonMetadataHash))
+	} else {
+		if metaURI, err = u.vocClient.SetProcessMetadata(metadata, election.ProcessID); err != nil {
+			return fmt.Errorf("could not set process metadata: %w", err)
+		}
 	}
 
 	// TODO use encryption priv/pub keys if process is encrypted
 	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
-		ProcessId:     processID,
+		ProcessId:     election.ProcessID,
 		EntityId:      orgInfo.entityID,
 		StartBlock:    startBlock,
 		BlockCount:    endBlock - startBlock,
@@ -460,18 +469,23 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		Mode:          processMode,
 		VoteOptions:   voteOptions,
 		CensusOrigin:  models.CensusOrigin_OFF_CHAIN_CA,
-		Metadata:      &metaUri,
+		Metadata:      &metaURI,
 		MaxCensusSize: &u.config.MaxCensusSize,
 	}, entitySignKeys); err != nil {
 		return fmt.Errorf("could not create process on the vochain: %w", err)
 	}
 
-	if _, err = u.db.CreateElection(orgInfo.integratorPrivKey, orgInfo.entityID, processID,
-		req.Title, startDate, endDate, uuid.NullUUID{}, int(startBlock), int(endBlock),
-		req.Confidential, req.HiddenResults); err != nil {
+	election.StartBlock = int(startBlock)
+	election.EndBlock = int(endBlock)
+	election.Title = req.Title
+	election.CensusID = uuid.NullUUID{}
+	election.Confidential = req.Confidential
+	election.HiddenResults = req.HiddenResults
+
+	if _, err = u.db.CreateElection(election); err != nil {
 		return fmt.Errorf("could not create election: %w", err)
 	}
-	return sendResponse(types.APIResponse{ElectionID: processID}, ctx)
+	return sendResponse(types.APIResponse{ElectionID: election.ProcessID}, ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
