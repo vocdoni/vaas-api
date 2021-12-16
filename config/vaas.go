@@ -27,6 +27,8 @@ type API struct {
 	}
 	// AdminToken is the hexString bearer token for superadmin API methods
 	AdminToken string
+	// GlobalEntityKey is the key used to encrypt entity private keys in the db
+	GlobalEntityKey string
 	// ExplorerVoteUrl is the url for explorer vote packages
 	ExplorerVoteUrl string
 	// GatewayUrls to use for gateway api

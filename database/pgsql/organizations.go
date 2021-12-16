@@ -26,15 +26,15 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 	}
 
 	organization := &types.Organization{
-		EthAddress:        ethAddress,
-		IntegratorID:      integrator.ID,
-		EthPrivKeyCicpher: ethPrivKeyCipher,
-		IntegratorApiKey:  integrator.SecretApiKey,
-		HeaderURI:         headerUri,
-		AvatarURI:         avatarUri,
-		PublicAPIToken:    publicApiToken,
-		QuotaPlanID:       planID,
-		PublicAPIQuota:    publiApiQuota,
+		EthAddress:       ethAddress,
+		IntegratorID:     integrator.ID,
+		EthPrivKeyCipher: ethPrivKeyCipher,
+		IntegratorApiKey: integrator.SecretApiKey,
+		HeaderURI:        headerUri,
+		AvatarURI:        avatarUri,
+		PublicAPIToken:   publicApiToken,
+		QuotaPlanID:      planID,
+		PublicAPIQuota:   publiApiQuota,
 		CreatedUpdated: types.CreatedUpdated{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -164,11 +164,11 @@ func (d *Database) UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte, p
 	return int(rows), nil
 }
 
-func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCicpher []byte) (int, error) {
+func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCipher []byte) (int, error) {
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return 0, fmt.Errorf("invalid arguments")
 	}
-	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, EthPrivKeyCicpher: newEthPrivKeyCicpher}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, EthPrivKeyCipher: newEthPrivKeyCipher}
 	update := `UPDATE organizations SET
 				eth_priv_key_cipher = COALESCE(NULLIF(:eth_priv_key_cipher, '' ::::bytea ),  eth_priv_key_cipher),
 				updated_at = now()

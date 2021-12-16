@@ -30,16 +30,16 @@ type QuotaPlan struct {
 }
 type Organization struct {
 	CreatedUpdated
-	ID                int           `json:"id" db:"id"`
-	IntegratorID      int           `json:"integratorId" db:"integrator_id"`
-	IntegratorApiKey  []byte        `json:"integratorApiKey" db:"integrator_api_key"`
-	EthAddress        []byte        `json:"ethAddress" db:"eth_address"`
-	EthPrivKeyCicpher []byte        `json:"ethPrivKeyCipher" db:"eth_priv_key_cipher"` // encrypted priv key for metadata
-	HeaderURI         string        `json:"headerUri" db:"header_uri"`                 // cURI
-	AvatarURI         string        `json:"avatarUri" db:"avatar_uri"`                 // cURI
-	PublicAPIToken    string        `json:"publicApiToken" db:"public_api_token"`      // Public API token
-	QuotaPlanID       uuid.NullUUID `json:"quotaPlanId" db:"quota_plan_id"`            // Billing plan ID
-	PublicAPIQuota    int           `json:"publicApiQuota" db:"public_api_quota"`
+	ID               int           `json:"id" db:"id"`
+	IntegratorID     int           `json:"integratorId" db:"integrator_id"`
+	IntegratorApiKey []byte        `json:"integratorApiKey" db:"integrator_api_key"`
+	EthAddress       []byte        `json:"ethAddress" db:"eth_address"`
+	EthPrivKeyCipher []byte        `json:"ethPrivKeyCipher" db:"eth_priv_key_cipher"` // encrypted priv key for metadata
+	HeaderURI        string        `json:"headerUri" db:"header_uri"`                 // cURI
+	AvatarURI        string        `json:"avatarUri" db:"avatar_uri"`                 // cURI
+	PublicAPIToken   string        `json:"publicApiToken" db:"public_api_token"`      // Public API token
+	QuotaPlanID      uuid.NullUUID `json:"quotaPlanId" db:"quota_plan_id"`            // Billing plan ID
+	PublicAPIQuota   int           `json:"publicApiQuota" db:"public_api_quota"`
 }
 
 type Election struct {

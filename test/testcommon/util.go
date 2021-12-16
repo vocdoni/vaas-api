@@ -33,13 +33,13 @@ func CreateOrganizations(size int) []*types.Organization {
 	mp := make([]*types.Organization, size)
 	for i := 0; i < size; i++ {
 		mp[i] = &types.Organization{
-			EthAddress:        signers[i].Address().Bytes(),
-			EthPrivKeyCicpher: []byte("ff"),
-			HeaderURI:         "https://",
-			AvatarURI:         "https://",
-			PublicAPIToken:    signers[i].Address().String(),
-			PublicAPIQuota:    1000,
-			QuotaPlanID:       uuid.NullUUID{},
+			EthAddress:       signers[i].Address().Bytes(),
+			EthPrivKeyCipher: []byte("ff"),
+			HeaderURI:        "https://",
+			AvatarURI:        "https://",
+			PublicAPIToken:   signers[i].Address().String(),
+			PublicAPIQuota:   1000,
+			QuotaPlanID:      uuid.NullUUID{},
 		}
 	}
 	return mp

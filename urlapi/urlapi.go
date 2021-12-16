@@ -23,12 +23,13 @@ type URLAPI struct {
 	PublicCalls  uint64
 	BaseRoute    string
 
-	config       *config.API
-	router       *httprouter.HTTProuter
-	api          *bearerstdapi.BearerStandardAPI
-	metricsagent *metrics.Agent
-	db           database.Database
-	vocClient    *vocclient.Client
+	config                *config.API
+	globalOrganizationKey []byte
+	router                *httprouter.HTTProuter
+	api                   *bearerstdapi.BearerStandardAPI
+	metricsagent          *metrics.Agent
+	db                    database.Database
+	vocClient             *vocclient.Client
 }
 
 func NewURLAPI(router *httprouter.HTTProuter,
@@ -52,6 +53,15 @@ func NewURLAPI(router *httprouter.HTTProuter,
 		metricsagent: metricsAgent,
 	}
 	log.Infof("url api available with baseRoute %s", baseRoute)
+	if len(cfg.GlobalEntityKey) > 0 {
+		key, err := hex.DecodeString(cfg.GlobalEntityKey)
+		if err != nil {
+			log.Errorf("could not decode global encryption key: %v", err)
+		} else {
+			urlapi.globalOrganizationKey = key
+		}
+		log.Infof("global entity encryption key: %s", key)
+	}
 	urlapi.registerMetrics()
 	var err error
 	urlapi.api, err = bearerstdapi.NewBearerStandardAPI(router, baseRoute)

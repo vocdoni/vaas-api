@@ -38,28 +38,39 @@ func newConfig() (*config.Vaas, config.Error) {
 	cfg.LogLevel = *flag.String("logLevel", "info", "Log level (debug, info, warn, error, fatal)")
 	cfg.LogOutput = *flag.String("logOutput", "stdout", "Log output (stdout, stderr or filepath)")
 	cfg.LogErrorFile = *flag.String("logErrorFile", "", "Log errors and warnings to a file")
-	cfg.SaveConfig = *flag.Bool("saveConfig", false, "overwrites an existing config file with the CLI provided flags")
-	cfg.SigningKey = *flag.String("signingKey", "", "signing private Keys (if not specified, a new one will be created), the first one is the oracle public key")
+	cfg.SaveConfig = *flag.Bool("saveConfig", false,
+		"overwrites an existing config file with the CLI provided flags")
+	cfg.SigningKey = *flag.String("signingKey", "",
+		"signing private Keys (if not specified, a new "+
+			"one will be created), the first one is the oracle public key")
 	cfg.API.AdminToken = *flag.String("adminToken", "", "hexString token for admin api calls")
-	cfg.API.ExplorerVoteUrl = *flag.String("explorerVoteUrl", "https://vaas.explorer.vote/envelope/", "explorer url for vote envelope pages")
-	cfg.API.GatewayUrls = *flag.StringArray("gatewayUrls", []string{"https://gw1.vocdoni.net/dvote"}, "urls to use as gateway api endpoints")
+	cfg.API.ExplorerVoteUrl = *flag.String("explorerVoteUrl",
+		"https://vaas.explorer.vote/envelope/", "explorer url for vote envelope pages")
+	cfg.API.GlobalEntityKey = *flag.String("globalEntityKey", "",
+		"encryption key for organization private keys in the db. Leave empty for no encryption")
+	cfg.API.GatewayUrls = *flag.StringArray("gatewayUrls",
+		[]string{"https://gw1.vocdoni.net/dvote"}, "urls to use as gateway api endpoints")
 	cfg.API.MaxCensusSize = *flag.Uint64("maxCensusSize", 2<<32, "maximum size of a voter census")
 	cfg.API.Route = *flag.String("apiRoute", "/", "dvote API route")
 	cfg.API.ListenHost = *flag.String("listenHost", "0.0.0.0", "API endpoint listen address")
 	cfg.API.ListenPort = *flag.Int("listenPort", 8000, "API endpoint http port")
-	cfg.API.Ssl.Domain = *flag.String("sslDomain", "", "enable TLS secure domain with LetsEncrypt auto-generated certificate")
+	cfg.API.Ssl.Domain = *flag.String("sslDomain", "",
+		"enable TLS secure domain with LetsEncrypt auto-generated certificate")
 	cfg.DB.Host = *flag.String("dbHost", "127.0.0.1", "DB server address")
 	cfg.DB.Port = *flag.Int("dbPort", 5432, "DB server port")
 	cfg.DB.User = *flag.String("dbUser", "user", "DB Username")
 	cfg.DB.Password = *flag.String("dbPassword", "password", "DB password")
 	cfg.DB.Dbname = *flag.String("dbName", "database", "DB database name")
 	cfg.DB.Sslmode = *flag.String("dbSslmode", "prefer", "DB postgres sslmode")
-	cfg.DefaultPlan.MaxCensusSize = *flag.Int("defaultPlanCensusSize", 500, "Default census size (500)")
-	cfg.DefaultPlan.MaxProccessCount = *flag.Int("defaultPlanProccessCoun", 10, "Default process count (10)")
+	cfg.DefaultPlan.MaxCensusSize = *flag.Int("defaultPlanCensusSize",
+		500, "Default census size (500)")
+	cfg.DefaultPlan.MaxProccessCount = *flag.Int("defaultPlanProccessCount",
+		10, "Default process count (10)")
 	cfg.Migrate.Action = *flag.String("migrateAction", "", "Migration action (up,down,status)")
 	// metrics
 	cfg.Metrics.Enabled = *flag.Bool("metricsEnabled", true, "enable prometheus metrics")
-	cfg.Metrics.RefreshInterval = *flag.Int("metricsRefreshInterval", 10, "metrics refresh interval in seconds")
+	cfg.Metrics.RefreshInterval =
+		*flag.Int("metricsRefreshInterval", 10, "metrics refresh interval in seconds")
 
 	// parse flags
 	flag.Parse()
@@ -84,6 +95,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("api.adminToken", flag.Lookup("adminToken"))
 	viper.BindPFlag("api.maxCensusSize", flag.Lookup("maxCensusSize"))
 	viper.BindPFlag("api.explorerVoteUrl", flag.Lookup("explorerVoteUrl"))
+	viper.BindPFlag("api.globalEntityKey", flag.Lookup("globalEntityKey"))
 	viper.BindPFlag("api.gatewayUrls", flag.Lookup("gatewayUrls"))
 	viper.BindPFlag("api.route", flag.Lookup("apiRoute"))
 	viper.BindPFlag("api.listenHost", flag.Lookup("listenHost"))
