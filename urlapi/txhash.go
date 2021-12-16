@@ -50,9 +50,12 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if err != nil {
 		return err
 	}
+	txTime, ok := u.txWaitMap[hex.EncodeToString(txHash)]
+	mined := false
+	if ok && txTime.Add(15*time.Second).Before(time.Now()) {
+		mined = true
+	}
 	// TODO make vocclient api request to get tx status
-	mined := true
-
 	if mined {
 		tx, ok := u.dbTransactions.LoadAndDelete(hex.EncodeToString(txHash))
 		if !ok {
@@ -79,5 +82,5 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 			}
 		}
 	}
-	return nil
+	return sendResponse(mined, ctx)
 }
