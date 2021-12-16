@@ -3,6 +3,7 @@ package urlapi
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -591,12 +592,24 @@ func (u *URLAPI) importPublicKeysHandler(
 // setProcessStatusHandler sets the process status (READY, PAUSED, ENDED, CANCELED)
 func (u *URLAPI) setProcessStatusHandler(
 	msg *bearerstdapi.BearerStandardAPIdata, ctx *httprouter.HTTPContext) error {
-	orgInfo, err := u.authEntityPermissions(msg, ctx)
+	processID, err := util.GetBytesID(ctx, "electionId")
 	if err != nil {
-		return err
+		return fmt.Errorf("could not get electionId: %w", err)
+	}
+	process, err := u.vocClient.GetProcess(processID)
+	if err != nil {
+		return fmt.Errorf("could not fetch election %x from the vochain: %w", processID, err)
+	}
+	integratorPrivKey, err := util.GetAuthToken(msg)
+	if err != nil {
+		return fmt.Errorf("could not get integrator api token: %w", err)
+	}
+	organization, err := u.db.GetOrganization(integratorPrivKey, process.EntityID)
+	if err != nil {
+		return fmt.Errorf("organization %X could not be fetched from the db: %w", organization.EthAddress, err)
 	}
 	entityPrivKey, ok := util.DecryptSymmetric(
-		orgInfo.organization.EthPrivKeyCicpher, orgInfo.integratorPrivKey)
+		organization.EthPrivKeyCicpher, integratorPrivKey)
 	if !ok {
 		return fmt.Errorf("could not decrypt entity private key")
 	}
@@ -604,13 +617,9 @@ func (u *URLAPI) setProcessStatusHandler(
 	if err = entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
 		return fmt.Errorf("could not decode entity private key: %w", err)
 	}
-	processID, err := util.GetBytesID(ctx, "electionId")
-	if err != nil {
-		return err
-	}
 
 	var status models.ProcessStatus
-	switch ctx.URLParam("status") {
+	switch strings.ToUpper(ctx.URLParam("status")) {
 	case "READY":
 		status = models.ProcessStatus_READY
 	case "PAUSED":
@@ -622,7 +631,7 @@ func (u *URLAPI) setProcessStatusHandler(
 	}
 
 	if err = u.vocClient.SetProcessStatus(processID, &status, entitySignKeys); err != nil {
-		return fmt.Errorf("could not set process status: %w", err)
+		return fmt.Errorf("could not set process status %d: %w", status, err)
 	}
 
 	return sendResponse(types.APIResponse{}, ctx)

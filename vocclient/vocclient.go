@@ -479,7 +479,7 @@ func (c *Client) CreateProcess(process *models.Process,
 		return 0, err
 	}
 	if !resp.Ok {
-		return 0, fmt.Errorf("could not create organization on the vochain: %s", resp.Message)
+		return 0, fmt.Errorf(resp.Message)
 	}
 	return p.Process.StartBlock, nil
 }
