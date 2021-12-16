@@ -685,5 +685,9 @@ func (u *URLAPI) setProcessStatusHandler(
 		return fmt.Errorf("could not set process status %d: %w", status, err)
 	}
 
+	// TODO fetch actual transaction hash
+	txHash := dvoteutil.RandomHex(32)
+	u.txWaitMap[txHash] = time.Now()
+
 	return sendResponse(types.APIResponse{}, ctx)
 }

@@ -31,9 +31,11 @@ type URLAPI struct {
 	metricsagent          *metrics.Agent
 	db                    database.Database
 	vocClient             *vocclient.Client
-	dbTransactions        sync.Map
-	txWaitMap             map[string]time.Time
 	globalOrganizationKey []byte
+	// Map of database queries pending transactions being mined
+	dbTransactions sync.Map
+	// TODO remove temporary tx time map
+	txWaitMap map[string]time.Time
 }
 
 func NewURLAPI(router *httprouter.HTTProuter,

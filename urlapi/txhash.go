@@ -56,12 +56,16 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		mined = true
 	}
 	// TODO make vocclient api request to get tx status
+	// If tx has been mined, check dbTransactions map for pending db queries
 	if mined {
 		tx, ok := u.dbTransactions.LoadAndDelete(hex.EncodeToString(txHash))
+		// If transaction not in map, it is a transaction
+		//  not associated with a db query (setProcessStatus)
 		if !ok {
-			return fmt.Errorf("transaction %x never queried to database", txHash)
+			return sendResponse(mined, ctx)
 		}
 		switch queryTx := tx.(type) {
+		// Make the db request depending on query type
 		case createOrganizationQuery:
 			if _, err = u.db.CreateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
 				queryTx.ethPrivKeyCipher, queryTx.planID, queryTx.publicApiQuota,
