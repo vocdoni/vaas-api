@@ -343,8 +343,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("confidential processes are not yet supported")
 	}
 
-	pid := dvoteutil.RandomHex(32)
-	processID, err := hex.DecodeString(pid)
+	processID, err := hex.DecodeString(dvoteutil.RandomHex(32))
 	if err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
 	}
