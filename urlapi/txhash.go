@@ -1,18 +1,15 @@
 package urlapi
 
 import (
+	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"go.vocdoni.io/api/util"
+	"go.vocdoni.io/dvote/httprouter"
+	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 )
-
-type txMap map[string]dbQuery
-
-type dbQuery struct {
-	createOrganization *createOrganizationQuery
-	updateOrganization *updateOrganizationQuery
-	createElection     *createElectionQuery
-}
 
 type createOrganizationQuery struct {
 	integratorPrivKey []byte
@@ -44,4 +41,43 @@ type createElectionQuery struct {
 	endBlock          int
 	confidential      bool
 	hiddenResults     bool
+}
+
+// GET https://server/v1/priv/transactions/<transactionHash>
+func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+	txHash, err := util.GetBytesID(ctx, "transactionHash")
+	if err != nil {
+		return err
+	}
+	// TODO make vocclient api request to get tx status
+	mined := true
+
+	if mined {
+		tx, ok := u.dbTransactions.LoadAndDelete(hex.EncodeToString(txHash))
+		if !ok {
+			return fmt.Errorf("transaction %x never queried to database", txHash)
+		}
+		switch queryTx := tx.(type) {
+		case createOrganizationQuery:
+			if _, err = u.db.CreateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
+				queryTx.ethPrivKeyCipher, queryTx.planID, queryTx.publicApiQuota,
+				queryTx.publicApiToken, queryTx.headerUri, queryTx.avatarUri); err != nil {
+				return fmt.Errorf("could not create organization: %w", err)
+			}
+		case updateOrganizationQuery:
+			if _, err = u.db.UpdateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
+				queryTx.headerUri, queryTx.avatarUri); err != nil {
+				return fmt.Errorf("could not update organization: %w", err)
+			}
+		case createElectionQuery:
+			if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress,
+				queryTx.electionID, queryTx.title, queryTx.startDate, queryTx.endDate,
+				queryTx.censusID, queryTx.startBlock, queryTx.endBlock, queryTx.confidential,
+				queryTx.hiddenResults); err != nil {
+				return fmt.Errorf("could not create election: %w", err)
+			}
+		}
+	}
+	return nil
 }
