@@ -176,9 +176,14 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return fmt.Errorf("could not decode entity private key: %w", err)
 	}
 
-	encryptedPrivKey, err := util.EncryptSymmetric(entityPrivKey, integratorPrivKey)
-	if err != nil {
-		return fmt.Errorf("could not encrypt entity private key: %w", err)
+	// If there is a global entity encryption key that can be decoded,
+	//  use it to encrypt the entityPrivKey before storing
+	encryptedPrivKey := entityPrivKey
+	if len(u.globalOrganizationKey) > 0 {
+		if encryptedPrivKey, err = util.EncryptSymmetric(
+			entityPrivKey, u.globalOrganizationKey); err != nil {
+			return fmt.Errorf("could not encrypt entity private key: %w", err)
+		}
 	}
 
 	// Post metadata to ipfs
@@ -347,14 +352,17 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
 	}
-	entityPrivKey, ok := util.DecryptSymmetric(
-		orgInfo.organization.EthPrivKeyCicpher, orgInfo.integratorPrivKey)
-	if !ok {
-		return fmt.Errorf("could not decrypt entity private key")
+	entityPrivKey := orgInfo.organization.EthPrivKeyCipher
+	if len(u.globalOrganizationKey) > 0 {
+		var ok bool
+		if entityPrivKey, ok = util.DecryptSymmetric(
+			orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey); !ok {
+			return fmt.Errorf("could not decrypt entity private key")
+		}
 	}
 	entitySignKeys := ethereum.NewSignKeys()
 	if err = entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
-		return fmt.Errorf("could not decode entity private key: %w", err)
+		return fmt.Errorf("could not convert entity private key to signKey: %w", err)
 	}
 
 	startDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.StartDate)
@@ -605,16 +613,20 @@ func (u *URLAPI) setProcessStatusHandler(
 	}
 	organization, err := u.db.GetOrganization(integratorPrivKey, process.EntityID)
 	if err != nil {
-		return fmt.Errorf("organization %X could not be fetched from the db: %w", organization.EthAddress, err)
+		return fmt.Errorf("organization %X could not be fetched from the db: %w",
+			organization.EthAddress, err)
 	}
-	entityPrivKey, ok := util.DecryptSymmetric(
-		organization.EthPrivKeyCicpher, integratorPrivKey)
-	if !ok {
-		return fmt.Errorf("could not decrypt entity private key")
+	entityPrivKey := organization.EthPrivKeyCipher
+	if len(u.globalOrganizationKey) > 0 {
+		var ok bool
+		if entityPrivKey, ok = util.DecryptSymmetric(
+			organization.EthPrivKeyCipher, u.globalOrganizationKey); !ok {
+			return fmt.Errorf("could not decrypt entity private key")
+		}
 	}
 	entitySignKeys := ethereum.NewSignKeys()
 	if err = entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
-		return fmt.Errorf("could not decode entity private key: %w", err)
+		return fmt.Errorf("could not convert entity private key to signKey: %w", err)
 	}
 
 	var status models.ProcessStatus

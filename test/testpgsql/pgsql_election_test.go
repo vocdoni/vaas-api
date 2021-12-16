@@ -18,7 +18,7 @@ func TestElection(t *testing.T) {
 
 	organizations := testcommon.CreateOrganizations(1)
 	organizations[0].ID, err = API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
-		organizations[0].EthPrivKeyCicpher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
+		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
 	c.Assert(err, qt.IsNil)
 

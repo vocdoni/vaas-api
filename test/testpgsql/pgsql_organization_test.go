@@ -20,7 +20,7 @@ func TestOrganization(t *testing.T) {
 
 	organizations := testcommon.CreateOrganizations(1)
 	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
-		organizations[0].EthPrivKeyCicpher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
+		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
@@ -30,7 +30,7 @@ func TestOrganization(t *testing.T) {
 	log.Infof("%w", organization)
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
-	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCicpher))
+	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCipher), qt.Equals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCipher))
 	c.Assert(organization.QuotaPlanID, qt.Equals, organizations[0].QuotaPlanID)
 	c.Assert(organization.PublicAPIQuota, qt.Equals, organizations[0].PublicAPIQuota)
 	c.Assert(organization.PublicAPIToken, qt.Equals, organizations[0].PublicAPIToken)
@@ -68,7 +68,7 @@ func TestOrganizationUpdate(t *testing.T) {
 
 	organizations := testcommon.CreateOrganizations(1)
 	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
-		organizations[0].EthPrivKeyCicpher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
+		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
@@ -80,7 +80,7 @@ func TestOrganizationUpdate(t *testing.T) {
 	organization, err := API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
-	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCicpher))
+	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCipher), qt.Equals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCipher))
 	c.Assert(organization.QuotaPlanID, qt.Equals, organizations[0].QuotaPlanID)
 	c.Assert(organization.PublicAPIQuota, qt.Equals, organizations[0].PublicAPIQuota)
 	c.Assert(organization.PublicAPIToken, qt.Equals, organizations[0].PublicAPIToken)
@@ -94,7 +94,7 @@ func TestOrganizationUpdate(t *testing.T) {
 	c.Assert(count, qt.Equals, 1)
 	organization, err = API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
-	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", ethPrivKeyCipher))
+	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCipher), qt.Equals, fmt.Sprintf("%x", ethPrivKeyCipher))
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
 	c.Assert(organization.QuotaPlanID, qt.Equals, organizations[0].QuotaPlanID)
 	c.Assert(organization.PublicAPIQuota, qt.Equals, organizations[0].PublicAPIQuota)
@@ -108,7 +108,7 @@ func TestOrganizationUpdate(t *testing.T) {
 	organization, err = API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
 	c.Assert(organization.PublicAPIToken, qt.Equals, "bb")
-	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCicpher), qt.Equals, fmt.Sprintf("%x", ethPrivKeyCipher))
+	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCipher), qt.Equals, fmt.Sprintf("%x", ethPrivKeyCipher))
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
 	c.Assert(organization.QuotaPlanID, qt.Equals, organizations[0].QuotaPlanID)
 	c.Assert(organization.PublicAPIQuota, qt.Equals, organizations[0].PublicAPIQuota)
