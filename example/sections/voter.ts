@@ -164,7 +164,7 @@ export function getProofFromBlindSignature(hexBlindSignature: string, userSecret
   const unblindedSignature = CensusBlind.unblind(hexBlindSignature, userSecretData)
 
   const proof: IProofCA = {
-    type: ProofCaSignatureTypes.ECDSA_BLIND,
+    type: ProofCaSignatureTypes.ECDSA_BLIND_PIDSALTED,
     signature: unblindedSignature,
     voterAddress: wallet.address
   }
@@ -172,10 +172,11 @@ export function getProofFromBlindSignature(hexBlindSignature: string, userSecret
   return proof
 }
 
-export function getBallotPayload(processId: string, proof: IProofCA, hasEncryptedVotes: boolean, processKeys: ProcessKeys) {
+export function getBallotPayload(processId: string, proof: IProofCA, hasEncryptedVotes: boolean, processKeys: ProcessKeys = { encryptionPubKeys: [] }) {
   const choices = [1, 2, 3]
 
   if (hasEncryptedVotes) {
+    if (!(processKeys?.encryptionPubKeys?.length)) throw new Error("Empty vote encryption keys")
     return Voting.packageSignedEnvelope({
       censusOrigin: ProcessCensusOrigin.OFF_CHAIN_CA,
       votes: choices,
