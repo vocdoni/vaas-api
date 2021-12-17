@@ -1,3 +1,4 @@
+import { ProcessKeys } from "@vocdoni/voting"
 import "isomorphic-unfetch"
 import { getConfig } from "../util/config"
 
@@ -294,8 +295,9 @@ type ElectionDetails = {
   }[],
   confidential: boolean,
   hiddenResults: boolean,
-  census: string
-  status: string
+  census: string,
+  status: string,
+  ecryptionPubKeys : ProcessKeys
 }
 export async function getElectionPriv(electionId: string, apiKey: string): Promise<ElectionDetails> {
   const url = config.apiUrlPrefix + "/v1/priv/elections/" + electionId
