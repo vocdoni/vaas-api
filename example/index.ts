@@ -3,6 +3,7 @@ import { createIntegrator, deleteIntegrator } from "./sections/superadmin"
 import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot } from "./sections/voter"
 import { Wallet } from "@ethersproject/wallet"
 import { wait } from "./util/wait"
+import { ProcessKeys } from "@vocdoni/voting"
 
 async function main() {
     // VOCDONI INTERNAL
@@ -53,8 +54,11 @@ async function main() {
 
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
-
-    const ballot = getBallotPayload(electionId1, proof, true,  election1Details.ecryptionPubKeys  )
+    let a: ProcessKeys
+    a = {
+        encryptionPubKeys: election1Details.ecryptionPubKeys
+    }
+    const ballot = getBallotPayload(electionId1, proof, true, a  )
 
     const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
     const ballotDetails = await getBallot(nullifier, orgApiToken)

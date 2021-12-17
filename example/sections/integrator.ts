@@ -297,7 +297,10 @@ type ElectionDetails = {
   hiddenResults: boolean,
   census: string,
   status: string,
-  ecryptionPubKeys : ProcessKeys
+  ecryptionPubKeys :  {
+    idx: number;
+    key: string;
+}[];
 }
 export async function getElectionPriv(electionId: string, apiKey: string): Promise<ElectionDetails> {
   const url = config.apiUrlPrefix + "/v1/priv/elections/" + electionId
@@ -318,7 +321,6 @@ export async function getElectionPriv(electionId: string, apiKey: string): Promi
 
   const { error } = responseBody
   if (error) throw new Error(error)
-
   console.log("Get election", electionId, ":", responseBody)
   return responseBody
 }
