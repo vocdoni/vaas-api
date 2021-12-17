@@ -285,7 +285,8 @@ func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 	return metaURI, nil
 }
 
-// SetProcessMetadata pins the given process metadata to IPFS and returns its URI
+// SetProcessMetadataConfidential encrypts with metadataPrivKey and then pins
+//  the given process metadata to IPFS and returns its URI
 func (c *Client) SetProcessMetadataConfidential(meta types.ProcessMetadata, metadataPrivKey,
 	processId []byte) (string, error) {
 	metaBytes, err := json.Marshal(meta)
@@ -331,6 +332,25 @@ func (c *Client) FetchProcessMetadata(URI string) (*types.ProcessMetadata, error
 	}
 	var process types.ProcessMetadata
 	if err = json.Unmarshal(content, &process); err != nil {
+		return nil, err
+	}
+	return &process, nil
+}
+
+// FetchProcessMetadataConfidential fetches and attempts to decrypt, unmarshal & return
+//  the process metadata from the given URI
+func (c *Client) FetchProcessMetadataConfidential(URI string,
+	metadataPrivKey []byte) (*types.ProcessMetadata, error) {
+	content, err := c.FetchFile(URI)
+	if err != nil {
+		return nil, err
+	}
+	decrypted, ok := apiUtil.DecryptSymmetric(content, metadataPrivKey)
+	if !ok {
+		return nil, fmt.Errorf("could not decrypt private metadata")
+	}
+	var process types.ProcessMetadata
+	if err = json.Unmarshal(decrypted, &process); err != nil {
 		return nil, err
 	}
 	return &process, nil
