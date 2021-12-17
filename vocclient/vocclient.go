@@ -345,6 +345,7 @@ func (c *Client) FetchProcessMetadataConfidential(URI string,
 	if err != nil {
 		return nil, err
 	}
+
 	decrypted, ok := apiUtil.DecryptSymmetric(content, metadataPrivKey)
 	if !ok {
 		return nil, fmt.Errorf("could not decrypt private metadata")

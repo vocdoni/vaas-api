@@ -62,7 +62,7 @@ func (d *Database) GetElectionPublic(organizationEthAddress, processID []byte) (
 
 func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error) {
 	var election types.Election
-	selectIntegrator := `SELECT title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, 
+	selectIntegrator := `SELECT metadata_priv_key, title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, 
 							created_at, updated_at
 						FROM elections WHERE organization_eth_address =$1 AND integrator_api_key=$2
 									AND process_id=$3`

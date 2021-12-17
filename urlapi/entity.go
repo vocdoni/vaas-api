@@ -483,22 +483,26 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	var metaUri string
-	var metadataPrivKey string
+	var metaPrivKeyBytes []byte
 	var encryptedMetaKey []byte
 	// If election is confidential, generate a private metadata key and encrypt it.
 	// store this key with the election
 	if req.Confidential {
-		metadataPrivKey = dvoteutil.RandomHex(32)
-		metaPrivKeyBytes, err := hex.DecodeString(metadataPrivKey)
-		if err != nil {
+		metadataPrivKey := dvoteutil.RandomHex(32)
+		if metaPrivKeyBytes, err = hex.DecodeString(metadataPrivKey); err != nil {
 			return fmt.Errorf("could not decode metadata private key: %w", err)
 		}
-		if encryptedMetaKey, err = util.EncryptSymmetric(
-			metaPrivKeyBytes, u.globalMetadataKey); err != nil {
-			return fmt.Errorf("could not encrypt metadata private key: %w", err)
+		encryptedMetaKey = metaPrivKeyBytes
+		// If there is a global meta key, encrypt the meta priv key
+		if len(u.globalMetadataKey) > 0 {
+			if encryptedMetaKey, err = util.EncryptSymmetric(
+				metaPrivKeyBytes, u.globalMetadataKey); err != nil {
+				return fmt.Errorf("could not encrypt metadata private key: %w", err)
+			}
 		}
+
 		if metaUri, err = u.vocClient.SetProcessMetadataConfidential(
-			metadata, u.globalMetadataKey, processID); err != nil {
+			metadata, metaPrivKeyBytes, processID); err != nil {
 			return fmt.Errorf("could not set confidential process metadata: %w", err)
 		}
 	} else {
@@ -541,6 +545,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	u.dbTransactions.Store(txHash, createElectionQuery{
 		integratorPrivKey: orgInfo.integratorPrivKey,
 		ethAddress:        orgInfo.entityID,
+		encryptedMetaKey: encryptedMetaKey,
 		electionID:        processID,
 		title:             req.Title,
 		startDate:         startDate,
@@ -593,10 +598,14 @@ func (u *URLAPI) getProcessHandler(
 	}
 	if vochainProcess == nil {
 		return fmt.Errorf("process does not exist")
+		
+	integratorApiKey, err := hex.DecodeString(msg.AuthToken)
+	if err != nil {
+		return fmt.Errorf("could not decode bearer token: %w", err)
 	}
 
 	// Fetch election from database
-	dbElection, err := u.db.GetElectionPublic(vochainProcess.EntityID, processId)
+	dbElection, err := u.db.GetElection(integratorApiKey, vochainProcess.EntityID, processId)
 	if err != nil {
 		return fmt.Errorf("could not get election from the database")
 	}
@@ -614,7 +623,7 @@ func (u *URLAPI) getProcessHandler(
 	if dbElection.Confidential {
 		metaKey := dbElection.MetadataPrivKey
 		// If globalMetadataKey exists, try to decrypt metadata private key
-		if len(u.globalMetadataKey) < 0 {
+		if len(u.globalMetadataKey) > 0 {
 			var ok bool
 			metaKey, ok = util.DecryptSymmetric(dbElection.MetadataPrivKey, u.globalMetadataKey)
 			if !ok {

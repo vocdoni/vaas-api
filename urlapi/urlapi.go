@@ -77,7 +77,7 @@ func NewURLAPI(router *httprouter.HTTProuter,
 		} else {
 			urlapi.globalMetadataKey = key
 		}
-		log.Infof("global metadata encryption key: %s", key)
+		log.Infof("global metadata encryption key: %x", urlapi.globalMetadataKey)
 	}
 	urlapi.registerMetrics()
 	var err error
