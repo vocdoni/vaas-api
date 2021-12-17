@@ -447,13 +447,18 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not set process metadata: %w", err)
 	}
 
+	integrator, err := u.db.GetIntegratorByKey(orgInfo.integratorPrivKey)
+	if err != nil {
+		return fmt.Errorf("could not retrieve integrator from db: %w", err)
+	}
+
 	// TODO use encryption priv/pub keys if process is encrypted
 	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
 		ProcessId:     processID,
 		EntityId:      orgInfo.entityID,
 		StartBlock:    startBlock,
 		BlockCount:    endBlock - startBlock,
-		CensusRoot:    []byte{},
+		CensusRoot:    integrator.CspPubKey,
 		CensusURI:     new(string),
 		Status:        models.ProcessStatus_READY,
 		EnvelopeType:  envelopeType,
