@@ -198,7 +198,7 @@ export function getBallotPayload(processId: string, proof: IProofCA, hasEncrypte
 //////////////////////////////////////////////////////////////////////////
 
 export async function getElectionSharedKey(electionId: string, signedElectionId: string, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/sharedKey"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/sharedkey"
 
   const body = {
     "authData": [signedElectionId]
@@ -224,10 +224,10 @@ export async function getElectionSharedKey(electionId: string, signedElectionId:
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { sharedKey } = responseBody
+  const { sharedkey } = responseBody
 
-  console.log("Get election shared key", sharedKey)
-  return sharedKey
+  console.log("Get election shared key", sharedkey)
+  return sharedkey
 }
 
 export async function getCspSigningTokenPlain(electionId: string, signedElectionId: string, orgApiToken: string): Promise<string> {
@@ -369,7 +369,7 @@ export async function getCspBlindSignature(electionId: string, tokenR: string, b
 //////////////////////////////////////////////////////////////////////////
 
 export async function getElectionSharedKeyCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
-  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/sharedKey"
+  const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/sharedkey"
 
   const body = {
     "authData": [proof.param1, proof.param2] // The custom values that the CSP expects
@@ -395,10 +395,10 @@ export async function getElectionSharedKeyCustom(electionId: string, proof: { pa
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { sharedKey } = responseBody
+  const { sharedkey } = responseBody
 
-  console.log("Get election shared key", sharedKey)
-  return sharedKey
+  console.log("Get election shared key", sharedkey)
+  return sharedkey
 }
 
 export async function getCspSigningTokenPlainCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
@@ -488,7 +488,7 @@ export async function submitBallot(electionId: string, ballot: VoteEnvelope, eph
   const url = config.apiUrlPrefix + "/v1/pub/elections/" + electionId + "/vote"
 
   const body = {
-    "vote": [base64Payload]
+    "vote": base64Payload
   }
 
   const response = await fetch(url, {
