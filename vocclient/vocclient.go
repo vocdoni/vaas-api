@@ -135,6 +135,16 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	return resp.Process, nil
 }
 
+// GetProcessKeys returns the encryption pubKeys for a process
+func (c *Client) GetProcessPubKeys(pid []byte) ([]api.Key, error) {
+	req := api.APIrequest{Method: "getProcessKeys", ProcessID: pid}
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
+		return nil, err
+	}
+	return resp.EncryptionPublicKeys, nil
+}
+
 // GetAccount returns the metadata URI, token balance, and nonce for the
 //  given account ID on the vochain
 func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {

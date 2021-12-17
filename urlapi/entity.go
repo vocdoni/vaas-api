@@ -538,7 +538,6 @@ func (u *URLAPI) getProcessHandler(
 	if err != nil {
 		return fmt.Errorf("could not get process metadata: %w", err)
 	}
-
 	// Parse all the information
 	resp, err := u.parseProcessInfo(vochainProcess, results, processMetadata)
 	if err != nil {
