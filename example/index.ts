@@ -54,7 +54,8 @@ async function main() {
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
 
-    const ballot = getBallotPayload(electionId1, proof, true, election1Details.ecryptionPubKeys)
+    const encryptedResults = false
+    const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1Details.encryptionPubKeys)
 
     const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
     const ballotDetails = await getBallot(nullifier, orgApiToken)

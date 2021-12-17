@@ -297,7 +297,7 @@ type ElectionDetails = {
   hiddenResults: boolean,
   census: string,
   status: string,
-  ecryptionPubKeys: {
+  encryptionPubKeys: {
     idx: number;
     key: string;
   }[];
