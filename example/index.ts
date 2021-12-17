@@ -2,6 +2,7 @@ import { createAnonymousElection, createOrganization, createSignedElection, dele
 import { createIntegrator, deleteIntegrator } from "./sections/superadmin"
 import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot } from "./sections/voter"
 import { Wallet } from "@ethersproject/wallet"
+import { wait } from "./util/wait"
 
 async function main() {
     // VOCDONI INTERNAL
@@ -61,14 +62,6 @@ async function main() {
 
     await deleteOrganization(organizationId, integratorId)
     await deleteIntegrator(integratorId)
-}
-
-function wait(seconds: number) {
-    return new Promise(resolve => {
-        console.log("Waiting", seconds, "s")
-
-        setTimeout(resolve, seconds * 1000)
-    })
 }
 
 main().catch(err => {
