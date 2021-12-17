@@ -178,7 +178,7 @@ export function getBallotPayload(processId: string, proof: IProofCA, hasEncrypte
   if (hasEncryptedVotes) {
     if (!(encryptionPubKeys?.length)) throw new Error("Empty vote encryption keys")
     const processKeys: ProcessKeys = {
-      encryptionPubKeys: encryptionPubKeys
+      encryptionPubKeys
     }
 
     return Voting.packageSignedEnvelope({

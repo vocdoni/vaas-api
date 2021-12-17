@@ -23,7 +23,7 @@ async function main() {
 
     const { electionId: electionId1 } = await createSignedElection(organizationId, integratorApiKey)
     const { electionId: electionId2 } = await createAnonymousElection(organizationId, integratorApiKey)
-    await wait(11)
+    await wait(11 * 2)
     // const electionList = await listElectionsPriv(organizationId, integratorApiKey)
     const election1Details = await getElectionPriv(electionId1, integratorApiKey)
     const election2Details = await getElectionPriv(electionId2, integratorApiKey)
@@ -54,7 +54,7 @@ async function main() {
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
 
-    const encryptedResults = false
+    const encryptedResults = true
     const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1Details.encryptionPubKeys)
 
     const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
