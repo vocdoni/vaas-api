@@ -25,12 +25,13 @@ type URLAPI struct {
 	BaseRoute    string
 
 	config                *config.API
+	globalOrganizationKey []byte
+	globalMetadataKey     []byte
 	router                *httprouter.HTTProuter
 	api                   *bearerstdapi.BearerStandardAPI
 	metricsagent          *metrics.Agent
 	db                    database.Database
 	vocClient             *vocclient.Client
-	globalOrganizationKey []byte
 	// Map of database queries pending transactions being mined
 	dbTransactions sync.Map
 	// TODO remove temporary tx time map
@@ -68,6 +69,15 @@ func NewURLAPI(router *httprouter.HTTProuter,
 			urlapi.globalOrganizationKey = key
 		}
 		log.Infof("global entity encryption key: %s", key)
+	}
+	if len(cfg.GlobalMetaKey) > 0 {
+		key, err := hex.DecodeString(cfg.GlobalMetaKey)
+		if err != nil {
+			log.Errorf("could not decode global metadata key: %v", err)
+		} else {
+			urlapi.globalMetadataKey = key
+		}
+		log.Infof("global metadata encryption key: %s", key)
 	}
 	urlapi.registerMetrics()
 	var err error
