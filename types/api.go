@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/types"
 )
 
@@ -65,6 +66,7 @@ type APIElectionInfo struct {
 	Header             string         `json:"header,omitempty"`
 	Ok                 bool           `json:"ok,omitempty"`
 	ElectionID         types.HexBytes `json:"electionId,omitempty"`
+	EncryptionPubKeys  []api.Key      `json:"encryptionPubKeys,omitempty"`
 	Questions          []Question     `json:"questions,omitempty"`
 	Results            []Result       `json:"results,omitempty"`
 	ResultsAggregation string         `json:"resultsAggregation,omitempty"`

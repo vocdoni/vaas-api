@@ -50,6 +50,10 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	results *types.VochainResults, meta *types.ProcessMetadata) (types.APIElectionInfo, error) {
+	keys, err := u.vocClient.GetProcessPubKeys(vc.ID)
+	if err != nil {
+		log.Errorf("could not get process keys: %v", err)
+	}
 	process := types.APIElectionInfo{
 		Description:        meta.Description["default"],
 		OrganizationID:     vc.EntityID,
@@ -57,6 +61,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 		ElectionID:         vc.ID,
 		ResultsAggregation: meta.Results.Aggregation,
 		ResultsDisplay:     meta.Results.Display,
+		EncryptionPubKeys:  keys,
 		EndBlock:           vc.EndBlock,
 		StartBlock:         vc.StartBlock,
 		StreamURI:          meta.Media.StreamURI,
@@ -95,7 +100,6 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 			strings.ToLower(models.ProcessStatus_name[vc.Status])[1:]
 	}
 
-	var err error
 	if results != nil && vc.HaveResults {
 		process.VoteCount = results.Height
 		if process.Results, err = aggregateResults(meta, results); err != nil {
