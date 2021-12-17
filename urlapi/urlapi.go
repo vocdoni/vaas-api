@@ -88,6 +88,9 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 	if err := u.enablePublicHandlers(); err != nil {
 		return err
 	}
+	if err := u.enableFileHandlers(); err != nil {
+		return err
+	}
 	return nil
 }
 

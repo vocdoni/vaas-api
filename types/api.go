@@ -38,6 +38,7 @@ type APIResponse struct {
 	APIToken         string               `json:"apiToken,omitempty"`
 	Avatar           string               `json:"avatar,omitempty"`
 	CensusID         int                  `json:"censusId,omitempty"`
+	Content          []byte               `json:"content,omitempty"`
 	ContentURI       string               `json:"contentUri,omitempty"`
 	CspPubKey        types.HexBytes       `json:"cspPubKey,omitempty"`
 	CspUrlPrefix     string               `json:"cspUrlPrefix,omitempty"`
