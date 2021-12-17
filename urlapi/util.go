@@ -1,18 +1,19 @@
 package urlapi
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
+	dvoteUtil "go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 )
@@ -31,21 +32,18 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 	if err != nil {
 		return orgPermissionsInfo{}, err
 	}
-	entityID, err := util.GetBytesID(ctx, "organizationId")
-	if err != nil {
-		return orgPermissionsInfo{}, err
-	}
-	organization, err := u.db.GetOrganization(integratorPrivKey, entityID)
+	organizationID := common.HexToAddress(dvoteUtil.TrimHex(ctx.URLParam("organizationId")))
+	organization, err := u.db.GetOrganization(integratorPrivKey, organizationID.Bytes())
 	if err != nil {
 		return orgPermissionsInfo{},
-			fmt.Errorf("entity %X could not be fetched from the db: %w", entityID, err)
+			fmt.Errorf("organization %s could not be fetched from the db: %w", organizationID.String(), err)
 	}
-	if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
-		return orgPermissionsInfo{}, fmt.Errorf("entity %X does not belong to this integrator", entityID)
-	}
+	// if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
+	// 	return orgPermissionsInfo{}, fmt.Errorf("entity %s does not belong to this integrator", organizationID.String())
+	// }
 	return orgPermissionsInfo{
 		integratorPrivKey: integratorPrivKey,
-		entityID:          entityID,
+		entityID:          organizationID.Bytes(),
 		organization:      organization,
 	}, nil
 }
