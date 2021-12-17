@@ -305,6 +305,10 @@ type ElectionDetails = {
   resultsDisplay: string;
   endDate: Date;
   startDate: Date;
+  encryptionPubKeys:  {
+    idx: number;
+    key: string;
+}[]
 }
 export async function getElectionPriv(electionId: string, apiKey: string): Promise<ElectionDetails> {
   const url = config.apiUrlPrefix + "/v1/priv/elections/" + electionId
