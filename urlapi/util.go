@@ -96,7 +96,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	}
 
 	var err error
-	if results != nil {
+	if results != nil && vc.HaveResults {
 		process.VoteCount = results.Height
 		if process.Results, err = aggregateResults(meta, results); err != nil {
 			return process, fmt.Errorf("could not aggregate results: %v", err)
@@ -281,7 +281,7 @@ func aggregateResults(meta *types.ProcessMetadata,
 	if len(meta.Questions) != len(results.Results) {
 		return nil, fmt.Errorf("number of results does not match number of questions")
 	}
-	if meta.Results.Aggregation != "discrete-counting" &&
+	if meta.Results.Aggregation != "discrete-values" &&
 		meta.Results.Aggregation != "index-weighted" {
 		return nil, fmt.Errorf("process aggregation method %s not supported", meta.Results.Aggregation)
 	}

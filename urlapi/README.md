@@ -471,7 +471,7 @@ curl -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/election
   "electionId": "47f2c1f1164a27db4f5e7b825f8ec064c44da88a83ff72b90e5755fff8bfb53b",
   "start_block": "2090900",
   "end_block": "2091900",
-  "ResultsAggregation": "discrete-counting",
+  "ResultsAggregation": "discrete-values",
   "ResultsDisplay": "multiple-question"
 }
 ```
