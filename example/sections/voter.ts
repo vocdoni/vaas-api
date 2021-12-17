@@ -172,11 +172,15 @@ export function getProofFromBlindSignature(hexBlindSignature: string, userSecret
   return proof
 }
 
-export function getBallotPayload(processId: string, proof: IProofCA, hasEncryptedVotes: boolean, processKeys: ProcessKeys = { encryptionPubKeys: [] }) {
+export function getBallotPayload(processId: string, proof: IProofCA, hasEncryptedVotes: boolean, encryptionKeys: { idx: number, key: string }[] = []) {
   const choices = [1, 2, 3]
 
   if (hasEncryptedVotes) {
-    if (!(processKeys?.encryptionPubKeys?.length)) throw new Error("Empty vote encryption keys")
+    if (!(encryptionKeys?.length)) throw new Error("Empty vote encryption keys")
+    const processKeys: ProcessKeys = {
+      encryptionPubKeys: encryptionKeys
+    }
+
     return Voting.packageSignedEnvelope({
       censusOrigin: ProcessCensusOrigin.OFF_CHAIN_CA,
       votes: choices,

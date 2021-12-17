@@ -16,7 +16,6 @@ async function main() {
     await wait(11)
     await getOrganizationPriv(organizationId, integratorApiKey)
     // resetOrganizationPublicKey()
-    await wait(11)
 
     await setOrganizationMetadata(organizationId, integratorApiKey)
     await getOrganizationPriv(organizationId, integratorApiKey)
@@ -54,11 +53,8 @@ async function main() {
 
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
-    let a: ProcessKeys
-    a = {
-        encryptionPubKeys: election1Details.ecryptionPubKeys
-    }
-    const ballot = getBallotPayload(electionId1, proof, true, a  )
+
+    const ballot = getBallotPayload(electionId1, proof, true, election1Details.ecryptionPubKeys)
 
     const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
     const ballotDetails = await getBallot(nullifier, orgApiToken)
