@@ -259,7 +259,7 @@ export async function getCspSigningTokenPlain(electionId: string, signedElection
 
   const { tokenR } = responseBody
 
-  console.log("Get election shared key", tokenR)
+  console.log("Get CSP signing token plain", tokenR)
   return tokenR
 }
 
@@ -292,7 +292,7 @@ export async function getCspSigningTokenBlind(electionId: string, signedElection
 
   const { tokenR } = responseBody
 
-  console.log("Get election shared key", tokenR)
+  console.log("Get CSP signing token blind", tokenR)
   return tokenR
 }
 
@@ -326,7 +326,7 @@ export async function getCspPlainSignature(electionId: string, tokenR: string, p
 
   const { signature } = responseBody
 
-  console.log("Get election shared key", signature)
+  console.log("Get CSP plain signature", signature)
   return signature
 }
 
@@ -360,7 +360,7 @@ export async function getCspBlindSignature(electionId: string, tokenR: string, b
 
   const { signature } = responseBody
 
-  console.log("Get election shared key", signature)
+  console.log("Get CSP blind signature", signature)
   return signature
 }
 
@@ -397,7 +397,7 @@ export async function getElectionSharedKeyCustom(electionId: string, proof: { pa
 
   const { sharedkey } = responseBody
 
-  console.log("Get election shared key", sharedkey)
+  console.log("Get election shared key custom", sharedkey)
   return sharedkey
 }
 
@@ -430,7 +430,7 @@ export async function getCspSigningTokenPlainCustom(electionId: string, proof: {
 
   const { tokenR } = responseBody
 
-  console.log("Get election shared key", tokenR)
+  console.log("Get CSP signing token plain custom", tokenR)
   return tokenR
 }
 
@@ -463,7 +463,7 @@ export async function getCspSigningTokenBlindCustom(electionId: string, proof: {
 
   const { tokenR } = responseBody
 
-  console.log("Get election shared key", tokenR)
+  console.log("Get CSP signing token blind custom", tokenR)
   return tokenR
 }
 

@@ -9,8 +9,8 @@ export async function createIntegrator(name: string): Promise<{ id: string, apiK
   const body = {
     name,
     email: Math.random().toString().slice(2) + "@email.net",
-    // cspUrlPrefix: config.cspUrlPrefix,
-    // cspPubKey: config.cspPublicKey
+    cspUrlPrefix: config.cspUrlPrefix,
+    cspPubKey: config.cspPublicKey
   }
 
   const response = await fetch(url, {
