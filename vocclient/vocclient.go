@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.vocdoni.io/api/types"
+	apiUtil "go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/client"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -278,6 +279,25 @@ func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 	}
 	metaURI, err := c.AddFile(metaBytes, "ipfs",
 		fmt.Sprintf("%X process metadata", processId))
+	if err != nil {
+		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
+	}
+	return metaURI, nil
+}
+
+// SetProcessMetadata pins the given process metadata to IPFS and returns its URI
+func (c *Client) SetProcessMetadataConfidential(meta types.ProcessMetadata, metadataPrivKey,
+	processId []byte) (string, error) {
+	metaBytes, err := json.Marshal(meta)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal process metadata: %v", err)
+	}
+	encryptedMeta, err := apiUtil.EncryptSymmetric(metaBytes, metadataPrivKey)
+	if err != nil {
+		return "", fmt.Errorf("could not encrypt private metadata: %w", err)
+	}
+	metaURI, err := c.AddFile(encryptedMeta, "ipfs",
+		fmt.Sprintf("%X process metadata (encrypted)", processId))
 	if err != nil {
 		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
 	}

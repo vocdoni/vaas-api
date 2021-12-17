@@ -33,6 +33,7 @@ type createElectionQuery struct {
 	integratorPrivKey []byte
 	ethAddress        []byte
 	electionID        []byte
+	encryptedMetaKey  []byte
 	title             string
 	startDate         time.Time
 	endDate           time.Time
@@ -86,10 +87,9 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 			return fmt.Errorf("could not update organization: %w", err)
 		}
 	case createElectionQuery:
-		if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress,
-			queryTx.electionID, queryTx.title, queryTx.startDate, queryTx.endDate,
-			queryTx.censusID, queryTx.startBlock, queryTx.endBlock, queryTx.confidential,
-			queryTx.hiddenResults); err != nil {
+		if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress, queryTx.electionID, queryTx.encryptedMetaKey,
+			queryTx.title, queryTx.startDate, queryTx.endDate, queryTx.censusID, queryTx.startBlock, queryTx.endBlock,
+			queryTx.confidential, queryTx.hiddenResults); err != nil {
 			return fmt.Errorf("could not create election: %w", err)
 		}
 	}

@@ -385,10 +385,6 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	if req.Confidential {
-		return fmt.Errorf("confidential processes are not yet supported")
-	}
-
 	processID, err := hex.DecodeString(dvoteutil.RandomHex(32))
 	if err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
@@ -477,8 +473,6 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		}
 		metadata.Questions = append(metadata.Questions, metaQuestion)
 	}
-	log.Debugf("req questions: %v", req.Questions)
-	log.Debugf("meta qustions: %v", metadata.Questions)
 
 	voteOptions := &models.ProcessVoteOptions{
 		MaxCount:          uint32(len(req.Questions)),
@@ -488,9 +482,29 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		CostExponent:      1,
 	}
 
-	metaUri, err := u.vocClient.SetProcessMetadata(metadata, processID)
-	if err != nil {
-		return fmt.Errorf("could not set process metadata: %w", err)
+	var metaUri string
+	var metadataPrivKey string
+	var encryptedMetaKey []byte
+	// If election is confidential, generate a private metadata key and encrypt it.
+	// store this key with the election
+	if req.Confidential {
+		metadataPrivKey = dvoteutil.RandomHex(32)
+		metaPrivKeyBytes, err := hex.DecodeString(metadataPrivKey)
+		if err != nil {
+			return fmt.Errorf("could not decode metadata private key: %w", err)
+		}
+		if encryptedMetaKey, err = util.EncryptSymmetric(
+			metaPrivKeyBytes, u.globalMetadataKey); err != nil {
+			return fmt.Errorf("could not encrypt metadata private key: %w", err)
+		}
+		if metaUri, err = u.vocClient.SetProcessMetadataConfidential(
+			metadata, u.globalMetadataKey, processID); err != nil {
+			return fmt.Errorf("could not set confidential process metadata: %w", err)
+		}
+	} else {
+		if metaUri, err = u.vocClient.SetProcessMetadata(metadata, processID); err != nil {
+			return fmt.Errorf("could not set process metadata: %w", err)
+		}
 	}
 
 	integrator, err := u.db.GetIntegratorByKey(orgInfo.integratorPrivKey)
@@ -502,7 +516,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if startBlock > 1 && startBlock < currentBlockHeight+vocclient.VOCHAIN_BLOCK_MARGIN {
 		return fmt.Errorf("cannot create process: startDate needs to be at least %ds in the future", vocclient.VOCHAIN_BLOCK_MARGIN*avgTimes[0]/1000)
 	}
-	// TODO use encryption priv/pub keys if process is encrypted
+
 	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
 		ProcessId:     processID,
 		EntityId:      orgInfo.entityID,
