@@ -158,7 +158,7 @@ export async function createSignedElection(organizationId: string, apiKey: strin
         choices: ["Yes", "No", "Maybe", "Blank"]
       },
     ],
-    confidential: true,  // Metadata access restricted to only census members
+    confidential: false,  // Metadata access restricted to only census members
     hiddenResults: true, // Encrypt results until the process ends
     census: ""     // Empty when using a custom CSP
   }
@@ -183,7 +183,7 @@ export async function createSignedElection(organizationId: string, apiKey: strin
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { processId: electionId } = responseBody
+  const { electionId } = responseBody
 
   console.log("Created election with ID", electionId)
   return { electionId }
@@ -214,7 +214,7 @@ export async function createAnonymousElection(organizationId: string, apiKey: st
         choices: ["Yes", "No", "Maybe", "Blank"]
       },
     ],
-    confidential: true,  // Metadata access restricted to only census members
+    confidential: false,  // Metadata access restricted to only census members
     hiddenResults: true, // Encrypt results until the process ends
     census: ""     // Empty when using a custom CSP
   }
@@ -239,7 +239,7 @@ export async function createAnonymousElection(organizationId: string, apiKey: st
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { processId: electionId } = responseBody
+  const { electionId } = responseBody
 
   console.log("Created anonymous election", electionId)
   return { electionId }

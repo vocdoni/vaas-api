@@ -11,14 +11,18 @@ async function main() {
     // INTEGRATOR ENDPOINTS (backend)
 
     const { organizationId, apiToken: orgApiToken } = await createOrganization("Association " + Math.random(), integratorApiKey)
+    await wait(11)
     await getOrganizationPriv(organizationId, integratorApiKey)
     // resetOrganizationPublicKey()
+    await wait(11)
 
     await setOrganizationMetadata(organizationId, integratorApiKey)
     await getOrganizationPriv(organizationId, integratorApiKey)
+    await wait(11)
 
     const { electionId: electionId1 } = await createSignedElection(organizationId, integratorApiKey)
     const { electionId: electionId2 } = await createAnonymousElection(organizationId, integratorApiKey)
+    await wait(11)
     const electionList = await listElectionsPriv(organizationId, integratorApiKey)
     const electionDetails = await getElectionPriv(electionId1, integratorApiKey)
 
@@ -57,6 +61,14 @@ async function main() {
 
     await deleteOrganization(organizationId, integratorId)
     await deleteIntegrator(integratorId)
+}
+
+function wait(seconds: number) {
+    return new Promise(resolve => {
+        console.log("Waiting", seconds, "s")
+
+        setTimeout(resolve, seconds * 1000)
+    })
 }
 
 main().catch(err => {
