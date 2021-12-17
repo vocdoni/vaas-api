@@ -374,9 +374,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not parse startDate: %w", err)
 	}
 
-	now := time.Now()
-	if startDate.Before(now) || endDate.Before(now) {
-		return fmt.Errorf("election start and end date cannot be in the past")
+	if endDate.Before(time.Now()) {
+		return fmt.Errorf("election end date cannot be in the past")
 	}
 	if endDate.Before(startDate) {
 		return fmt.Errorf("end date must be after start date")
