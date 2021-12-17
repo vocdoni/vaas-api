@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
@@ -35,7 +34,7 @@ type URLAPI struct {
 	// Map of database queries pending transactions being mined
 	dbTransactions sync.Map
 	// TODO remove temporary tx time map
-	txWaitMap map[string]time.Time
+	txWaitMap sync.Map
 }
 
 func NewURLAPI(router *httprouter.HTTProuter,
@@ -58,7 +57,7 @@ func NewURLAPI(router *httprouter.HTTProuter,
 		router:         router,
 		metricsagent:   metricsAgent,
 		dbTransactions: sync.Map{},
-		txWaitMap:      map[string]time.Time{},
+		txWaitMap:      sync.Map{},
 	}
 	log.Infof("url api available with baseRoute %s", baseRoute)
 	if len(cfg.GlobalEntityKey) > 0 {

@@ -50,40 +50,42 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if err != nil {
 		return err
 	}
-	txTime, ok := u.txWaitMap[hex.EncodeToString(txHash)]
-	mined := false
-	if ok && txTime.Add(15*time.Second).Before(time.Now()) {
-		mined = true
+	val, ok := u.txWaitMap.Load(hex.EncodeToString(txHash))
+	var txTime time.Time
+	if ok {
+		txTime, ok = val.(time.Time)
 	}
+	mined := ok && txTime.Add(15*time.Second).Before(time.Now())
 	// TODO make vocclient api request to get tx status
 	// If tx has been mined, check dbTransactions map for pending db queries
-	if mined {
-		tx, ok := u.dbTransactions.LoadAndDelete(hex.EncodeToString(txHash))
-		// If transaction not in map, it is a transaction
-		//  not associated with a db query (setProcessStatus)
-		if !ok {
-			return sendResponse(mined, ctx)
+	if !mined {
+		return sendResponse(mined, ctx)
+	}
+	tx, ok := u.dbTransactions.LoadAndDelete(hex.EncodeToString(txHash))
+	// If transaction not in map, it is a transaction
+	//  not associated with a db query (setProcessStatus)
+	if !ok {
+		return sendResponse(mined, ctx)
+	}
+	switch queryTx := tx.(type) {
+	// Make the db request depending on query type
+	case createOrganizationQuery:
+		if _, err = u.db.CreateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
+			queryTx.ethPrivKeyCipher, queryTx.planID, queryTx.publicApiQuota,
+			queryTx.publicApiToken, queryTx.headerUri, queryTx.avatarUri); err != nil {
+			return fmt.Errorf("could not create organization: %w", err)
 		}
-		switch queryTx := tx.(type) {
-		// Make the db request depending on query type
-		case createOrganizationQuery:
-			if _, err = u.db.CreateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
-				queryTx.ethPrivKeyCipher, queryTx.planID, queryTx.publicApiQuota,
-				queryTx.publicApiToken, queryTx.headerUri, queryTx.avatarUri); err != nil {
-				return fmt.Errorf("could not create organization: %w", err)
-			}
-		case updateOrganizationQuery:
-			if _, err = u.db.UpdateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
-				queryTx.headerUri, queryTx.avatarUri); err != nil {
-				return fmt.Errorf("could not update organization: %w", err)
-			}
-		case createElectionQuery:
-			if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress,
-				queryTx.electionID, queryTx.title, queryTx.startDate, queryTx.endDate,
-				queryTx.censusID, queryTx.startBlock, queryTx.endBlock, queryTx.confidential,
-				queryTx.hiddenResults); err != nil {
-				return fmt.Errorf("could not create election: %w", err)
-			}
+	case updateOrganizationQuery:
+		if _, err = u.db.UpdateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
+			queryTx.headerUri, queryTx.avatarUri); err != nil {
+			return fmt.Errorf("could not update organization: %w", err)
+		}
+	case createElectionQuery:
+		if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress,
+			queryTx.electionID, queryTx.title, queryTx.startDate, queryTx.endDate,
+			queryTx.censusID, queryTx.startBlock, queryTx.endBlock, queryTx.confidential,
+			queryTx.hiddenResults); err != nil {
+			return fmt.Errorf("could not create election: %w", err)
 		}
 	}
 	return sendResponse(mined, ctx)

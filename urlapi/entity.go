@@ -217,7 +217,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap[txHash] = time.Now()
+	u.txWaitMap.Store(txHash, time.Now())
 	u.dbTransactions.Store(txHash, createOrganizationQuery{
 		integratorPrivKey: integratorPrivKey,
 		ethAddress:        ethSignKeys.Address().Bytes(),
@@ -333,7 +333,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap[txHash] = time.Now()
+	u.txWaitMap.Store(txHash, time.Now())
 	u.dbTransactions.Store(txHash,
 		updateOrganizationQuery{
 			integratorPrivKey: orgInfo.organization.IntegratorApiKey,
@@ -503,7 +503,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap[txHash] = time.Now()
+	u.txWaitMap.Store(txHash, time.Now())
 	u.dbTransactions.Store(txHash, createElectionQuery{
 		integratorPrivKey: orgInfo.integratorPrivKey,
 		ethAddress:        orgInfo.entityID,
@@ -687,7 +687,7 @@ func (u *URLAPI) setProcessStatusHandler(
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap[txHash] = time.Now()
+	u.txWaitMap.Store(txHash, time.Now())
 
 	return sendResponse(types.APIResponse{}, ctx)
 }
