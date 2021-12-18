@@ -196,13 +196,29 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 		return fmt.Errorf("could not extract csp pubKey from signature: %w", err)
 	}
 	if !bytes.Equal(cspPubKey, integrator.CspPubKey) {
-		return fmt.Errorf("signature pubKey %x does not match integrator's csp pubKey %x", cspPubKey, integrator.CspPubKey)
+		return fmt.Errorf("signature pubKey %x does not match integrator's csp pubKey %x",
+			cspPubKey, integrator.CspPubKey)
 	}
 
-	// Fetch metadata
-	processMetadata, err := u.vocClient.FetchProcessMetadata(vochainProcess.Metadata)
-	if err != nil {
-		return fmt.Errorf("unable to get metadata: %w", err)
+	var processMetadata *types.ProcessMetadata
+	if dbElection.Confidential {
+		metaKey := dbElection.MetadataPrivKey
+		// If globalMetadataKey exists, try to decrypt metadata private key
+		if len(u.globalMetadataKey) > 0 {
+			var ok bool
+			metaKey, ok = util.DecryptSymmetric(dbElection.MetadataPrivKey, u.globalMetadataKey)
+			if !ok {
+				return fmt.Errorf("could not decrypt election private metadata key")
+			}
+		}
+		if processMetadata, err = u.vocClient.FetchProcessMetadataConfidential(
+			vochainProcess.Metadata, metaKey); err != nil {
+			return fmt.Errorf("could not get process metadata: %w", err)
+		}
+	} else {
+		if processMetadata, err = u.vocClient.FetchProcessMetadata(vochainProcess.Metadata); err != nil {
+			return fmt.Errorf("could not get process metadata: %w", err)
+		}
 	}
 
 	// Parse all the information
