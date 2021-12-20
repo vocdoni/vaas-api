@@ -72,14 +72,11 @@ type APIElectionInfo struct {
 	// Estimated start/end dates
 	EndDate   time.Time `json:"endDate,omitempty"`
 	StartDate time.Time `json:"startDate,omitempty"`
-	// Start/end blocks are source of truth
-	EndBlock   uint32 `json:"endBlock,omitempty"`
-	StartBlock uint32 `json:"startBlock,omitempty"`
-	Status     string `json:"status,omitempty"`
-	StreamURI  string `json:"streamUri,omitempty"`
-	Title      string `json:"title,omitempty"`
-	Type       string `json:"type,omitempty"`
-	VoteCount  uint32 `json:"voteCount,omitempty"`
+	Status    string    `json:"status,omitempty"`
+	StreamURI string    `json:"streamUri,omitempty"`
+	Title     string    `json:"title,omitempty"`
+	Type      string    `json:"type,omitempty"`
+	VoteCount uint32    `json:"voteCount,omitempty"`
 }
 
 // APIElectionSummary is the struct for returning election info from the database
@@ -90,8 +87,6 @@ type APIElectionSummary struct {
 	CensusID        string         `json:"censusId,omitempty" db:"censusId"`
 	StartDate       time.Time      `json:"startDate,omitempty" db:"startDate"`
 	EndDate         time.Time      `json:"endDate,omitempty" db:"endDate"`
-	StartBlock      uint32         `json:"startBlock,omitempty" db:"startBlock"`
-	EndBlock        uint32         `json:"endBlock,omitempty" db:"endBlock"`
 	Confidential    bool           `json:"confidential,omitempty" db:"confidential"`
 	HiddenResults   bool           `json:"hiddenResults,omitempty" db:"hiddenResults"`
 	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadataPrivKey"`
