@@ -37,19 +37,9 @@ func (pool *GatewayPool) shift() {
 }
 
 func (pool *GatewayPool) Request(req api.APIrequest, signer *ethereum.SignKeys) (resp *api.APIresponse, err error) {
-	errorCount := 0
-	// allow for 10 retries, shifting gateways each time
-	for errorCount < 10 {
-		gw, err := pool.activeGateway()
-		if err != nil {
-			return nil, fmt.Errorf("could not make request %s: %v", req.Method, err)
-		}
-		resp, err = gw.client.Request(req, signer)
-		if err == nil && resp.Ok {
-			return resp, nil
-		}
-		errorCount++
-		pool.shift()
+	gw, err := pool.activeGateway()
+	if err != nil {
+		return nil, fmt.Errorf("could not make request %s: %v", req.Method, err)
 	}
-	return
+	return gw.client.Request(req, signer)
 }
