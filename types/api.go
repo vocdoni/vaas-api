@@ -67,8 +67,8 @@ type APIElectionInfo struct {
 	EncryptionPubKeys  []api.Key      `json:"encryptionPubKeys,omitempty"`
 	Questions          []Question     `json:"questions,omitempty"`
 	Results            []Result       `json:"results,omitempty"`
-	ResultsAggregation string         `json:"resultsAggregation,omitempty"`
-	ResultsDisplay     string         `json:"resultsDisplay,omitempty"`
+	ResultsAggregation string         `json:"aggregation,omitempty"`
+	ResultsDisplay     string         `json:"display,omitempty"`
 	// Estimated start/end dates
 	EndDate   time.Time `json:"endDate,omitempty"`
 	StartDate time.Time `json:"startDate,omitempty"`
