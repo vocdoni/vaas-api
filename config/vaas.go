@@ -32,7 +32,7 @@ type API struct {
 	// ExplorerVoteUrl is the url for explorer vote packages
 	ExplorerVoteUrl string
 	// GatewayUrls to use for gateway api
-	GatewayUrls []string
+	GatewayUrl string
 	// MaxCensusSize is the maximum size for a voter census
 	MaxCensusSize uint64
 }
