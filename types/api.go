@@ -50,7 +50,6 @@ type APIResponse struct {
 	Message          string               `json:"message,omitempty"`
 	Name             string               `json:"name,omitempty"`
 	Nullifier        string               `json:"nullifier,omitempty"`
-	Ok               bool                 `json:"ok,omitempty"`
 	OrganizationID   types.HexBytes       `json:"organizationId,omitempty"`
 	PrivateProcesses []APIElectionSummary `json:"private,omitempty"`
 	ProcessID        types.HexBytes       `json:"processId,omitempty"`
@@ -64,7 +63,6 @@ type APIElectionInfo struct {
 	Description        string         `json:"description,omitempty"`
 	OrganizationID     types.HexBytes `json:"organizationId,omitempty"`
 	Header             string         `json:"header,omitempty"`
-	Ok                 bool           `json:"ok,omitempty"`
 	ElectionID         types.HexBytes `json:"electionId,omitempty"`
 	EncryptionPubKeys  []api.Key      `json:"encryptionPubKeys,omitempty"`
 	Questions          []Question     `json:"questions,omitempty"`
@@ -156,9 +154,8 @@ type VochainResults struct {
 	Type    string     `json:"type,omitempty"`
 }
 
-// SetError sets the MetaResponse's Ok field to false, and Message to a string
+// SetError sets the MetaResponse's Message to a string
 // representation of v. Usually, v's type will be error or string.
 func (r *APIResponse) SetError(v interface{}) {
-	r.Ok = false
 	r.Message = fmt.Sprintf("%s", v)
 }
