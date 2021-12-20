@@ -533,20 +533,17 @@ func (c *Client) RelayVote(signedTx []byte) (string, error) {
 	resp, err := c.pool.Request(api.APIrequest{
 		Method:  "submitRawTx",
 		Payload: signedTx,
-	}, c.signingKey)
+	}, nil)
 	if err != nil {
 		return "", err
 	}
-
 	if !resp.Ok {
-		return "", fmt.Errorf("could not cast voteTx to the vochain: %s", resp.Message)
+		return "", fmt.Errorf("could not cast vote: %s", resp.Message)
 	}
-
-	if len(resp.Nullifier) < 1 {
-		return "", fmt.Errorf("RelayVote: did not revieve nullifier")
+	if len(resp.Payload) < 1 {
+		return "", fmt.Errorf("did not receive nullifier")
 	}
-
-	return resp.Nullifier, nil
+	return resp.Payload, nil
 }
 
 func (c *Client) getVocHeight() error {

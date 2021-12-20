@@ -47,10 +47,9 @@ func (pool *GatewayPool) Request(req api.APIrequest, signer *ethereum.SignKeys) 
 		resp, err = gw.client.Request(req, signer)
 		if err == nil && resp.Ok {
 			return resp, nil
-		} else {
-			errorCount++
-			pool.shift()
 		}
+		errorCount++
+		pool.shift()
 	}
 	return
 }
