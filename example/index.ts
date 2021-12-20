@@ -3,9 +3,10 @@ import { createIntegrator, deleteIntegrator } from "./sections/superadmin"
 import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot } from "./sections/voter"
 import { Wallet } from "@ethersproject/wallet"
 import { wait } from "./util/wait"
-import { ProcessKeys } from "@vocdoni/voting"
 
 async function main() {
+    const encryptedResults = false
+
     // VOCDONI INTERNAL
 
     const { id: integratorId, apiKey: integratorApiKey } = await createIntegrator("Integrator Ltd")
@@ -21,9 +22,9 @@ async function main() {
     await getOrganizationPriv(organizationId, integratorApiKey)
     await wait(11)
 
-    const { electionId: electionId1 } = await createSignedElection(organizationId, integratorApiKey)
-    const { electionId: electionId2 } = await createAnonymousElection(organizationId, integratorApiKey)
-    await wait(11 * 2)
+    const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, integratorApiKey)
+    const { electionId: electionId2 } = await createAnonymousElection(organizationId, encryptedResults, integratorApiKey)
+    await wait(11 * 3)
     // const electionList = await listElectionsPriv(organizationId, integratorApiKey)
     const election1Details = await getElectionPriv(electionId1, integratorApiKey)
     const election2Details = await getElectionPriv(electionId2, integratorApiKey)

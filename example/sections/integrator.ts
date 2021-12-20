@@ -134,7 +134,7 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
   return { apiToken, name, description, header, avatar }
 }
 
-export async function createSignedElection(organizationId: string, apiKey: string) {
+export async function createSignedElection(organizationId: string, hiddenResults: boolean, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
 
   const startDate = new Date(Date.now() + 1000 * 15)
@@ -160,7 +160,7 @@ export async function createSignedElection(organizationId: string, apiKey: strin
       },
     ],
     confidential: false,  // Metadata access restricted to only census members
-    hiddenResults: true, // Encrypt results until the process ends
+    hiddenResults, // Encrypt results until the process ends
     census: ""     // Empty when using a custom CSP
   }
 
@@ -190,7 +190,7 @@ export async function createSignedElection(organizationId: string, apiKey: strin
   return { electionId }
 }
 
-export async function createAnonymousElection(organizationId: string, apiKey: string) {
+export async function createAnonymousElection(organizationId: string, hiddenResults: boolean, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/blind"
 
   const startDate = new Date(Date.now() + 1000 * 15)
@@ -216,7 +216,7 @@ export async function createAnonymousElection(organizationId: string, apiKey: st
       },
     ],
     confidential: false,  // Metadata access restricted to only census members
-    hiddenResults: true, // Encrypt results until the process ends
+    hiddenResults, // Encrypt results until the process ends
     census: ""     // Empty when using a custom CSP
   }
 
