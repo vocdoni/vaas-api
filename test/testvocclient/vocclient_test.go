@@ -43,7 +43,7 @@ func TestFailure(t *testing.T) {
 
 func TestBadMethod(t *testing.T) {
 	root, err := testClient.GetRoot("0xzzzzzzzz")
-	qt.Assert(t, err, qt.IsNil)
+	qt.Assert(t, err, qt.IsNotNil)
 	qt.Assert(t, len(root) == 0, qt.IsTrue)
 }
 
