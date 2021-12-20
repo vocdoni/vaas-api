@@ -523,6 +523,9 @@ func (u *URLAPI) getProcessHandler(
 	if err != nil {
 		return fmt.Errorf("unable to fetch process from the vochain: %w", err)
 	}
+	if vochainProcess == nil {
+		return fmt.Errorf("process does not exist")
+	}
 
 	// Fetch results
 	var results *types.VochainResults
