@@ -6,7 +6,6 @@ import (
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/client"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	"go.vocdoni.io/dvote/log"
 )
 
 // gateway client wrapper
@@ -31,12 +30,10 @@ func (pool GatewayPool) activeGateway() (Gateway, error) {
 }
 
 func (pool *GatewayPool) shift() {
-	log.Info(*pool)
-	if len(*pool) < 2 {
+	if pool == nil || len(*pool) < 2 {
 		return
 	}
 	*pool = append((*pool)[1:], (*pool)[0])
-	log.Info(*pool)
 }
 
 func (pool *GatewayPool) Request(req api.APIrequest, signer *ethereum.SignKeys) (resp *api.APIresponse, err error) {
