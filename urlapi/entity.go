@@ -598,7 +598,8 @@ func (u *URLAPI) getProcessHandler(
 	}
 	if vochainProcess == nil {
 		return fmt.Errorf("process does not exist")
-		
+	}
+
 	integratorApiKey, err := hex.DecodeString(msg.AuthToken)
 	if err != nil {
 		return fmt.Errorf("could not decode bearer token: %w", err)
@@ -644,7 +645,6 @@ func (u *URLAPI) getProcessHandler(
 	if err != nil {
 		return fmt.Errorf("could not parse information for process %x: %w", processId, err)
 	}
-
 	return sendResponse(resp, ctx)
 }
 

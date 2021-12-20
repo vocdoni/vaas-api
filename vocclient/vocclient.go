@@ -297,7 +297,11 @@ func (c *Client) SetProcessMetadataConfidential(meta types.ProcessMetadata, meta
 	if err != nil {
 		return "", fmt.Errorf("could not encrypt private metadata: %w", err)
 	}
-	metaURI, err := c.AddFile(encryptedMeta, "ipfs",
+	metaBytes, err = json.Marshal(types.RawFile{Payload: encryptedMeta, Version: "1.0"})
+	if err != nil {
+		return "", fmt.Errorf("could not marshal encrypted bytes: %v", err)
+	}
+	metaURI, err := c.AddFile(metaBytes, "ipfs",
 		fmt.Sprintf("%X process metadata (encrypted)", processId))
 	if err != nil {
 		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
@@ -345,8 +349,11 @@ func (c *Client) FetchProcessMetadataConfidential(URI string,
 	if err != nil {
 		return nil, err
 	}
-
-	decrypted, ok := apiUtil.DecryptSymmetric(content, metadataPrivKey)
+	var file types.RawFile
+	if err = json.Unmarshal(content, &file); err != nil {
+		return nil, err
+	}
+	decrypted, ok := apiUtil.DecryptSymmetric(file.Payload, metadataPrivKey)
 	if !ok {
 		return nil, fmt.Errorf("could not decrypt private metadata")
 	}

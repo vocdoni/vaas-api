@@ -108,6 +108,11 @@ type ProcessMedia struct {
 	StreamURI string `json:"streamUri,omitempty"`
 }
 
+type RawFile struct {
+	Payload []byte `json:"payload,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+
 type ProcessResultsDetails struct {
 	Aggregation string `json:"aggregation,omitempty"`
 	Display     string `json:"display,omitempty"`
