@@ -43,20 +43,20 @@ type Organization struct {
 }
 
 type Election struct {
-	CreatedUpdated
-	ID               int           `json:"id" db:"id"`
-	OrgEthAddress    []byte        `json:"orgEthAddress" db:"organization_eth_address"`
-	IntegratorApiKey []byte        `json:"integratorApiKey" db:"integrator_api_key"`
-	ProcessID        []byte        `json:"processId" db:"process_id"`
-	Title            string        `json:"title" db:"title"`
-	CensusID         uuid.NullUUID `json:"censusId" db:"census_id"`
-	StartDate        time.Time     `json:"startDate" db:"start_date"`
-	EndDate          time.Time     `json:"endDate" db:"end_date"`
-	StartBlock       int           `json:"startBlock" db:"start_block"`
-	EndBlock         int           `json:"endBlock" db:"end_block"`
-	Confidential     bool          `json:"confidential" db:"confidential"`
-	HiddenResults    bool          `json:"hiddenResults" db:"hidden_results"`
-	MetadataPrivKey  []byte        `json:"metadataPrivKey" db:"metadata_priv_key"`
+	CreatedUpdated   `json:"created_updated,omitempty"`
+	ID               int           `json:"id,omitempty" db:"id"`
+	OrgEthAddress    []byte        `json:"orgEthAddress,omitempty" db:"organization_eth_address"`
+	IntegratorApiKey []byte        `json:"integratorApiKey,omitempty" db:"integrator_api_key"`
+	ProcessID        []byte        `json:"processId,omitempty" db:"process_id"`
+	Title            string        `json:"title,omitempty" db:"title"`
+	CensusID         uuid.NullUUID `json:"censusId,omitempty" db:"census_id"`
+	StartDate        time.Time     `json:"startDate,omitempty" db:"start_date"`
+	EndDate          time.Time     `json:"endDate,omitempty" db:"end_date"`
+	StartBlock       int           `json:"startBlock,omitempty" db:"start_block"`
+	EndBlock         int           `json:"endBlock,omitempty" db:"end_block"`
+	Confidential     bool          `json:"confidential,omitempty" db:"confidential"`
+	HiddenResults    bool          `json:"hiddenResults,omitempty" db:"hidden_results"`
+	MetadataPrivKey  []byte        `json:"metadataPrivKey,omitempty" db:"metadata_priv_key"`
 }
 
 type Result struct {

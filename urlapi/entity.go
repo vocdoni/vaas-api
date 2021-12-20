@@ -608,7 +608,7 @@ func (u *URLAPI) getProcessHandler(
 	// Fetch election from database
 	dbElection, err := u.db.GetElection(integratorApiKey, vochainProcess.EntityID, processId)
 	if err != nil {
-		return fmt.Errorf("could not get election from the database")
+		return fmt.Errorf("could not get election from the database: %w", err)
 	}
 
 	// Fetch results

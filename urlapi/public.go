@@ -183,7 +183,7 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 		}
 	}
 
-	dbElection, err := u.db.GetElectionPublic(vochainProcess.EntityID, processId)
+	dbElection, err := u.db.GetElectionPrivate(vochainProcess.EntityID, processId)
 	if err != nil {
 		return fmt.Errorf("could not fetch election %x from db: %w", processId, err)
 	}

@@ -60,6 +60,14 @@ func (d *Database) GetElectionPublic(organizationEthAddress, processID []byte) (
 	return &election, row.StructScan(&election)
 }
 
+func (d *Database) GetElectionPrivate(organizationEthAddress, processID []byte) (*types.Election, error) {
+	var election types.Election
+	selectIntegrator := `SELECT metadata_priv_key, title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, integrator_api_key
+						FROM elections WHERE organization_eth_address=$1 AND process_id=$2`
+	row := d.db.QueryRowx(selectIntegrator, organizationEthAddress, processID)
+	return &election, row.StructScan(&election)
+}
+
 func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error) {
 	var election types.Election
 	selectIntegrator := `SELECT metadata_priv_key, title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, 
