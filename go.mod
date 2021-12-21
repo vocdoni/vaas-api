@@ -3,6 +3,7 @@ module go.vocdoni.io/api
 go 1.16
 
 require (
+	github.com/arnaucube/go-blindsecp256k1 v0.0.0-20210323162413-ccaa6313370d
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/ethereum/go-ethereum v1.10.13
 	github.com/frankban/quicktest v1.13.0
@@ -20,7 +21,6 @@ require (
 	go.vocdoni.io/proto v1.13.3-0.20211202161242-17ea8a435be6
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	google.golang.org/protobuf v1.27.1
-	nhooyr.io/websocket v1.8.7 // indirect
 )
 
 // Newer versions of the fuse module removed support for MacOS.

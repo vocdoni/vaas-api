@@ -3,11 +3,14 @@ package urlapi
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	"go.vocdoni.io/dvote/crypto/saltedkey"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
@@ -191,13 +194,38 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 	if err != nil {
 		return fmt.Errorf("could not fetch election's integrator from db: %w", err)
 	}
-	cspPubKey, err := ethereum.PubKeyFromSignature(processId, cspSignature)
+	saltedCspPubKey, err := ethereum.PubKeyFromSignature(processId, cspSignature)
 	if err != nil {
 		return fmt.Errorf("could not extract csp pubKey from signature: %w", err)
 	}
-	if !bytes.Equal(cspPubKey, integrator.CspPubKey) {
+	log.Debugf("salted cspPubKey: %x", saltedCspPubKey)
+	log.Debugf("integrator key: %x", integrator.CspPubKey)
+
+	rootPub, err := ethereum.DecompressPubKey(integrator.CspPubKey)
+	if err != nil {
+		return fmt.Errorf("could not decompress csp public key from election configuration: %w", err)
+	}
+	ecdsaKey, err := ethcrypto.UnmarshalPubkey(rootPub)
+	if err != nil {
+		return fmt.Errorf("could not decode csp public key from election configuration: %w", err)
+	}
+	saltedKey, err := saltedkey.SaltECDSAPubKey(ecdsaKey, processId)
+	if err != nil {
+		return fmt.Errorf("could not salt csp public key: %w", err)
+	}
+	compressedSaltedKey, err := ethereum.CompressPubKey(
+		hex.EncodeToString(ethcrypto.FromECDSAPub(saltedKey)))
+	if err != nil {
+		return fmt.Errorf("could not compress salted pubKey: %w", err)
+	}
+	compSaltedKeyBytes, err := hex.DecodeString(compressedSaltedKey)
+	if err != nil {
+		return fmt.Errorf("could not decode compressed salted pubKey: %w", err)
+	}
+	log.Debugf("salted integrator key: %x", ethcrypto.FromECDSAPub(saltedKey))
+	if !bytes.Equal(saltedCspPubKey, compSaltedKeyBytes) {
 		return fmt.Errorf("signature pubKey %x does not match integrator's csp pubKey %x",
-			cspPubKey, integrator.CspPubKey)
+			saltedCspPubKey, integrator.CspPubKey)
 	}
 
 	var processMetadata *types.ProcessMetadata
