@@ -13,10 +13,8 @@ import (
 	"go.vocdoni.io/dvote/crypto/ethereum"
 )
 
-var testUrls = []string{"https://api-dev.vocdoni.net", "https://gw2.vocdoni.net",
-	"https://gw2.dev.vocdoni.net/dvote", "https://gw3.dev.vocdoni.net/dvote"}
-
-var testBadUrls = []string{"https://invalidUrl.vocdoni.net/dvote", "https://wrooooo.vocdoni.net/dvote", "https://Wroooo0ooo.vocdoni.net/dvote"}
+var testUrl = "https://api-dev.vocdoni.net"
+var testBadUrl = "https://invalidUrl.vocdoni.net/dvote"
 
 var testClient *vocclient.Client
 
@@ -28,7 +26,7 @@ func TestMain(m *testing.M) {
 		fmt.Printf("Error initializiting ethereum signer: %v", err)
 		os.Exit(1)
 	}
-	testClient, err = vocclient.New(testUrls, signer)
+	testClient, err = vocclient.New(testUrl, signer)
 	if err != nil {
 		fmt.Printf("Error connecting to gateways: %v", err)
 		os.Exit(1)
@@ -37,15 +35,9 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestFailure(t *testing.T) {
-	badClient, err := vocclient.New(testBadUrls, nil)
-	qt.Assert(t, badClient, qt.IsNil)
-	qt.Assert(t, err, qt.Not(qt.IsNil))
-}
-
 func TestBadMethod(t *testing.T) {
 	root, err := testClient.GetRoot("0xzzzzzzzz")
-	qt.Assert(t, err, qt.IsNil)
+	qt.Assert(t, err, qt.IsNotNil)
 	qt.Assert(t, len(root) == 0, qt.IsTrue)
 }
 
