@@ -88,6 +88,9 @@ func (c *Client) GetVoteStatus(nullifier []byte) ([]byte, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	if !resp.Ok {
+		return nil, false, fmt.Errorf("could not get vote status: %s", resp.Message)
+	}
 	if resp.Registered == nil {
 		return nil, false, fmt.Errorf("vote registered is nil")
 	}
@@ -100,6 +103,9 @@ func (c *Client) GetCurrentBlock() (uint32, error) {
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return 0, err
+	}
+	if !resp.Ok {
+		return 0, fmt.Errorf("could not get current block: %s", resp.Message)
 	}
 	if resp.Height == nil {
 		return 0, fmt.Errorf("height is nil")
@@ -122,6 +128,9 @@ func (c *Client) GetBlock(height uint32) (*indexertypes.BlockMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
+	if !resp.Ok {
+		return nil, fmt.Errorf("could not get block: %s", resp.Message)
+	}
 	return resp.Block, nil
 }
 
@@ -131,6 +140,9 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return nil, err
+	}
+	if !resp.Ok || resp.Process == nil {
+		return nil, fmt.Errorf("cannot getProcessInfo: %v", resp.Message)
 	}
 	return resp.Process, nil
 }
@@ -142,6 +154,9 @@ func (c *Client) GetProcessPubKeys(pid []byte) ([]api.Key, error) {
 	if err != nil {
 		return nil, err
 	}
+	if !resp.Ok {
+		return nil, fmt.Errorf("could not get process keys: %s", resp.Message)
+	}
 	return resp.EncryptionPublicKeys, nil
 }
 
@@ -152,6 +167,9 @@ func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return "", 0, 0, err
+	}
+	if !resp.Ok {
+		return "", 0, 0, fmt.Errorf("could not get account: %s", resp.Message)
 	}
 	if resp.Balance == nil {
 		resp.Balance = new(uint64)
@@ -168,6 +186,9 @@ func (c *Client) GetResults(pid []byte) (*types.VochainResults, error) {
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return nil, err
+	}
+	if !resp.Ok {
+		return nil, fmt.Errorf("could not get results: %s", resp.Message)
 	}
 	if resp.Height == nil {
 		resp.Height = new(uint32)
@@ -203,6 +224,9 @@ func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm st
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return nil, err
+	}
+	if !resp.Ok {
+		return nil, fmt.Errorf("could not get results: %s", resp.Message)
 	}
 	if resp.Message == "no results yet" {
 		return nil, nil
@@ -253,6 +277,9 @@ func (c *Client) AddFile(content []byte, contentType, name string) (string, erro
 	}, c.signingKey)
 	if err != nil {
 		return "", fmt.Errorf("could not AddFile %s: %v", name, err)
+	}
+	if !resp.Ok {
+		return "", fmt.Errorf("could not AddFile %s: %s", name, resp.Message)
 	}
 	return resp.URI, nil
 }
@@ -313,6 +340,9 @@ func (c *Client) AddCensus() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if !resp.Ok {
+		return "", fmt.Errorf(resp.Message)
+	}
 	return resp.CensusID, nil
 }
 
@@ -339,6 +369,9 @@ func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, cens
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return dvoteTypes.HexBytes{}, err
+	}
+	if !resp.Ok {
+		return nil, fmt.Errorf(resp.Message)
 	}
 	return resp.Root, nil
 }
@@ -413,6 +446,9 @@ func (c *Client) PublishCensus(censusID string,
 	if err != nil {
 		return "", err
 	}
+	if !resp.Ok {
+		return "", fmt.Errorf(resp.Message)
+	}
 	if len(resp.URI) < 40 {
 		return "", fmt.Errorf("got invalid URI")
 	}
@@ -428,6 +464,9 @@ func (c *Client) GetRoot(censusID string) (dvoteTypes.HexBytes, error) {
 	resp, err := c.pool.Request(req, c.signingKey)
 	if err != nil {
 		return dvoteTypes.HexBytes{}, err
+	}
+	if !resp.Ok {
+		return []byte{}, fmt.Errorf(resp.Message)
 	}
 	return resp.Root, nil
 }
@@ -456,8 +495,12 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 	if req.Payload, err = proto.Marshal(stx); err != nil {
 		return err
 	}
-	if _, err = c.pool.Request(req, c.signingKey); err != nil {
+	resp, err := c.pool.Request(req, c.signingKey)
+	if err != nil {
 		return err
+	}
+	if !resp.Ok {
+		return fmt.Errorf(resp.Message)
 	}
 	return nil
 }
@@ -565,6 +608,9 @@ func (c *Client) getVocHeight() error {
 	}, c.signingKey)
 	if err != nil {
 		return err
+	}
+	if !resp.Ok {
+		return fmt.Errorf(resp.Message)
 	}
 	if resp.BlockTime == nil {
 		return fmt.Errorf("blockTime is nil")
