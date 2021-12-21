@@ -48,8 +48,8 @@ func newConfig() (*config.Vaas, config.Error) {
 		"https://vaas.explorer.vote/envelope/", "explorer url for vote envelope pages")
 	cfg.API.GlobalEntityKey = *flag.String("globalEntityKey", "",
 		"encryption key for organization private keys in the db. Leave empty for no encryption")
-	cfg.API.GatewayUrls = *flag.StringArray("gatewayUrls",
-		[]string{"https://gw1.vocdoni.net/dvote"}, "urls to use as gateway api endpoints")
+	cfg.API.GatewayUrl = *flag.String("gatewayUrl",
+		"https://gw1.vocdoni.net/dvote", "url to use as gateway api endpoint")
 	cfg.API.MaxCensusSize = *flag.Uint64("maxCensusSize", 2<<32, "maximum size of a voter census")
 	cfg.API.Route = *flag.String("apiRoute", "/", "dvote API route")
 	cfg.API.ListenHost = *flag.String("listenHost", "0.0.0.0", "API endpoint listen address")
@@ -96,7 +96,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("api.maxCensusSize", flag.Lookup("maxCensusSize"))
 	viper.BindPFlag("api.explorerVoteUrl", flag.Lookup("explorerVoteUrl"))
 	viper.BindPFlag("api.globalEntityKey", flag.Lookup("globalEntityKey"))
-	viper.BindPFlag("api.gatewayUrls", flag.Lookup("gatewayUrls"))
+	viper.BindPFlag("api.gatewayUrl", flag.Lookup("gatewayUrl"))
 	viper.BindPFlag("api.route", flag.Lookup("apiRoute"))
 	viper.BindPFlag("api.listenHost", flag.Lookup("listenHost"))
 	viper.BindPFlag("api.listenPort", flag.Lookup("listenPort"))
@@ -206,12 +206,7 @@ func main() {
 	log.Infof("my public key: %s", pub)
 	log.Infof("my address: %s", signer.AddressString())
 
-	// Gateways
-	for idx, url := range cfg.API.GatewayUrls {
-		cfg.API.GatewayUrls[idx] = strings.Trim(url, `"[]`)
-	}
-
-	client, err := vocclient.New(cfg.API.GatewayUrls, signer)
+	client, err := vocclient.New(cfg.API.GatewayUrl, signer)
 	if err != nil {
 		log.Fatal(err)
 	}

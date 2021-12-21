@@ -9,6 +9,7 @@ import (
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
+	"go.vocdoni.io/dvote/client"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
 	dvoteTypes "go.vocdoni.io/dvote/types"
@@ -31,21 +32,21 @@ type vocBlockHeight struct {
 }
 
 type Client struct {
-	pool        GatewayPool
+	gw          *client.Client
 	signingKey  *ethereum.SignKeys
 	blockHeight *vocBlockHeight
 }
 
 // New initializes a new gatewayPool with the gatewayUrls, in order of health
 // returns the new Client
-func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
-	gwPool, err := DiscoverGateways(gatewayUrls)
+func New(gatewayUrl string, signingKey *ethereum.SignKeys) (*Client, error) {
+	gw, err := DiscoverGateway(gatewayUrl)
 	if err != nil {
 		return nil, err
 	}
 
 	c := &Client{
-		pool:        gwPool,
+		gw:          gw,
 		signingKey:  signingKey,
 		blockHeight: &vocBlockHeight{},
 	}
@@ -65,14 +66,22 @@ func New(gatewayUrls []string, signingKey *ethereum.SignKeys) (*Client, error) {
 
 // ActiveEndpoint returns the address of the current active endpoint, if one exists
 func (c *Client) ActiveEndpoint() string {
-	gw, err := c.pool.activeGateway()
+	if c.gw == nil {
+		return ""
+	}
+	return c.gw.Addr
+}
+
+func (c *Client) request(req api.APIrequest,
+	signer *ethereum.SignKeys) (*api.APIresponse, error) {
+	resp, err := c.gw.Request(req, signer)
 	if err != nil {
-		return ""
+		return nil, err
 	}
-	if gw.client == nil {
-		return ""
+	if !resp.Ok {
+		return nil, fmt.Errorf(resp.Message)
 	}
-	return gw.client.Addr
+	return resp, nil
 }
 
 // FETCHING INFO APIS
@@ -84,7 +93,7 @@ func (c *Client) GetVoteStatus(nullifier []byte) ([]byte, bool, error) {
 		Method:    "getEnvelopeStatus",
 		Nullifier: nullifier,
 	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return nil, false, err
 	}
@@ -100,7 +109,7 @@ func (c *Client) GetVoteStatus(nullifier []byte) ([]byte, bool, error) {
 // GetCurrentBlock returns the height of the current vochain block
 func (c *Client) GetCurrentBlock() (uint32, error) {
 	req := api.APIrequest{Method: "getBlockHeight"}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return 0, err
 	}
@@ -124,7 +133,7 @@ func (c *Client) GetBlockTimes() (uint32, [5]int32, int32, error) {
 // GetBlock fetches the vochain block at the given height and returns its summary
 func (c *Client) GetBlock(height uint32) (*indexertypes.BlockMetadata, error) {
 	req := api.APIrequest{Method: "getBlock", Height: height}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +146,7 @@ func (c *Client) GetBlock(height uint32) (*indexertypes.BlockMetadata, error) {
 // GetProcess returns the process parameters for the given process id
 func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	req := api.APIrequest{Method: "getProcessInfo", ProcessID: pid}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +159,7 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 // GetProcessKeys returns the encryption pubKeys for a process
 func (c *Client) GetProcessPubKeys(pid []byte) ([]api.Key, error) {
 	req := api.APIrequest{Method: "getProcessKeys", ProcessID: pid}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +173,7 @@ func (c *Client) GetProcessPubKeys(pid []byte) ([]api.Key, error) {
 //  given account ID on the vochain
 func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
 	req := api.APIrequest{Method: "getAccount", EntityId: entityId}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return "", 0, 0, err
 	}
@@ -183,7 +192,7 @@ func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
 // GetResults returns the results for the given processID, if available
 func (c *Client) GetResults(pid []byte) (*types.VochainResults, error) {
 	req := api.APIrequest{Method: "getResults", ProcessID: pid}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +230,7 @@ func (c *Client) GetProcessList(entityId []byte, status, srcNetId, searchTerm st
 		From:        from,
 		ListSize:    listSize,
 	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +278,7 @@ func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 // AddFile pins the given content to the gateway's storage mechanism,
 //  specified by contentType, and returns its URI
 func (c *Client) AddFile(content []byte, contentType, name string) (string, error) {
-	resp, err := c.pool.Request(api.APIrequest{
+	resp, err := c.request(api.APIrequest{
 		Method:  "addFile",
 		Content: content,
 		Type:    contentType,
@@ -314,7 +323,7 @@ func (c *Client) FetchOrganizationMetadata(URI string) (*types.EntityMetadata, e
 
 // FetchFile fetches and returns a raw file from the given URI, via the gateway
 func (c *Client) FetchFile(URI string) ([]byte, error) {
-	resp, err := c.pool.Request(api.APIrequest{
+	resp, err := c.request(api.APIrequest{
 		Method: "fetchFile",
 		URI:    URI,
 	}, c.signingKey)
@@ -336,7 +345,7 @@ func (c *Client) AddCensus() (string, error) {
 		CensusType: models.Census_ARBO_BLAKE2B,
 		CensusID:   fmt.Sprintf("census%d", util.RandomInt(0, 2<<32)),
 	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return "", err
 	}
@@ -366,7 +375,7 @@ func (c *Client) AddClaim(censusID string, censusSigner *ethereum.SignKeys, cens
 	}
 	req.CensusKey = pub
 	req.CensusValue = censusValue
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return dvoteTypes.HexBytes{}, err
 	}
@@ -422,7 +431,7 @@ func (c *Client) AddClaimBulk(censusID string, censusSigners []*ethereum.SignKey
 		}
 		req.CensusKeys = claims
 		req.Weights = values
-		resp, err := c.pool.Request(req, c.signingKey)
+		resp, err := c.request(req, c.signingKey)
 		if err != nil {
 			return dvoteTypes.HexBytes{}, []int{}, err
 		}
@@ -442,7 +451,7 @@ func (c *Client) PublishCensus(censusID string,
 		CensusID: censusID,
 		RootHash: rootHash,
 	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return "", err
 	}
@@ -461,7 +470,7 @@ func (c *Client) GetRoot(censusID string) (dvoteTypes.HexBytes, error) {
 		Method:   "getRoot",
 		CensusID: censusID,
 	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return dvoteTypes.HexBytes{}, err
 	}
@@ -495,7 +504,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 	if req.Payload, err = proto.Marshal(stx); err != nil {
 		return err
 	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return err
 	}
@@ -527,7 +536,7 @@ func (c *Client) CreateProcess(process *models.Process,
 	if req.Payload, err = proto.Marshal(stx); err != nil {
 		return 0, err
 	}
-	resp, err := c.pool.Request(req, c.signingKey)
+	resp, err := c.request(req, c.signingKey)
 	if err != nil {
 		return 0, err
 	}
@@ -561,7 +570,7 @@ func (c *Client) SetProcessStatus(pid []byte,
 		return err
 	}
 
-	resp, err := c.pool.Request(req, nil)
+	resp, err := c.request(req, nil)
 	if err != nil {
 		return err
 	}
@@ -573,7 +582,7 @@ func (c *Client) SetProcessStatus(pid []byte,
 
 // RelayVote relays a given raw vote transaction to the vochain and returns its nullifier
 func (c *Client) RelayVote(signedTx []byte) (string, error) {
-	resp, err := c.pool.Request(api.APIrequest{
+	resp, err := c.request(api.APIrequest{
 		Method:  "submitRawTx",
 		Payload: signedTx,
 	}, nil)
@@ -590,7 +599,7 @@ func (c *Client) RelayVote(signedTx []byte) (string, error) {
 }
 
 func (c *Client) getVocHeight() error {
-	resp, err := c.pool.Request(api.APIrequest{
+	resp, err := c.request(api.APIrequest{
 		Method: "getBlockHeight",
 	}, c.signingKey)
 	if err != nil {
@@ -603,7 +612,7 @@ func (c *Client) getVocHeight() error {
 	defer c.blockHeight.lock.Unlock()
 	c.blockHeight.height = *resp.Height
 
-	resp, err = c.pool.Request(api.APIrequest{
+	resp, err = c.request(api.APIrequest{
 		Method: "getBlockStatus",
 	}, c.signingKey)
 	if err != nil {

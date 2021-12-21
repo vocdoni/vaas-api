@@ -32,7 +32,7 @@ type TestCSP struct {
 // Start creates a new database connection and API endpoint for testing.
 // If dbc is nill the testdb will be used.
 // If route is nill, then the websockets API won't be initialized
-func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateways []string, port int, csp TestCSP) error {
+func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateway string, port int, csp TestCSP) error {
 	log.Init("info", "stdout")
 	var err error
 	if route != "" {
@@ -48,7 +48,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateways []stri
 	}
 
 	if route != "" {
-		client, err := vocclient.New(gateways, t.Signer)
+		client, err := vocclient.New(gateway, t.Signer)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -59,10 +59,10 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateways []stri
 		}
 		// Rest api
 		urlApi, err := urlapi.NewURLAPI(&httpRouter, &config.API{
-			Route:       route,
-			ListenPort:  port,
-			AdminToken:  "test",
-			GatewayUrls: gateways,
+			Route:      route,
+			ListenPort: port,
+			AdminToken: "test",
+			GatewayUrl: gateway,
 		}, nil)
 		if err != nil {
 			log.Fatal(err)

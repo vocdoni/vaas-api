@@ -38,8 +38,8 @@ func TestMain(m *testing.M) {
 	// var API testcommon.TestAPI
 	apiPort := 9000
 	apiAuthToken := "bb1a42df36d0cf3f4dd53d71dffa15780d44c54a5971792acd31974bc2cbceb6"
-	apiGateways := []string{"https://api-dev.vocdoni.net/dvote"}
-	if err := API.Start(db, "/api", apiAuthToken, apiGateways, apiPort, csp); err != nil {
+	apiGateway := "https://api-dev.vocdoni.net/dvote"
+	if err := API.Start(db, "/api", apiAuthToken, apiGateway, apiPort, csp); err != nil {
 		log.Printf("SKIPPING: could not start the API: %v", err)
 		return
 	}
