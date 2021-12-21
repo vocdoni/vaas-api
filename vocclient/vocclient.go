@@ -124,10 +124,10 @@ func (c *Client) GetCurrentBlock() (uint32, error) {
 
 // GetBlockTimes returns the current block height, average block times, and recent block timestamp
 // from the vochain. It queries the blockHeight cache updated by the client
-func (c *Client) GetBlockTimes() (uint32, [5]int32, int32, error) {
+func (c *Client) GetBlockTimes() (uint32, [5]int32, int32) {
 	c.blockHeight.lock.RLock()
 	defer c.blockHeight.lock.RUnlock()
-	return c.blockHeight.height, c.blockHeight.avgTimes, c.blockHeight.timestamp, nil
+	return c.blockHeight.height, c.blockHeight.avgTimes, c.blockHeight.timestamp
 }
 
 // GetBlock fetches the vochain block at the given height and returns its summary

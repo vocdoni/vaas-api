@@ -365,10 +365,17 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not convert entity private key to signKey: %w", err)
 	}
 
-	startDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.StartDate)
-	if err != nil {
-		return fmt.Errorf("could not parse startDate: %w", err)
+	var startBlock uint32
+	startDate := time.Unix(0, 0)
+	if req.StartDate != "" {
+		if startDate, err = time.Parse("2006-01-02T15:04:05.000Z", req.StartDate); err != nil {
+			return fmt.Errorf("could not parse startDate: %w", err)
+		}
+		if startBlock, err = u.estimateBlockHeight(startDate); err != nil {
+			return fmt.Errorf("unable to estimate startDate block height: %w", err)
+		}
 	}
+
 	endDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.EndDate)
 	if err != nil {
 		return fmt.Errorf("could not parse startDate: %w", err)
@@ -377,16 +384,12 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if endDate.Before(time.Now()) {
 		return fmt.Errorf("election end date cannot be in the past")
 	}
-	if endDate.Before(startDate) {
-		return fmt.Errorf("end date must be after start date")
-	}
-	startBlock, err := u.estimateBlockHeight(startDate)
-	if err != nil {
-		return fmt.Errorf("unable to estimate startDate block height: %w", err)
-	}
 	endBlock, err := u.estimateBlockHeight(endDate)
 	if err != nil {
 		return fmt.Errorf("unable to estimate endDate block height: %w", err)
+	}
+	if endDate.Before(startDate) {
+		return fmt.Errorf("end date must be after start date")
 	}
 
 	metadata := types.ProcessMetadata{
@@ -459,6 +462,10 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not retrieve integrator from db: %w", err)
 	}
 
+	currentBlockHeight, _, _ := u.vocClient.GetBlockTimes()
+	if startBlock > 1 && startBlock < currentBlockHeight+10 {
+		return fmt.Errorf("cannot create process: estimated start block is in the past")
+	}
 	// TODO use encryption priv/pub keys if process is encrypted
 	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
 		ProcessId:     processID,

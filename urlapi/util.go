@@ -120,10 +120,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 }
 
 func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
-	currentHeight, times, _, err := u.vocClient.GetBlockTimes()
-	if err != nil {
-		return time.Time{}, err
-	}
+	currentHeight, times, _ := u.vocClient.GetBlockTimes()
 	diffHeight := int64(height) - int64(currentHeight)
 	inPast := diffHeight < 0
 	absDiff := diffHeight
@@ -156,10 +153,7 @@ func (u *URLAPI) estimateBlockTime(height uint32) (time.Time, error) {
 }
 
 func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
-	currentHeight, times, _, err := u.vocClient.GetBlockTimes()
-	if err != nil {
-		return 0, err
-	}
+	currentHeight, times, _ := u.vocClient.GetBlockTimes()
 	currentTime := time.Now()
 	// diff time in seconds
 	diffTime := target.Unix() - currentTime.Unix()
@@ -210,10 +204,7 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 	switch filter {
 	case "active", "ended", "upcoming":
 		var fullProcessList []string
-		currentHeight, _, _, err := u.vocClient.GetBlockTimes()
-		if err != nil {
-			return nil, nil, fmt.Errorf("could not get current block height: %w", err)
-		}
+		currentHeight, _, _ := u.vocClient.GetBlockTimes()
 		// loop to fetch all processes
 		for {
 			tempProcessList, err := u.vocClient.GetProcessList(entityId,
@@ -228,9 +219,9 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 		}
 		// loop to fetch processes from db, filter by date
 		for _, processID := range fullProcessList {
-			var processIDBytes []byte
 			var newProcess *types.Election
-			if processIDBytes, err = hex.DecodeString(processID); err != nil {
+			processIDBytes, err := hex.DecodeString(processID)
+			if err != nil {
 				log.Errorf("cannot decode process id %s: %v", processID, err)
 				continue
 			}
