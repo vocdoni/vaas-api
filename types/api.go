@@ -91,6 +91,7 @@ type APIElectionSummary struct {
 	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadataPrivKey"`
 }
 
+// ProcessMetadata contains the process metadata fields as stored on ipfs
 type ProcessMetadata struct {
 	Description LanguageString        `json:"description,omitempty"`
 	Media       ProcessMedia          `json:"media,omitempty"`
@@ -101,34 +102,36 @@ type ProcessMetadata struct {
 	Version     string                `json:"version,omitempty"`
 }
 
+// LanguageString is a wrapper for multi-language strings, specified in metadata.
+//  example {"default": "hello", "en": "hello", "es": "hola"}
 type LanguageString map[string]string
 
+// ProcessMedia holds the process metadata's header and streamURI
 type ProcessMedia struct {
 	Header    string `json:"header,omitempty"`
 	StreamURI string `json:"streamUri,omitempty"`
 }
 
-type RawFile struct {
-	Payload []byte `json:"payload,omitempty"`
-	Version string `json:"version,omitempty"`
-}
-
+// ProcessResultsDetails describes how a process results should be displayed and aggregated
 type ProcessResultsDetails struct {
 	Aggregation string `json:"aggregation,omitempty"`
 	Display     string `json:"display,omitempty"`
 }
 
+// QuestionMeta contains metadata for one single question of a process
 type QuestionMeta struct {
 	Choices     []Choice       `json:"choices"`
 	Description LanguageString `json:"description"`
 	Title       LanguageString `json:"title"`
 }
 
+// Choice contains metadata for one choice of a question
 type Choice struct {
 	Title LanguageString `json:"title,omitempty"`
 	Value uint32         `json:"value,omitempty"`
 }
 
+// EntityMetadata is the metadata for an organization
 type EntityMetadata struct {
 	Version     string         `json:"version,omitempty"`
 	Languages   []string       `json:"languages,omitempty"`
@@ -140,17 +143,26 @@ type EntityMetadata struct {
 	Actions     interface{}    `json:"actions,omitempty"`
 }
 
+// EntityMedia stores the avatar, header, and logo for an entity metadata
 type EntityMedia struct {
 	Avatar string `json:"avatar,omitempty"`
 	Header string `json:"header,omitempty"`
 	Logo   string `json:"logo,omitempty"`
 }
 
+// VochainResults is the results of a single process, as returned by the vochain
 type VochainResults struct {
 	Height  uint32     `json:"height,omitempty"`
 	Results [][]string `json:"results,omitempty"`
 	State   string     `json:"state,omitempty"`
 	Type    string     `json:"type,omitempty"`
+}
+
+// RawFile provides a json struct wrapper to a raw bytes payload, used for storing
+//  encrypted metadata on ipfs. Version is "1.0"
+type RawFile struct {
+	Payload []byte `json:"payload,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 // SetError sets the MetaResponse's Message to a string

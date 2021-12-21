@@ -73,10 +73,9 @@ func NewURLAPI(router *httprouter.HTTProuter,
 	if len(cfg.GlobalMetaKey) > 0 {
 		key, err := hex.DecodeString(cfg.GlobalMetaKey)
 		if err != nil {
-			log.Errorf("could not decode global metadata key: %v", err)
-		} else {
-			urlapi.globalMetadataKey = key
+			log.Fatalf("could not decode global metadata key: %v", err)
 		}
+		urlapi.globalMetadataKey = key
 		log.Infof("global metadata encryption key: %x", urlapi.globalMetadataKey)
 	}
 	urlapi.registerMetrics()

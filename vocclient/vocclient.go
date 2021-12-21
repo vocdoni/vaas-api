@@ -293,6 +293,7 @@ func (c *Client) SetProcessMetadataConfidential(meta types.ProcessMetadata, meta
 	if err != nil {
 		return "", fmt.Errorf("could not marshal process metadata: %v", err)
 	}
+	log.Debugf("encrypting meta with %x", metadataPrivKey)
 	encryptedMeta, err := apiUtil.EncryptSymmetric(metaBytes, metadataPrivKey)
 	if err != nil {
 		return "", fmt.Errorf("could not encrypt private metadata: %w", err)
@@ -301,12 +302,8 @@ func (c *Client) SetProcessMetadataConfidential(meta types.ProcessMetadata, meta
 	if err != nil {
 		return "", fmt.Errorf("could not marshal encrypted bytes: %v", err)
 	}
-	metaURI, err := c.AddFile(metaBytes, "ipfs",
+	return c.AddFile(metaBytes, "ipfs",
 		fmt.Sprintf("%X process metadata (encrypted)", processId))
-	if err != nil {
-		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
-	}
-	return metaURI, nil
 }
 
 // AddFile pins the given content to the gateway's storage mechanism,
@@ -358,10 +355,7 @@ func (c *Client) FetchProcessMetadataConfidential(URI string,
 		return nil, fmt.Errorf("could not decrypt private metadata")
 	}
 	var process types.ProcessMetadata
-	if err = json.Unmarshal(decrypted, &process); err != nil {
-		return nil, err
-	}
-	return &process, nil
+	return &process, json.Unmarshal(decrypted, &process)
 }
 
 // FetchOrganizationMetadata fetches and attempts to unmarshal & return
