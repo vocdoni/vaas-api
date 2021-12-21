@@ -190,18 +190,12 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 	if err != nil {
 		return fmt.Errorf("could not fetch election %x from db: %w", processId, err)
 	}
-	integrator, err := u.db.GetIntegratorByKey(dbElection.IntegratorApiKey)
-	if err != nil {
-		return fmt.Errorf("could not fetch election's integrator from db: %w", err)
-	}
 	saltedCspPubKey, err := ethereum.PubKeyFromSignature(processId, cspSignature)
 	if err != nil {
 		return fmt.Errorf("could not extract csp pubKey from signature: %w", err)
 	}
-	log.Debugf("salted cspPubKey: %x", saltedCspPubKey)
-	log.Debugf("integrator key: %x", integrator.CspPubKey)
 
-	rootPub, err := ethereum.DecompressPubKey(integrator.CspPubKey)
+	rootPub, err := ethereum.DecompressPubKey(vochainProcess.CensusRoot)
 	if err != nil {
 		return fmt.Errorf("could not decompress csp public key from election configuration: %w", err)
 	}
@@ -222,10 +216,9 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 	if err != nil {
 		return fmt.Errorf("could not decode compressed salted pubKey: %w", err)
 	}
-	log.Debugf("salted integrator key: %x", ethcrypto.FromECDSAPub(saltedKey))
 	if !bytes.Equal(saltedCspPubKey, compSaltedKeyBytes) {
-		return fmt.Errorf("signature pubKey %x does not match integrator's csp pubKey %x",
-			saltedCspPubKey, integrator.CspPubKey)
+		return fmt.Errorf("signature pubKey %x does not match election census root %x",
+			saltedCspPubKey, vochainProcess.CensusRoot)
 	}
 
 	var processMetadata *types.ProcessMetadata
