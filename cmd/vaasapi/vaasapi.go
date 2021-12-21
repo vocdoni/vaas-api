@@ -49,7 +49,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	cfg.API.GlobalEntityKey = *flag.String("globalEntityKey", "",
 		"encryption key for organization private keys in the db. Leave empty for no encryption")
 	cfg.API.GatewayUrl = *flag.String("gatewayUrl",
-		"https://gw1.vocdoni.net/dvote", "url to use as gateway api endpoint")
+		"https://api-dev.vocdoni.net", "url to use as gateway api endpoint")
 	cfg.API.MaxCensusSize = *flag.Uint64("maxCensusSize", 2<<32, "maximum size of a voter census")
 	cfg.API.Route = *flag.String("apiRoute", "/", "dvote API route")
 	cfg.API.ListenHost = *flag.String("listenHost", "0.0.0.0", "API endpoint listen address")
