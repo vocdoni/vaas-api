@@ -190,35 +190,10 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 	if err != nil {
 		return fmt.Errorf("could not fetch election %x from db: %w", processId, err)
 	}
-	saltedCspPubKey, err := ethereum.PubKeyFromSignature(processId, cspSignature)
-	if err != nil {
-		return fmt.Errorf("could not extract csp pubKey from signature: %w", err)
-	}
 
-	rootPub, err := ethereum.DecompressPubKey(vochainProcess.CensusRoot)
+	err = verifyCspSharedSignature(processId, cspSignature, vochainProcess.CensusRoot)
 	if err != nil {
-		return fmt.Errorf("could not decompress csp public key from election configuration: %w", err)
-	}
-	ecdsaKey, err := ethcrypto.UnmarshalPubkey(rootPub)
-	if err != nil {
-		return fmt.Errorf("could not decode csp public key from election configuration: %w", err)
-	}
-	saltedKey, err := saltedkey.SaltECDSAPubKey(ecdsaKey, processId)
-	if err != nil {
-		return fmt.Errorf("could not salt csp public key: %w", err)
-	}
-	compressedSaltedKey, err := ethereum.CompressPubKey(
-		hex.EncodeToString(ethcrypto.FromECDSAPub(saltedKey)))
-	if err != nil {
-		return fmt.Errorf("could not compress salted pubKey: %w", err)
-	}
-	compSaltedKeyBytes, err := hex.DecodeString(compressedSaltedKey)
-	if err != nil {
-		return fmt.Errorf("could not decode compressed salted pubKey: %w", err)
-	}
-	if !bytes.Equal(saltedCspPubKey, compSaltedKeyBytes) {
-		return fmt.Errorf("signature pubKey %x does not match election census root %x",
-			saltedCspPubKey, vochainProcess.CensusRoot)
+		return fmt.Errorf("shared key not valid to decrypt process %x: %w", processId, err)
 	}
 
 	var processMetadata *types.ProcessMetadata
@@ -317,4 +292,37 @@ func (u *URLAPI) getVoteHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		resp.ExplorerUrl = fmt.Sprintf("%s%x", u.config.ExplorerVoteUrl, nullifier)
 	}
 	return sendResponse(resp, ctx)
+}
+
+func verifyCspSharedSignature(processId, cspSignature, censusRoot []byte) error {
+	saltedCspPubKey, err := ethereum.PubKeyFromSignature(processId, cspSignature)
+	if err != nil {
+		return fmt.Errorf("could not extract csp pubKey from signature: %w", err)
+	}
+	rootPub, err := ethereum.DecompressPubKey(censusRoot)
+	if err != nil {
+		return fmt.Errorf("could not decompress csp public key from election configuration: %w", err)
+	}
+	ecdsaKey, err := ethcrypto.UnmarshalPubkey(rootPub)
+	if err != nil {
+		return fmt.Errorf("could not decode csp public key from election configuration: %w", err)
+	}
+	saltedKey, err := saltedkey.SaltECDSAPubKey(ecdsaKey, processId)
+	if err != nil {
+		return fmt.Errorf("could not salt csp public key: %w", err)
+	}
+	compressedSaltedKey, err := ethereum.CompressPubKey(
+		hex.EncodeToString(ethcrypto.FromECDSAPub(saltedKey)))
+	if err != nil {
+		return fmt.Errorf("could not compress salted pubKey: %w", err)
+	}
+	compSaltedKeyBytes, err := hex.DecodeString(compressedSaltedKey)
+	if err != nil {
+		return fmt.Errorf("could not decode compressed salted pubKey: %w", err)
+	}
+	if !bytes.Equal(saltedCspPubKey, compSaltedKeyBytes) {
+		return fmt.Errorf("signature pubKey %x does not match election census root %x",
+			saltedCspPubKey, censusRoot)
+	}
+	return nil
 }
