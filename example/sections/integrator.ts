@@ -150,7 +150,7 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
   return { apiToken, name, description, header, avatar }
 }
 
-export async function createSignedElection(organizationId: string, hiddenResults: boolean, apiKey: string) {
+export async function createSignedElection(organizationId: string, hiddenResults: boolean, confidential: boolean, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
 
   const startDate = new Date(Date.now() + 1000 * 60) // start time should be at least one minute from 'now()'
@@ -175,7 +175,7 @@ export async function createSignedElection(organizationId: string, hiddenResults
         choices: ["Yes", "No", "Maybe", "Blank"]
       },
     ],
-    confidential: false,  // Metadata access restricted to only census members
+    confidential: confidential,  // Metadata access restricted to only census members
     hiddenResults, // Encrypt results until the process ends
     census: ""     // Empty when using a custom CSP
   }
@@ -210,7 +210,7 @@ export async function createSignedElection(organizationId: string, hiddenResults
   return { electionId }
 }
 
-export async function createAnonymousElection(organizationId: string, hiddenResults: boolean, apiKey: string) {
+export async function createAnonymousElection(organizationId: string, hiddenResults: boolean, confidential: boolean, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/blind"
 
   const startDate = new Date(Date.now() + 1000 * 60) // start time should be at least one minute from 'now()'
@@ -235,7 +235,7 @@ export async function createAnonymousElection(organizationId: string, hiddenResu
         choices: ["Yes", "No", "Maybe", "Blank"]
       },
     ],
-    confidential: false,  // Metadata access restricted to only census members
+    confidential: confidential,  // Metadata access restricted to only census members
     hiddenResults, // Encrypt results until the process ends
     census: ""     // Empty when using a custom CSP
   }
