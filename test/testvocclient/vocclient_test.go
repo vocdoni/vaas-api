@@ -14,7 +14,6 @@ import (
 )
 
 var testUrl = "https://api-dev.vocdoni.net"
-var testBadUrl = "https://invalidUrl.vocdoni.net/dvote"
 
 var testClient *vocclient.Client
 

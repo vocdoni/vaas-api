@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
@@ -24,12 +25,16 @@ type URLAPI struct {
 	BaseRoute    string
 
 	config                *config.API
-	globalOrganizationKey []byte
 	router                *httprouter.HTTProuter
 	api                   *bearerstdapi.BearerStandardAPI
 	metricsagent          *metrics.Agent
 	db                    database.Database
 	vocClient             *vocclient.Client
+	globalOrganizationKey []byte
+	// Map of database queries pending transactions being mined
+	dbTransactions sync.Map
+	// TODO remove temporary tx time map
+	txWaitMap sync.Map
 }
 
 func NewURLAPI(router *httprouter.HTTProuter,
@@ -47,10 +52,12 @@ func NewURLAPI(router *httprouter.HTTProuter,
 	}
 	baseRoute += "/" + API_VERSION
 	urlapi := URLAPI{
-		config:       cfg,
-		BaseRoute:    baseRoute,
-		router:       router,
-		metricsagent: metricsAgent,
+		config:         cfg,
+		BaseRoute:      baseRoute,
+		router:         router,
+		metricsagent:   metricsAgent,
+		dbTransactions: sync.Map{},
+		txWaitMap:      sync.Map{},
 	}
 	log.Infof("url api available with baseRoute %s", baseRoute)
 	if len(cfg.GlobalEntityKey) > 0 {

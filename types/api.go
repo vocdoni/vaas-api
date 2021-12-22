@@ -55,6 +55,7 @@ type APIResponse struct {
 	ProcessID        types.HexBytes       `json:"processId,omitempty"`
 	PublicProcesses  []APIElectionSummary `json:"public,omitempty"`
 	Registered       bool                 `json:"registered,omitempty"`
+	TxHash           string               `json:"txHash,omitempty"`
 }
 
 // APIElectionInfo is the response struct for a getElection request

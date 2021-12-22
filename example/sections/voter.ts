@@ -173,7 +173,7 @@ export function getProofFromBlindSignature(hexBlindSignature: string, userSecret
 }
 
 export function getBallotPayload(processId: string, proof: IProofCA, hasEncryptedVotes: boolean, encryptionPubKeys: { idx: number, key: string }[] = []) {
-  const choices = [1, 2, 3]
+  const choices = [1, 2]
 
   if (hasEncryptedVotes) {
     if (!(encryptionPubKeys?.length)) throw new Error("Empty vote encryption keys")

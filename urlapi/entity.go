@@ -147,6 +147,14 @@ func (u *URLAPI) enableEntityHandlers() error {
 	); err != nil {
 		return err
 	}
+	if err := u.api.RegisterMethod(
+		"/priv/transactions/{transactionHash}",
+		"GET",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.getTxStatusHandler,
+	); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -203,17 +211,26 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return fmt.Errorf("could not set entity metadata: %w", err)
 	}
 
-	// Register organization to database
-	if _, err = u.db.CreateOrganization(integratorPrivKey, ethSignKeys.Address().Bytes(),
-		encryptedPrivKey, uuid.NullUUID{}, 0, orgApiToken, req.Header, req.Avatar); err != nil {
-		return fmt.Errorf("could not create organization: %w", err)
-	}
-
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
 		return fmt.Errorf("could not create account on the vochain: %w", err)
 	}
-	resp := types.APIResponse{APIToken: orgApiToken, OrganizationID: ethSignKeys.Address().Bytes()}
+
+	// TODO fetch actual transaction hash
+	txHash := dvoteutil.RandomHex(32)
+	u.txWaitMap.Store(txHash, time.Now())
+	u.dbTransactions.Store(txHash, createOrganizationQuery{
+		integratorPrivKey: integratorPrivKey,
+		ethAddress:        ethSignKeys.Address().Bytes(),
+		ethPrivKeyCipher:  encryptedPrivKey,
+		planID:            uuid.NullUUID{},
+		publicApiQuota:    0,
+		publicApiToken:    orgApiToken,
+		headerUri:         req.Header,
+		avatarUri:         req.Avatar,
+	})
+
+	resp := types.APIResponse{APIToken: orgApiToken, OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
 
 	return sendResponse(resp, ctx)
 }
@@ -315,14 +332,21 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 		return fmt.Errorf("could not set entity metadata: %w", err)
 	}
 
-	// Update organization in the db to make sure it matches the metadata
-	if _, err = u.db.UpdateOrganization(orgInfo.organization.IntegratorApiKey,
-		orgInfo.organization.EthAddress, req.Header, req.Avatar); err != nil {
-		return fmt.Errorf("could not update organization: %w", err)
-	}
+	// TODO fetch actual transaction hash
+	txHash := dvoteutil.RandomHex(32)
+	u.txWaitMap.Store(txHash, time.Now())
+	u.dbTransactions.Store(txHash,
+		updateOrganizationQuery{
+			integratorPrivKey: orgInfo.organization.IntegratorApiKey,
+			ethAddress:        orgInfo.organization.EthAddress,
+			headerUri:         req.Header,
+			avatarUri:         req.Avatar,
+		})
+
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
+		TxHash:         txHash,
 	}
 	return sendResponse(resp, ctx)
 }
@@ -488,12 +512,23 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not create process on the vochain: %w", err)
 	}
 
-	if _, err = u.db.CreateElection(orgInfo.integratorPrivKey, orgInfo.entityID, processID,
-		req.Title, startDate, endDate, uuid.NullUUID{}, int(startBlock), int(endBlock),
-		req.Confidential, req.HiddenResults); err != nil {
-		return fmt.Errorf("could not create election: %w", err)
-	}
-	return sendResponse(types.APIResponse{ElectionID: processID}, ctx)
+	// TODO fetch actual transaction hash
+	txHash := dvoteutil.RandomHex(32)
+	u.txWaitMap.Store(txHash, time.Now())
+	u.dbTransactions.Store(txHash, createElectionQuery{
+		integratorPrivKey: orgInfo.integratorPrivKey,
+		ethAddress:        orgInfo.entityID,
+		electionID:        processID,
+		title:             req.Title,
+		startDate:         startDate,
+		endDate:           endDate,
+		censusID:          uuid.NullUUID{},
+		startBlock:        int(startBlock),
+		endBlock:          int(endBlock),
+		confidential:      req.Confidential,
+		hiddenResults:     req.HiddenResults,
+	})
+	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: txHash}, ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
@@ -661,5 +696,9 @@ func (u *URLAPI) setProcessStatusHandler(
 		return fmt.Errorf("could not set process status %d: %w", status, err)
 	}
 
-	return sendResponse(types.APIResponse{}, ctx)
+	// TODO fetch actual transaction hash
+	txHash := dvoteutil.RandomHex(32)
+	u.txWaitMap.Store(txHash, time.Now())
+
+	return sendResponse(types.APIResponse{TxHash: txHash}, ctx)
 }
