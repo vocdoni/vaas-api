@@ -43,7 +43,7 @@ type Organization struct {
 }
 
 type Election struct {
-	CreatedUpdated   `json:"created_updated,omitempty"`
+	CreatedUpdated
 	ID               int           `json:"id,omitempty" db:"id"`
 	OrgEthAddress    []byte        `json:"orgEthAddress,omitempty" db:"organization_eth_address"`
 	IntegratorApiKey []byte        `json:"integratorApiKey,omitempty" db:"integrator_api_key"`
