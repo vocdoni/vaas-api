@@ -54,7 +54,7 @@ type APIResponse struct {
 	PrivateProcesses []APIElectionSummary `json:"private,omitempty"`
 	ProcessID        types.HexBytes       `json:"processId,omitempty"`
 	PublicProcesses  []APIElectionSummary `json:"public,omitempty"`
-	Registered       bool                 `json:"registered,omitempty"`
+	Registered       *bool                `json:"registered,omitempty"`
 	TxHash           string               `json:"txHash,omitempty"`
 }
 
@@ -88,8 +88,8 @@ type APIElectionSummary struct {
 	CensusID        string         `json:"censusId,omitempty" db:"censusId"`
 	StartDate       time.Time      `json:"startDate,omitempty" db:"startDate"`
 	EndDate         time.Time      `json:"endDate,omitempty" db:"endDate"`
-	Confidential    bool           `json:"confidential,omitempty" db:"confidential"`
-	HiddenResults   bool           `json:"hiddenResults,omitempty" db:"hiddenResults"`
+	Confidential    *bool          `json:"confidential,omitempty" db:"confidential"`
+	HiddenResults   *bool          `json:"hiddenResults,omitempty" db:"hiddenResults"`
 	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadataPrivKey"`
 }
 

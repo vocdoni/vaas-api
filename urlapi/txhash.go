@@ -44,7 +44,7 @@ type createElectionQuery struct {
 }
 
 type APIMined struct {
-	Mined bool `json:"mined,omitempty"`
+	Mined *bool `json:"mined,omitempty"`
 }
 
 // GET https://server/v1/priv/transactions/<transactionHash>
@@ -52,7 +52,8 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
 	txHash, err := util.GetBytesID(ctx, "transactionHash")
 	if err != nil {
-		return sendResponse(APIMined{Mined: false}, ctx)
+		mined := false
+		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
 	val, ok := u.txWaitMap.Load(hex.EncodeToString(txHash))
 	var txTime time.Time
@@ -63,13 +64,13 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// TODO make vocclient api request to get tx status
 	// If tx has been mined, check dbTransactions map for pending db queries
 	if !mined {
-		return sendResponse(APIMined{Mined: mined}, ctx)
+		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
 	tx, ok := u.dbTransactions.LoadAndDelete(hex.EncodeToString(txHash))
 	// If transaction not in map, it is a transaction
 	//  not associated with a db query (setProcessStatus)
 	if !ok {
-		return sendResponse(APIMined{Mined: mined}, ctx)
+		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
 	switch queryTx := tx.(type) {
 	// Make the db request depending on query type
@@ -92,5 +93,5 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 			return fmt.Errorf("could not create election: %w", err)
 		}
 	}
-	return sendResponse(APIMined{Mined: mined}, ctx)
+	return sendResponse(APIMined{Mined: &mined}, ctx)
 }
