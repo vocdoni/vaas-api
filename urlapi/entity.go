@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
+	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
@@ -465,7 +466,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	currentBlockHeight, _, _ := u.vocClient.GetBlockTimes()
-	if startBlock > 1 && startBlock < currentBlockHeight+10 {
+	if startBlock > 1 && startBlock < currentBlockHeight+vocclient.VOCHAIN_BLOCK_MARGIN {
 		return fmt.Errorf("cannot create process: estimated start block is in the past")
 	}
 	// TODO use encryption priv/pub keys if process is encrypted

@@ -22,6 +22,8 @@ import (
 const (
 	TIMEOUT_TIME        = time.Minute
 	HEIGHT_REQUEST_TIME = 10 * time.Second
+	// VOCHAIN_BLOCK_MARGIN is the number of blocks a process should be set in the future to ensure its creation
+	VOCHAIN_BLOCK_MARGIN = 5
 )
 
 type vocBlockHeight struct {
