@@ -52,7 +52,7 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
 	txHash, err := util.GetBytesID(ctx, "transactionHash")
 	if err != nil {
-		return err
+		return sendResponse(APIMined{Mined: false}, ctx)
 	}
 	val, ok := u.txWaitMap.Load(hex.EncodeToString(txHash))
 	var txTime time.Time

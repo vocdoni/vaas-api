@@ -229,7 +229,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		avatarUri:         req.Avatar,
 	})
 
-	resp := types.APIResponse{APIToken: orgApiToken, OrganizationID: ethSignKeys.Address().Bytes()}
+	resp := types.APIResponse{APIToken: orgApiToken, OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
 
 	return sendResponse(resp, ctx)
 }
@@ -345,6 +345,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
+		TxHash:         txHash,
 	}
 	return sendResponse(resp, ctx)
 }
@@ -517,7 +518,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		confidential:      req.Confidential,
 		hiddenResults:     req.HiddenResults,
 	})
-	return sendResponse(types.APIResponse{ElectionID: processID}, ctx)
+	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: txHash}, ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed

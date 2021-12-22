@@ -4,6 +4,14 @@ import { getConfig } from "../util/config"
 
 const config = getConfig()
 
+export function wait(seconds: number) {
+  return new Promise(resolve => {
+    console.log("Waiting", seconds, "s")
+
+    setTimeout(resolve, seconds * 1000)
+  })
+}
+
 // INTEGRATOR
 
 export async function createOrganization(name: string, apiKey: string) {
@@ -38,7 +46,11 @@ export async function createOrganization(name: string, apiKey: string) {
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { organizationId, apiToken } = responseBody
+  const { organizationId, apiToken, txHash } = responseBody
+
+  while (!(await getTransactionStatus(txHash, apiKey))) {
+    await wait(15)
+  }
 
   console.log("Created organization with ID", organizationId, "and API token", apiToken)
   return { organizationId, apiToken }
@@ -128,7 +140,11 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { apiToken, name, description, header, avatar } = responseBody
+  const { apiToken, name, description, header, avatar , txHash } = responseBody
+
+  while (!(await getTransactionStatus(txHash, apiKey))) {
+    await wait(15)
+  }
 
   console.log("Updated organization with ID", id)
   return { apiToken, name, description, header, avatar }
@@ -137,7 +153,7 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
 export async function createSignedElection(organizationId: string, hiddenResults: boolean, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
 
-  const startDate = new Date(Date.now() + 1000 * 15)
+  const startDate = new Date(Date.now() + 1000 * 30)
   const endDate = new Date(Date.now() + 1000 * 60 * 60)
 
   const body = {
@@ -184,7 +200,11 @@ export async function createSignedElection(organizationId: string, hiddenResults
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { electionId } = responseBody
+  const { electionId, txHash } = responseBody
+
+  while (!(await getTransactionStatus(txHash, apiKey))) {
+    await wait(15)
+  }
 
   console.log("Created election with ID", electionId)
   return { electionId }
@@ -240,7 +260,7 @@ export async function createAnonymousElection(organizationId: string, hiddenResu
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { electionId } = responseBody
+  const { electionId , txHash } = responseBody
 
   console.log("Created anonymous election", electionId)
   return { electionId }
@@ -331,4 +351,28 @@ export async function getElectionPriv(electionId: string, apiKey: string): Promi
 
   console.log("Get election", electionId, ":", responseBody)
   return responseBody
+}
+
+export async function getTransactionStatus(txHash: string, apiKey: string): Promise<boolean> {
+  const url = config.apiUrlPrefix + "/v1/priv/transactions/" + txHash
+
+  const response = await fetch(url, {
+    headers: {
+      "Authorization": "Bearer " + apiKey,
+    },
+    // mode: 'cors', // no-cors, *cors, same-origin
+    // credentials: 'same-origin', // include, *same-origin, omit
+  })
+
+  if (response.status != 200) {
+    throw new Error(await response.text())
+  }
+
+  const responseBody = await response.json()
+
+  let { mined } = responseBody
+  mined = ((typeof mined) === "undefined") ? false : mined
+
+  console.log("Get transaction", txHash, ":", mined)
+  return mined
 }
