@@ -156,6 +156,9 @@ func (c *Client) GetProcess(pid []byte) (*indexertypes.Process, error) {
 	if !resp.Ok || resp.Process == nil {
 		return nil, fmt.Errorf("cannot getProcessInfo: %v", resp.Message)
 	}
+	if resp.Process.Metadata == "" {
+		return nil, fmt.Errorf("election metadata not yet set")
+	}
 	return resp.Process, nil
 }
 
@@ -188,6 +191,9 @@ func (c *Client) GetAccount(entityId []byte) (string, uint64, uint32, error) {
 	}
 	if resp.Nonce == nil {
 		resp.Nonce = new(uint32)
+	}
+	if resp.InfoURI == "" {
+		return "", 0, 0, fmt.Errorf("account info URI not yet set")
 	}
 	return resp.InfoURI, *resp.Balance, *resp.Nonce, nil
 }
