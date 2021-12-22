@@ -690,5 +690,5 @@ func (u *URLAPI) setProcessStatusHandler(
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now())
 
-	return sendResponse(types.APIResponse{}, ctx)
+	return sendResponse(types.APIResponse{TxHash: txHash}, ctx)
 }
