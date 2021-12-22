@@ -151,6 +151,7 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
 }
 
 export async function createSignedElection(organizationId: string, hiddenResults: boolean, confidential: boolean, apiKey: string) {
+  console.log("Creating election...")
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
 
   const startDate = new Date(Date.now() + 1000 * 60) // start time should be at least one minute from 'now()'
@@ -279,11 +280,12 @@ type ElectionSummary = {
   endDate: string
 }
 export async function listElectionsPriv(organizationId: string, apiKey: string): Promise<Array<ElectionSummary>> {
-  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
-  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/blind"
+  const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections"
+  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/upcoming"
   // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/active"
   // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/ended"
-  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/ended"
+  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
+  // const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/blind"
 
   const response = await fetch(url, {
     headers: {
