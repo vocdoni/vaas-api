@@ -198,11 +198,10 @@ func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
 // if `private`, all processes are returned, including metadataPrivKeys, in the first return var.
 // otherwise, confidential processes are returned first and public ones second.
 func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byte,
-	private bool) ([]types.APIElectionSummary, []types.APIElectionSummary, error) {
-	var priv []types.APIElectionSummary
-	var pub []types.APIElectionSummary
+	private bool) ([]types.APIElectionSummary, error) {
+	var electionList []types.APIElectionSummary
 	switch filter {
-	case "active", "ended", "upcoming":
+	case "active", "ended", "upcoming", "":
 		var fullProcessList []string
 		currentHeight, _, _ := u.vocClient.GetBlockTimes()
 		// loop to fetch all processes
@@ -210,7 +209,7 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			tempProcessList, err := u.vocClient.GetProcessList(entityId,
 				"", "", "", 0, false, len(fullProcessList), 64)
 			if err != nil {
-				return nil, nil, fmt.Errorf("unable to get process list from vochain: %w", err)
+				return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
 			}
 			fullProcessList = append(fullProcessList, tempProcessList...)
 			if len(tempProcessList) < 64 {
@@ -243,25 +242,27 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			switch filter {
 			case "active":
 				if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-					appendProcess(&priv, &pub, newProcess, private)
+					appendProcess(&electionList, newProcess, private)
 				}
 			case "upcoming":
 				if newProcess.StartBlock > int(currentHeight) {
-					appendProcess(&priv, &pub, newProcess, private)
+					appendProcess(&electionList, newProcess, private)
 				}
 			case "ended":
 				if newProcess.EndBlock < int(currentHeight) {
-					appendProcess(&priv, &pub, newProcess, private)
+					appendProcess(&electionList, newProcess, private)
 				}
+			case "":
+				appendProcess(&electionList, newProcess, private)
 			}
 		}
 	case "blind", "signed":
-		return nil, nil, fmt.Errorf("filter %s unimplemented", filter)
+		return nil, fmt.Errorf("filter %s unimplemented", filter)
 	default:
-		return nil, nil, fmt.Errorf("%s not a valid filter", filter)
+		return nil, fmt.Errorf("%s not a valid filter", filter)
 
 	}
-	return priv, pub, nil
+	return electionList, nil
 }
 
 func aggregateResults(meta *types.ProcessMetadata,
@@ -301,15 +302,13 @@ func aggregateResults(meta *types.ProcessMetadata,
 	return aggregatedResults, nil
 }
 
-func appendProcess(priv, pub *[]types.APIElectionSummary, newProcess *types.Election,
+func appendProcess(electionList *[]types.APIElectionSummary, newProcess *types.Election,
 	private bool) {
 	if private {
-		*priv = append(*priv, reflectElectionPrivate(*newProcess))
+		*electionList = append(*electionList, reflectElectionPrivate(*newProcess))
 	} else {
-		if newProcess.Confidential {
-			*priv = append(*priv, reflectElectionPublic(*newProcess))
-		} else {
-			*pub = append(*pub, reflectElectionPublic(*newProcess))
+		if !newProcess.Confidential {
+			*electionList = append(*electionList, reflectElectionPublic(*newProcess))
 		}
 	}
 }
