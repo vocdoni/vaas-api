@@ -15,7 +15,7 @@ func DiscoverGateway(url string) (*client.Client, error) {
 	}
 	client, err := client.New(url)
 	if err != nil {
-		return nil, fmt.Errorf("Could not connect to gateway %s: %v", url, err)
+		return nil, fmt.Errorf("could not connect to gateway %s: %v", url, err)
 	}
 	return client, nil
 }
