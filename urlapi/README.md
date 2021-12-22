@@ -2,7 +2,6 @@
 
 The service exposes an HTTP Restful API with the following endpoints. 
 
-
 ## Internal API
 The group of calls below is intended for the admin running the service itself. 
 
@@ -91,7 +90,7 @@ curl -X PATCH -H "Authorization: Bearer <superadmin-key>" https://server/v1/admi
 ```json
 {
     "id": "1234567890",
-    "apiKey": "zxcvbnm"
+    "apiKey": "priv_abcdefghijklmnoprstuvwxyz"
 }
 
 ```
@@ -159,8 +158,10 @@ curl -X DELETE -H "Authorization: Bearer <superadmin-key>" https://server/v1/adm
 The following endpoints are authenticated by using the integrator secret key. They allow integrators to manage the organizations related to their customers. 
 
 ### Create an organization
+
 <details>
 <summary>Example</summary>
+This request submits a transaction to the [voting blockchain](../architecture/services/vochain.md) which can take some time (~15 seconds) to be accepted and mined. Therefore, the return values of this method should not be considered valid until the Transaction Status method is called, using the `txHash` value to confirm that the desired transaction has been mined. Only then is it safe to query for the organization you have created. 
 
 #### Request 
 ```bash
@@ -180,7 +181,8 @@ curl -X POST -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/
 ```json
 {
     "organizationId": "0x1234...",
-    "apiToken": "qwertyui..."   // API token for public voting endpoints
+    "apiToken": "pub_qwertyui...",   // API token for public voting endpoints
+    "txHash": "0x1234...",
 }
 ```
 #### HTTP 400
@@ -272,6 +274,7 @@ These methods are also intended for integrators, but they are expected to do the
 ### Set Organization metadata
 <details>
 <summary>Example</summary>
+This request submits a transaction to the [voting blockchain](../architecture/services/vochain.md) which can take some time (~15 seconds) to be accepted and mined. Therefore, the return values of this method should not be considered valid until the Transaction Status method is called, using the `txHash` value to confirm that the desired transaction has been mined. Only then is it safe to query for the organization you have updated. 
 
 #### Request 
 ```bash
@@ -292,6 +295,30 @@ curl -X PUT -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/o
 {
     "organizationId": "0x1234...",
     "contentUri": "ipfs://1234...",
+    "txHash": "0x1234...",
+}
+```
+#### HTTP 400
+```json
+{
+    "error": "Message goes here"
+}
+```
+</details>
+
+### Check a transaction status
+<details>
+<summary>Example</summary>
+
+#### Request 
+```bash
+curl -X GET -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/transactions/<transaction-hash>
+```
+
+#### HTTP 200
+```json
+{
+    "mined": true // true | false
 }
 ```
 #### HTTP 400
@@ -306,6 +333,7 @@ curl -X PUT -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/o
 Generates a Merkle Tree with the given current census keys and generates a voting process with the given metadata. 
 <details>
 <summary>Example</summary>
+This request submits a transaction to the [voting blockchain](../architecture/services/vochain.md) which can take some time (~15 seconds) to be accepted and mined. Therefore, the return values of this method should not be considered valid until the Transaction Status method is called, using the `txHash` value to confirm that the desired transaction has been mined. Only then is it safe to query for the election you have created. 
 
 
 #### Request 
@@ -339,9 +367,45 @@ curl -X POST -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/
 #### HTTP 200
 ```json
 {
-    "electionId": "0x1234..."
+    "electionId": "0x1234...",
+    "txHash": "0x1234...",
 }
 ```
+
+#### HTTP 400
+```json
+{
+    "error": "Message goes here"
+}
+```
+</details>
+
+### Set an election status
+Generates a Merkle Tree with the given current census keys and generates a voting process with the given metadata.
+<details>
+<summary>Example</summary>
+This request submits a transaction to the [voting blockchain](../architecture/services/vochain.md) which can take some time (~15 seconds) to be accepted and mined. Therefore, the desired results of this method should not be considered valid until the Transaction Status method is called, using the `txHash` value to confirm that the desired transaction has been mined. Only then is it safe to query for the election you have updated. 
+
+#### Request
+
+```bash
+curl -X PUT -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/elections/<electionId>/status
+```
+
+#### Request body
+```json
+{
+    "status": "READY" // READY, ENDED, CANCELED, PAUSED
+}
+```
+
+#### HTTP 200
+```json
+{
+    "txHash": "0x1234..."
+}
+```
+
 #### HTTP 400
 ```json
 {
@@ -402,6 +466,7 @@ curl -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/election
 ```json
 {
   "type": "blind-confidential-hidden-results",
+  "organizationId": "20323909c3e0965d1489893db1512b32b55707ea",
   "title": "test election",
   "description": "description test 1",
   "header": "https://source.unsplash.com/random/800x600",
@@ -433,7 +498,7 @@ curl -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/election
   ],
   "status": "Results",
   "streamUri": "uri",
-  "vote_count": 1,
+  "voteCount": 1,
   "results": [
     {
       "title": [
@@ -467,12 +532,9 @@ curl -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/election
     }
   ],
   "organizationId": "20323909c3e0965d1489893db1512b32b55707ea",
-  "ok": true,
   "electionId": "47f2c1f1164a27db4f5e7b825f8ec064c44da88a83ff72b90e5755fff8bfb53b",
-  "start_block": "2090900",
-  "end_block": "2091900",
-  "ResultsAggregation": "discrete-values",
-  "ResultsDisplay": "multiple-question"
+  "aggregation": "discrete-counting",
+  "display": "multiple-question"
 }
 ```
 #### HTTP 200
@@ -585,9 +647,9 @@ curl -X POST -H "Authorization: Bearer <integrator-key>" https://server/v1/priv/
     "censusId": "123456789...",
     "size": 700,  // new size
     "tokens": [
-        { "token": "jashdlkfjahs", weight: 40 },
-        { "token": "uyroeituwyert", weight: 70 },
-        { "token": "e7rg9e87rn9", weight: 200 }
+        { "token": "jashdlkfjahs", "weight": 40 },
+        { "token": "uyroeituwyert", "weight": 70 },
+        { "token": "e7rg9e87rn9", "weight": 200 }
     ]
 }
 ```
@@ -801,16 +863,13 @@ curl -H "Authorization: Bearer <manager-key>" https://server/v1/pub/organization
 ```json
 [
     {
-	    "orgEthAddress": "hexBytes",
-        "electionId": "hexBytes",
+        "id": "0x12345678...",
         "title": "Important election",
+        "avatar": "https://my/avatar.png",
         "startDate": "2021-12-25T11:20:53.769Z",
-        "endDate": "2021-12-30T12:00:00Z",
-        "startBlock": 140988,
-        "endBlock": 184423,
+        "endDate": "2021-10-30T12:00:00.000Z",
         "confidential": false,
-        "hiddenResults": true,
-		"metadataPrivKey": "hexBytes"
+        "hiddenResults": true
     }, {...}
 ]
 ```
@@ -1061,7 +1120,7 @@ The voter signs the `electionID` to prove that he/she has a private key within t
 
 #### Request 
 ```bash
-curl -H "Authorization: Bearer <organization-api-token>" https://server/v1/auth/elections/<election-id>/sharedKey
+curl -H "Authorization: Bearer <organization-api-token>" https://server/v1/auth/elections/<election-id>/sharedkey
 ```
 
 #### Request body
@@ -1073,7 +1132,7 @@ curl -H "Authorization: Bearer <organization-api-token>" https://server/v1/auth/
 #### HTTP 200
 ```json
 {
-    "sharedKey": "0x1234567890abcde..."
+    "sharedkey": "0x1234567890abcde..."
 }
 ```
 #### HTTP 400
@@ -1209,7 +1268,7 @@ If the evidence provided is correct, the CSP returns `sign({electionId}, cspPriv
 
 #### Request 
 ```bash
-curl -X POST -H "Authorization: Bearer <organization-api-token>" https://server/v1/auth/elections/<election-id>/sharedKey
+curl -X POST -H "Authorization: Bearer <organization-api-token>" https://server/v1/auth/elections/<election-id>/sharedkey
 ```
 
 #### Request body
