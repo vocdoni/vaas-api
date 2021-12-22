@@ -60,7 +60,8 @@ async function main() {
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
 
     const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1Details.encryptionPubKeys)
-
+    
+    await wait(35)
     const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
     const ballotDetails = await getBallot(nullifier, orgApiToken)
 
