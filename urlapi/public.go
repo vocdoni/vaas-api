@@ -29,6 +29,14 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
+		"/pub/organizations/{organizationId}/elections",
+		"GET",
+		bearerstdapi.MethodAccessTypePublic,
+		u.listProcessesHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
 		"/pub/elections/{electionId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
@@ -90,13 +98,12 @@ func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if err != nil {
 		return err
 	}
-	var resp types.APIResponse
-	resp.PrivateProcesses, resp.PublicProcesses, err =
+	list, err :=
 		u.getProcessList(ctx.URLParam("type"), []byte{}, entityId, false)
 	if err != nil {
 		return err
 	}
-	return sendResponse(resp, ctx)
+	return sendResponse(list, ctx)
 }
 
 // GET https://server/v1/pub/elections/<processId>

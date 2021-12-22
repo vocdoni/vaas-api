@@ -35,27 +35,25 @@ type APIRequest struct {
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
 type APIResponse struct {
-	APIKey           string               `json:"apiKey,omitempty"`
-	APIToken         string               `json:"apiToken,omitempty"`
-	Avatar           string               `json:"avatar,omitempty"`
-	CensusID         int                  `json:"censusId,omitempty"`
-	ContentURI       string               `json:"contentUri,omitempty"`
-	CspPubKey        types.HexBytes       `json:"cspPubKey,omitempty"`
-	CspUrlPrefix     string               `json:"cspUrlPrefix,omitempty"`
-	Description      string               `json:"description,omitempty"`
-	ElectionID       types.HexBytes       `json:"electionId,omitempty"`
-	ExplorerUrl      string               `json:"explorerUrl,omitempty"`
-	Header           string               `json:"header,omitempty"`
-	ID               int                  `json:"id,omitempty"`
-	Message          string               `json:"message,omitempty"`
-	Name             string               `json:"name,omitempty"`
-	Nullifier        string               `json:"nullifier,omitempty"`
-	OrganizationID   types.HexBytes       `json:"organizationId,omitempty"`
-	PrivateProcesses []APIElectionSummary `json:"private,omitempty"`
-	ProcessID        types.HexBytes       `json:"processId,omitempty"`
-	PublicProcesses  []APIElectionSummary `json:"public,omitempty"`
-	Registered       *bool                `json:"registered,omitempty"`
-	TxHash           string               `json:"txHash,omitempty"`
+	APIKey         string         `json:"apiKey,omitempty"`
+	APIToken       string         `json:"apiToken,omitempty"`
+	Avatar         string         `json:"avatar,omitempty"`
+	CensusID       int            `json:"censusId,omitempty"`
+	ContentURI     string         `json:"contentUri,omitempty"`
+	CspPubKey      types.HexBytes `json:"cspPubKey,omitempty"`
+	CspUrlPrefix   string         `json:"cspUrlPrefix,omitempty"`
+	Description    string         `json:"description,omitempty"`
+	ElectionID     types.HexBytes `json:"electionId,omitempty"`
+	ExplorerUrl    string         `json:"explorerUrl,omitempty"`
+	Header         string         `json:"header,omitempty"`
+	ID             int            `json:"id,omitempty"`
+	Message        string         `json:"message,omitempty"`
+	Name           string         `json:"name,omitempty"`
+	Nullifier      string         `json:"nullifier,omitempty"`
+	OrganizationID types.HexBytes `json:"organizationId,omitempty"`
+	ProcessID      types.HexBytes `json:"processId,omitempty"`
+	Registered     *bool          `json:"registered,omitempty"`
+	TxHash         string         `json:"txHash,omitempty"`
 }
 
 // APIElectionInfo is the response struct for a getElection request

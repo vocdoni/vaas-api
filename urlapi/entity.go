@@ -76,6 +76,14 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
+		"/priv/organizations/{organizationId}/elections",
+		"GET",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.listProcessesPrivateHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
 		"/priv/censuses",
 		"POST",
 		bearerstdapi.MethodAccessTypePrivate,
@@ -546,12 +554,12 @@ func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPI
 		return err
 	}
 
-	pub, _, err := u.getProcessList(ctx.URLParam("type"),
+	list, err := u.getProcessList(ctx.URLParam("type"),
 		orgInfo.integratorPrivKey, orgInfo.entityID, true)
 	if err != nil {
 		return err
 	}
-	return sendResponse(pub, ctx)
+	return sendResponse(list, ctx)
 }
 
 // GET https://server/v1/priv/elections/<processId>
