@@ -343,6 +343,20 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 			avatarUri:         req.Avatar,
 		})
 
+	entitySignKeys, err := decryptEntityKeys(
+		orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey)
+	if err != nil {
+		return err
+	}
+	if err = u.vocClient.SetAccountInfo(entitySignKeys, metaURI); err != nil {
+		return fmt.Errorf("could not update account metadata uri: %w", err)
+	}
+
+	// Update organization in the db to make sure it matches the metadata
+	if _, err = u.db.UpdateOrganization(orgInfo.organization.IntegratorApiKey,
+		orgInfo.organization.EthAddress, req.Header, req.Avatar); err != nil {
+		return fmt.Errorf("could not update organization: %w", err)
+	}
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
@@ -377,17 +391,10 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
 	}
-	entityPrivKey := orgInfo.organization.EthPrivKeyCipher
-	if len(u.globalOrganizationKey) > 0 {
-		var ok bool
-		if entityPrivKey, ok = util.DecryptSymmetric(
-			orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey); !ok {
-			return fmt.Errorf("could not decrypt entity private key")
-		}
-	}
-	entitySignKeys := ethereum.NewSignKeys()
-	if err = entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
-		return fmt.Errorf("could not convert entity private key to signKey: %w", err)
+	entitySignKeys, err := decryptEntityKeys(
+		orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey)
+	if err != nil {
+		return err
 	}
 
 	var startBlock uint32
@@ -701,4 +708,20 @@ func (u *URLAPI) setProcessStatusHandler(
 	u.txWaitMap.Store(txHash, time.Now())
 
 	return sendResponse(types.APIResponse{TxHash: txHash}, ctx)
+}
+func decryptEntityKeys(privKeyCipher, globalOrganizationKey []byte) (*ethereum.SignKeys, error) {
+	entityPrivKey := privKeyCipher
+	if len(globalOrganizationKey) > 0 {
+		var ok bool
+		if entityPrivKey, ok = util.DecryptSymmetric(
+			privKeyCipher, globalOrganizationKey); !ok {
+			return nil, fmt.Errorf("could not decrypt entity private key")
+		}
+	}
+	entitySignKeys := ethereum.NewSignKeys()
+	err := entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey))
+	if err != nil {
+		return nil, fmt.Errorf("could not convert entity private key to signKey: %w", err)
+	}
+	return entitySignKeys, nil
 }
