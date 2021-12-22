@@ -348,7 +348,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	if err != nil {
 		return err
 	}
-	if err = u.vocClient.SetAccountInfo(entitySignKeys, metaURI); err != nil {
+	if err := u.vocClient.SetAccountInfo(entitySignKeys, metaURI); err != nil {
 		return fmt.Errorf("could not update account metadata uri: %w", err)
 	}
 
@@ -719,8 +719,7 @@ func decryptEntityKeys(privKeyCipher, globalOrganizationKey []byte) (*ethereum.S
 		}
 	}
 	entitySignKeys := ethereum.NewSignKeys()
-	err := entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey))
-	if err != nil {
+	if err := entitySignKeys.AddHexKey(hex.EncodeToString(entityPrivKey)); err != nil {
 		return nil, fmt.Errorf("could not convert entity private key to signKey: %w", err)
 	}
 	return entitySignKeys, nil
