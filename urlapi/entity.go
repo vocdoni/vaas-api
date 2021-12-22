@@ -332,6 +332,15 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 		return fmt.Errorf("could not set entity metadata: %w", err)
 	}
 
+	entitySignKeys, err := decryptEntityKeys(
+		orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey)
+	if err != nil {
+		return err
+	}
+	if err := u.vocClient.SetAccountInfo(entitySignKeys, metaURI); err != nil {
+		return fmt.Errorf("could not update account metadata uri: %w", err)
+	}
+
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now())
@@ -342,21 +351,6 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 			headerUri:         req.Header,
 			avatarUri:         req.Avatar,
 		})
-
-	entitySignKeys, err := decryptEntityKeys(
-		orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey)
-	if err != nil {
-		return err
-	}
-	if err := u.vocClient.SetAccountInfo(entitySignKeys, metaURI); err != nil {
-		return fmt.Errorf("could not update account metadata uri: %w", err)
-	}
-
-	// Update organization in the db to make sure it matches the metadata
-	if _, err = u.db.UpdateOrganization(orgInfo.organization.IntegratorApiKey,
-		orgInfo.organization.EthAddress, req.Header, req.Avatar); err != nil {
-		return fmt.Errorf("could not update organization: %w", err)
-	}
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
