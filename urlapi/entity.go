@@ -367,6 +367,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	var startBlock uint32
 	startDate := time.Unix(0, 0)
+	// If start date is empty, do not attempt to parse it. Set startBlock to 0, starting the
+	//  process immediately. Otherwise, ensure the startBlock is in the future
 	if req.StartDate != "" {
 		if startDate, err = time.Parse("2006-01-02T15:04:05.000Z", req.StartDate); err != nil {
 			return fmt.Errorf("could not parse startDate: %w", err)
