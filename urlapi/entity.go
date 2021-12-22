@@ -67,7 +67,7 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/priv/organizations/{entityId}/elections/{type}",
+		"/priv/organizations/{organizationId}/elections/{type}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
 		u.listProcessesPrivateHandler,
