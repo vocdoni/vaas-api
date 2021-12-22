@@ -406,7 +406,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	endDate, err := time.Parse("2006-01-02T15:04:05.000Z", req.EndDate)
 	if err != nil {
-		return fmt.Errorf("could not parse startDate: %w", err)
+		return fmt.Errorf("could not parse endDate: %w", err)
 	}
 
 	if endDate.Before(time.Now()) {
@@ -490,9 +490,9 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("could not retrieve integrator from db: %w", err)
 	}
 
-	currentBlockHeight, _, _ := u.vocClient.GetBlockTimes()
+	currentBlockHeight, avgTimes, _ := u.vocClient.GetBlockTimes()
 	if startBlock > 1 && startBlock < currentBlockHeight+vocclient.VOCHAIN_BLOCK_MARGIN {
-		return fmt.Errorf("cannot create process: estimated start block is in the past")
+		return fmt.Errorf("cannot create process: startDate needs to be at least %ds in the future", vocclient.VOCHAIN_BLOCK_MARGIN*avgTimes[0]/1000)
 	}
 	// TODO use encryption priv/pub keys if process is encrypted
 	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
@@ -515,7 +515,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
+	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(int(avgTimes[0])*vocclient.VOCHAIN_BLOCK_MARGIN)*time.Millisecond))
 	u.dbTransactions.Store(txHash, createElectionQuery{
 		integratorPrivKey: orgInfo.integratorPrivKey,
 		ethAddress:        orgInfo.entityID,

@@ -153,7 +153,7 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
 export async function createSignedElection(organizationId: string, hiddenResults: boolean, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/signed"
 
-  const startDate = new Date(Date.now() + 1000 * 30)
+  const startDate = new Date(Date.now() + 1000 * 60) // start time should be at least one minute from 'now()'
   const endDate = new Date(Date.now() + 1000 * 60 * 60)
 
   const body = {
@@ -161,7 +161,7 @@ export async function createSignedElection(organizationId: string, hiddenResults
     description: "Description here",
     header: "https://my/header.jpeg",
     streamUri: "https://youtu.be/1234",
-    startDate: startDate.toJSON(), //  "2021-12-10T11:20:53.769Z", // can be empty
+    // startDate: startDate.toJSON(), //  "2021-12-10T11:20:53.769Z", // can be empty to start immediately when created
     endDate: endDate.toJSON(), //  "2021-12-15T12:00:00.000Z",
     questions: [
       {
@@ -213,7 +213,7 @@ export async function createSignedElection(organizationId: string, hiddenResults
 export async function createAnonymousElection(organizationId: string, hiddenResults: boolean, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/organizations/" + organizationId + "/elections/blind"
 
-  const startDate = new Date(Date.now() + 1000 * 15)
+  const startDate = new Date(Date.now() + 1000 * 60) // start time should be at least one minute from 'now()'
   const endDate = new Date(Date.now() + 1000 * 60 * 60)
 
   const body = {
@@ -221,7 +221,7 @@ export async function createAnonymousElection(organizationId: string, hiddenResu
     description: "Description here",
     header: "https://my/header.jpeg",
     streamUri: "https://youtu.be/1234",
-    startDate: startDate.toJSON(), //  "2021-12-10T11:20:53.769Z", // can be empty
+    startDate: startDate.toJSON(), //  "2021-12-10T11:20:53.769Z", // can be empty can be empty to start immediately when created
     endDate: endDate.toJSON(), //  "2021-12-15T12:00:00.000Z",
     questions: [
       {
@@ -261,6 +261,10 @@ export async function createAnonymousElection(organizationId: string, hiddenResu
   if (error) throw new Error(error)
 
   const { electionId , txHash } = responseBody
+
+  while (!(await getTransactionStatus(txHash, apiKey))) {
+    await wait(15)
+  }
 
   console.log("Created anonymous election", electionId)
   return { electionId }
