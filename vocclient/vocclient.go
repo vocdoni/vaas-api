@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.vocdoni.io/api/types"
+	apiUtil "go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/client"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -271,17 +272,46 @@ func (c *Client) SetEntityMetadata(meta types.EntityMetadata,
 
 // SetProcessMetadata pins the given process metadata to IPFS and returns its URI
 func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
+	processId, metadataPrivKey []byte) (string, error) {
+	metaBytes, err := json.Marshal(meta)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal process metadata: %v", err)
+	}
+	if len(metadataPrivKey) > 0 {
+		log.Debugf("encrypting metatadata for %x", processId)
+		encryptedMeta, err := apiUtil.EncryptSymmetric(metaBytes, metadataPrivKey)
+		if err != nil {
+			return "", fmt.Errorf("could not encrypt private metadata: %w", err)
+		}
+		metaBytes, err = json.Marshal(types.RawFile{Payload: encryptedMeta, Version: "1.0"})
+		if err != nil {
+			return "", fmt.Errorf("could not marshal encrypted bytes: %v", err)
+		}
+	}
+	return c.AddFile(metaBytes, "ipfs",
+		fmt.Sprintf("%X process metadata", processId))
+
+}
+
+// SetProcessMetadataConfidential encrypts with metadataPrivKey and then pins
+//  the given process metadata to IPFS and returns its URI
+func (c *Client) SetProcessMetadataConfidential(meta types.ProcessMetadata, metadataPrivKey,
 	processId []byte) (string, error) {
 	metaBytes, err := json.Marshal(meta)
 	if err != nil {
 		return "", fmt.Errorf("could not marshal process metadata: %v", err)
 	}
-	metaURI, err := c.AddFile(metaBytes, "ipfs",
-		fmt.Sprintf("%X process metadata", processId))
+	log.Debugf("encrypting metatadata for %x", processId)
+	encryptedMeta, err := apiUtil.EncryptSymmetric(metaBytes, metadataPrivKey)
 	if err != nil {
-		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
+		return "", fmt.Errorf("could not encrypt private metadata: %w", err)
 	}
-	return metaURI, nil
+	metaBytes, err = json.Marshal(types.RawFile{Payload: encryptedMeta, Version: "1.0"})
+	if err != nil {
+		return "", fmt.Errorf("could not marshal encrypted bytes: %v", err)
+	}
+	return c.AddFile(metaBytes, "ipfs",
+		fmt.Sprintf("%X process metadata (encrypted)", processId))
 }
 
 // AddFile pins the given content to the gateway's storage mechanism,
@@ -314,6 +344,26 @@ func (c *Client) FetchProcessMetadata(URI string) (*types.ProcessMetadata, error
 		return nil, err
 	}
 	return &process, nil
+}
+
+// FetchProcessMetadataConfidential fetches and attempts to decrypt, unmarshal & return
+//  the process metadata from the given URI
+func (c *Client) FetchProcessMetadataConfidential(URI string,
+	metadataPrivKey []byte) (*types.ProcessMetadata, error) {
+	content, err := c.FetchFile(URI)
+	if err != nil {
+		return nil, err
+	}
+	var file types.RawFile
+	if err = json.Unmarshal(content, &file); err != nil {
+		return nil, err
+	}
+	decrypted, ok := apiUtil.DecryptSymmetric(file.Payload, metadataPrivKey)
+	if !ok {
+		return nil, fmt.Errorf("could not decrypt private metadata")
+	}
+	var process types.ProcessMetadata
+	return &process, json.Unmarshal(decrypted, &process)
 }
 
 // FetchOrganizationMetadata fetches and attempts to unmarshal & return

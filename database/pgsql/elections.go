@@ -10,7 +10,7 @@ import (
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
+func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
 
 	election := &types.Election{
 		OrgEthAddress:    orgEthAddress,
@@ -24,6 +24,7 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 		EndBlock:         endBlock,
 		Confidential:     confidential,
 		HiddenResults:    hiddenResults,
+		MetadataPrivKey:  encryptedMetadataKey,
 		CreatedUpdated: types.CreatedUpdated{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -31,9 +32,9 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID []b
 	}
 	// TODO: Calculate EntityID (consult go-dvote)
 	insert := `INSERT INTO elections
-			( organization_eth_address, integrator_api_key, process_id, title, census_id,
+			( organization_eth_address, integrator_api_key, process_id, metadata_priv_key, title, census_id,
 				start_date, end_date, start_block, end_block, confidential, hidden_results, created_at, updated_at)
-			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :title, :census_id,
+			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :metadata_priv_key, :title, :census_id,
 				:start_date, :end_date, :start_block, :end_block, :confidential, :hidden_results, :created_at, :updated_at)
 			RETURNING id`
 	result, err := d.db.NamedQuery(insert, election)
@@ -59,9 +60,17 @@ func (d *Database) GetElectionPublic(organizationEthAddress, processID []byte) (
 	return &election, row.StructScan(&election)
 }
 
+func (d *Database) GetElectionPrivate(organizationEthAddress, processID []byte) (*types.Election, error) {
+	var election types.Election
+	selectIntegrator := `SELECT metadata_priv_key, title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, integrator_api_key
+						FROM elections WHERE organization_eth_address=$1 AND process_id=$2`
+	row := d.db.QueryRowx(selectIntegrator, organizationEthAddress, processID)
+	return &election, row.StructScan(&election)
+}
+
 func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error) {
 	var election types.Election
-	selectIntegrator := `SELECT title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, 
+	selectIntegrator := `SELECT metadata_priv_key, title, census_id, start_date, end_date, start_block, end_block, confidential, hidden_results, 
 							created_at, updated_at
 						FROM elections WHERE organization_eth_address =$1 AND integrator_api_key=$2
 									AND process_id=$3`

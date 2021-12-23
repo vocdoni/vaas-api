@@ -1,11 +1,15 @@
 package urlapi
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
+	"go.vocdoni.io/dvote/crypto/ethereum"
+	"go.vocdoni.io/dvote/crypto/saltedkey"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
@@ -129,6 +133,15 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 		}
 	}
 
+	dbElection, err := u.db.GetElectionPublic(vochainProcess.EntityID, processId)
+	if err != nil {
+		return fmt.Errorf("could not fetch election %x from db: %w", processId, err)
+	}
+
+	if dbElection.Confidential {
+		return fmt.Errorf("process %x is confidential, use authenticated API", processId)
+	}
+
 	// Fetch metadata
 	processMetadata, err := u.vocClient.FetchProcessMetadata(vochainProcess.Metadata)
 	if err != nil {
@@ -149,7 +162,51 @@ func (u *URLAPI) getProcessInfoPublicHandler(msg *bearerstdapi.BearerStandardAPI
 //  checking the voter's signature for inclusion in the census
 func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
-	return fmt.Errorf("endpoint %s unimplemented", ctx.Request.URL.String())
+	processId, err := util.GetBytesID(ctx, "electionId")
+	if err != nil {
+		return err
+	}
+	cspSignature, err := util.GetBytesID(ctx, "signature")
+	if err != nil {
+		return err
+	}
+
+	// Fetch process from vochain
+	vochainProcess, err := u.vocClient.GetProcess(processId)
+	if err != nil {
+		return fmt.Errorf("unable to get process: %w", err)
+	}
+
+	// Fetch results
+	var results *types.VochainResults
+	if vochainProcess.HaveResults {
+		if results, err = u.vocClient.GetResults(processId); err != nil {
+			return fmt.Errorf("unable to get results %w", err)
+		}
+	}
+
+	dbElection, err := u.db.GetElectionPrivate(vochainProcess.EntityID, processId)
+	if err != nil {
+		return fmt.Errorf("could not fetch election %x from db: %w", processId, err)
+	}
+
+	if err = verifyCspSharedSignature(processId, cspSignature, vochainProcess.CensusRoot); err != nil {
+		return fmt.Errorf("shared key not valid to decrypt process %x: %w", processId, err)
+	}
+
+	processMetadata, err := u.getProcessMetadataPriv(
+		dbElection.Confidential, dbElection.MetadataPrivKey, vochainProcess.Metadata)
+	if err != nil {
+		return err
+	}
+
+	// Parse all the information
+	resp, err := u.parseProcessInfo(vochainProcess, results, processMetadata)
+	if err != nil {
+		return fmt.Errorf("could not parse information for process %x: %w", processId, err)
+	}
+
+	return sendResponse(resp, ctx)
 }
 
 // GET https://server/v1/pub/account/organizations/<organizationId>
@@ -218,4 +275,32 @@ func (u *URLAPI) getVoteHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		resp.ExplorerUrl = fmt.Sprintf("%s%x", u.config.ExplorerVoteUrl, nullifier)
 	}
 	return sendResponse(resp, ctx)
+}
+
+func verifyCspSharedSignature(processId, cspSignature, censusRoot []byte) error {
+	saltedCspPubKey, err := ethereum.PubKeyFromSignature(processId, cspSignature)
+	if err != nil {
+		return fmt.Errorf("could not extract csp pubKey from signature: %w", err)
+	}
+	decompressedCspKey, err := ethereum.DecompressPubKey(saltedCspPubKey)
+	if err != nil {
+		return fmt.Errorf("could not decompress csp public key: %w", err)
+	}
+	rootPub, err := ethereum.DecompressPubKey(censusRoot)
+	if err != nil {
+		return fmt.Errorf("could not decompress census root key: %w", err)
+	}
+	ecdsaKey, err := ethcrypto.UnmarshalPubkey(rootPub)
+	if err != nil {
+		return fmt.Errorf("could not decode csp public key from election configuration: %w", err)
+	}
+	saltedKey, err := saltedkey.SaltECDSAPubKey(ecdsaKey, processId)
+	if err != nil {
+		return fmt.Errorf("could not salt csp public key: %w", err)
+	}
+	if !bytes.Equal(decompressedCspKey, ethcrypto.FromECDSAPub(saltedKey)) {
+		return fmt.Errorf("signature pubKey %x does not match election census root %x",
+			decompressedCspKey, ethcrypto.FromECDSAPub(saltedKey))
+	}
+	return nil
 }

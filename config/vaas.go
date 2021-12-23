@@ -29,6 +29,8 @@ type API struct {
 	AdminToken string
 	// GlobalEntityKey is the key used to encrypt entity private keys in the db
 	GlobalEntityKey string
+	// GlobalMetaKey is the key used to encrypt entity metadata keys in the db
+	GlobalMetaKey string
 	// ExplorerVoteUrl is the url for explorer vote packages
 	ExplorerVoteUrl string
 	// GatewayUrls to use for gateway api

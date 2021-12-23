@@ -39,7 +39,8 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 			fmt.Errorf("organization %s could not be fetched from the db: %w", organizationID.String(), err)
 	}
 	// if !bytes.Equal(organization.IntegratorApiKey, integratorPrivKey) {
-	// 	return orgPermissionsInfo{}, fmt.Errorf("entity %s does not belong to this integrator", organizationID.String())
+	// 	return orgPermissionsInfo{}, fmt.Errorf(
+	// "entity %s does not belong to this integrator", organizationID.String())
 	// }
 	return orgPermissionsInfo{
 		integratorPrivKey: integratorPrivKey,

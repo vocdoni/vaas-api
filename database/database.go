@@ -36,9 +36,10 @@ type Database interface {
 	ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error)
 	CountOrganizations(integratorAPIKey []byte) (int, error)
 	// Election
-	CreateElection(integratorAPIKey, orgEthAddress, processID []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error)
+	CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error)
 	GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error)
 	GetElectionPublic(organizationEthAddress, processID []byte) (*types.Election, error)
+	GetElectionPrivate(organizationEthAddress, processID []byte) (*types.Election, error)
 	ListElections(integratorAPIKey, orgEthAddress []byte) ([]types.Election, error)
 	// Manage DB
 	Ping() error

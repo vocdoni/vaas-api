@@ -238,7 +238,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		avatarUri:         req.Avatar,
 	})
 
-	resp := types.APIResponse{APIToken: orgApiToken, OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
+	resp := types.APIResponse{APIToken: orgApiToken,
+		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
 
 	return sendResponse(resp, ctx)
 }
@@ -385,10 +386,6 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	if req.Confidential {
-		return fmt.Errorf("confidential processes are not yet supported")
-	}
-
 	processID, err := hex.DecodeString(dvoteutil.RandomHex(32))
 	if err != nil {
 		return fmt.Errorf("could not decode process ID: %w", err)
@@ -477,8 +474,6 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		}
 		metadata.Questions = append(metadata.Questions, metaQuestion)
 	}
-	log.Debugf("req questions: %v", req.Questions)
-	log.Debugf("meta qustions: %v", metadata.Questions)
 
 	voteOptions := &models.ProcessVoteOptions{
 		MaxCount:          uint32(len(req.Questions)),
@@ -488,9 +483,32 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		CostExponent:      1,
 	}
 
-	metaUri, err := u.vocClient.SetProcessMetadata(metadata, processID)
-	if err != nil {
-		return fmt.Errorf("could not set process metadata: %w", err)
+	var metaUri string
+	var metaPrivKeyBytes []byte
+	// If election is confidential, generate a private metadata key and encrypt it.
+	// store this key with the election
+	if req.Confidential {
+		if metaPrivKeyBytes, err = hex.DecodeString(dvoteutil.RandomHex(32)); err != nil {
+			return fmt.Errorf("could not decode metadata private key: %w", err)
+		}
+		// Encrypt and send the process metadata
+		if metaUri, err = u.vocClient.SetProcessMetadata(
+			metadata, processID, metaPrivKeyBytes); err != nil {
+			return fmt.Errorf("could not set confidential process metadata: %w", err)
+		}
+
+		// If there is a global meta key, encrypt the meta priv key
+		if len(u.globalMetadataKey) > 0 {
+			if metaPrivKeyBytes, err = util.EncryptSymmetric(
+				metaPrivKeyBytes, u.globalMetadataKey); err != nil {
+				return fmt.Errorf("could not encrypt metadata private key: %w", err)
+			}
+		}
+
+	} else { // Process is not confidential, no need to touch metadata key
+		if metaUri, err = u.vocClient.SetProcessMetadata(metadata, processID, []byte{}); err != nil {
+			return fmt.Errorf("could not set process metadata: %w", err)
+		}
 	}
 
 	integrator, err := u.db.GetIntegratorByKey(orgInfo.integratorPrivKey)
@@ -502,7 +520,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if startBlock > 1 && startBlock < currentBlockHeight+vocclient.VOCHAIN_BLOCK_MARGIN {
 		return fmt.Errorf("cannot create process: startDate needs to be at least %ds in the future", vocclient.VOCHAIN_BLOCK_MARGIN*avgTimes[0]/1000)
 	}
-	// TODO use encryption priv/pub keys if process is encrypted
+
 	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
 		ProcessId:     processID,
 		EntityId:      orgInfo.entityID,
@@ -523,10 +541,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
+	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
 	u.dbTransactions.Store(txHash, createElectionQuery{
 		integratorPrivKey: orgInfo.integratorPrivKey,
 		ethAddress:        orgInfo.entityID,
+		encryptedMetaKey:  metaPrivKeyBytes,
 		electionID:        processID,
 		title:             req.Title,
 		startDate:         startDate,
@@ -581,6 +600,17 @@ func (u *URLAPI) getProcessHandler(
 		return fmt.Errorf("process does not exist")
 	}
 
+	integratorApiKey, err := hex.DecodeString(msg.AuthToken)
+	if err != nil {
+		return fmt.Errorf("could not decode bearer token: %w", err)
+	}
+
+	// Fetch election from database
+	dbElection, err := u.db.GetElection(integratorApiKey, vochainProcess.EntityID, processId)
+	if err != nil {
+		return fmt.Errorf("could not get election from the database: %w", err)
+	}
+
 	// Fetch results
 	var results *types.VochainResults
 	if vochainProcess.HaveResults {
@@ -590,16 +620,16 @@ func (u *URLAPI) getProcessHandler(
 	}
 
 	// Fetch metadata
-	processMetadata, err := u.vocClient.FetchProcessMetadata(vochainProcess.Metadata)
+	processMetadata, err := u.getProcessMetadataPriv(
+		dbElection.Confidential, dbElection.MetadataPrivKey, vochainProcess.Metadata)
 	if err != nil {
-		return fmt.Errorf("could not get process metadata: %w", err)
+		return err
 	}
 	// Parse all the information
 	resp, err := u.parseProcessInfo(vochainProcess, results, processMetadata)
 	if err != nil {
 		return fmt.Errorf("could not parse information for process %x: %w", processId, err)
 	}
-
 	return sendResponse(resp, ctx)
 }
 
@@ -711,6 +741,7 @@ func (u *URLAPI) setProcessStatusHandler(
 
 	return sendResponse(types.APIResponse{TxHash: txHash}, ctx)
 }
+
 func decryptEntityKeys(privKeyCipher, globalOrganizationKey []byte) (*ethereum.SignKeys, error) {
 	entityPrivKey := privKeyCipher
 	if len(globalOrganizationKey) > 0 {
@@ -725,4 +756,31 @@ func decryptEntityKeys(privKeyCipher, globalOrganizationKey []byte) (*ethereum.S
 		return nil, fmt.Errorf("could not convert entity private key to signKey: %w", err)
 	}
 	return entitySignKeys, nil
+}
+
+// Helper function to get process metadata, confidential or not.
+func (u *URLAPI) getProcessMetadataPriv(confidential bool,
+	metadataPrivKey []byte, uri string) (*types.ProcessMetadata, error) {
+	// If election is confidential, fetch private metadata key & decrypt metadata
+	var processMetadata *types.ProcessMetadata
+	var err error
+	if confidential {
+		// If globalMetadataKey exists, try to decrypt metadata private key
+		if len(u.globalMetadataKey) > 0 {
+			var ok bool
+			metadataPrivKey, ok = util.DecryptSymmetric(metadataPrivKey, u.globalMetadataKey)
+			if !ok {
+				return nil, fmt.Errorf("could not decrypt election private metadata key")
+			}
+		}
+		if processMetadata, err = u.vocClient.FetchProcessMetadataConfidential(
+			uri, metadataPrivKey); err != nil {
+			return nil, fmt.Errorf("could not get process metadata: %w", err)
+		}
+	} else { // Election is not confidential, no need to decrypt metadata
+		if processMetadata, err = u.vocClient.FetchProcessMetadata(uri); err != nil {
+			return nil, fmt.Errorf("could not get process metadata: %w", err)
+		}
+	}
+	return processMetadata, nil
 }

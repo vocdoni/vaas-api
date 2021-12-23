@@ -50,6 +50,8 @@ func newConfig() (*config.Vaas, config.Error) {
 		"encryption key for organization private keys in the db. Leave empty for no encryption")
 	cfg.API.GatewayUrl = *flag.String("gatewayUrl",
 		"https://api-dev.vocdoni.net", "url to use as gateway api endpoint")
+	cfg.API.GlobalMetaKey = *flag.String("globalMetaKey", "",
+		"encryption key for organization metadata keys in the db. Leave empty for no encryption")
 	cfg.API.MaxCensusSize = *flag.Uint64("maxCensusSize", 2<<32, "maximum size of a voter census")
 	cfg.API.Route = *flag.String("apiRoute", "/", "dvote API route")
 	cfg.API.ListenHost = *flag.String("listenHost", "0.0.0.0", "API endpoint listen address")
@@ -97,6 +99,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("api.explorerVoteUrl", flag.Lookup("explorerVoteUrl"))
 	viper.BindPFlag("api.globalEntityKey", flag.Lookup("globalEntityKey"))
 	viper.BindPFlag("api.gatewayUrl", flag.Lookup("gatewayUrl"))
+	viper.BindPFlag("api.globalMetaKey", flag.Lookup("globalMetaKey"))
 	viper.BindPFlag("api.route", flag.Lookup("apiRoute"))
 	viper.BindPFlag("api.listenHost", flag.Lookup("listenHost"))
 	viper.BindPFlag("api.listenPort", flag.Lookup("listenPort"))

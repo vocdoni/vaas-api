@@ -6,7 +6,8 @@ import { wait } from "./util/wait"
 import { fakeSign } from "./sections/fake-csp"
 
 async function main() {
-    const encryptedResults = false
+    const encryptedResults = true
+    const confidential = true
 
     // VOCDONI INTERNAL
 
@@ -21,10 +22,11 @@ async function main() {
     await setOrganizationMetadata(organizationId, integratorApiKey)
     await getOrganizationPriv(organizationId, integratorApiKey)
 
-    const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, integratorApiKey)
-    // const { electionId: electionId2 } = await createAnonymousElection(organizationId, encryptedResults, integratorApiKey)
-    // const electionList = await listElectionsPriv(organizationId, integratorApiKey)
-    const election1Details = await getElectionPriv(electionId1, integratorApiKey)
+    const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, confidential, integratorApiKey)
+    // const { electionId: electionId2 } = await createAnonymousElection(organizationId, encryptedResults, confidential, integratorApiKey)
+
+    const electionList = await listElectionsPriv(organizationId, integratorApiKey)
+    const election1DetailsPriv = await getElectionPriv(electionId1, integratorApiKey)
     // const election2Details = await getElectionPriv(electionId2, integratorApiKey)
 
     // VOTER ENDPOINTS (frontend)
@@ -40,7 +42,8 @@ async function main() {
     // key for confidential election data
     // const cspSharedKey = await getElectionSharedKey(electionId1, signedElectionId, orgApiToken)
     const cspSharedKey = await getElectionSharedKeyCustom(electionId1, { voterId, signature }, orgApiToken)
-    // const electionInfo1 = await getElectionSecretInfoPub(electionId1, cspSharedKey, orgApiToken)
+    // const electionInfo2 = await getElectionSecretInfoPub(electionId2, cspSharedKey, orgApiToken)
+    const election1DetailsPubAuth = await getElectionSecretInfoPub(electionId1, cspSharedKey, orgApiToken)
 
     // NON ANONYMOUS AUTH
     // const tokenR = await getCspSigningTokenPlain(electionId1, signedElectionId, orgApiToken)
@@ -56,15 +59,19 @@ async function main() {
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
 
-    // const encryptedResults = true
-    const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1Details.encryptionPubKeys)
-
+    const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1DetailsPubAuth.encryptionPubKeys)
+    
     const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
-    const ballotDetails = await getBallot(nullifier, orgApiToken)
+    let ballotDetails = await getBallot(nullifier, orgApiToken)
+    // optionally wait for the ballot to be registered if not already
+    // while (!ballotDetails.registered) {
+    //     await wait(5)
+    //     ballotDetails =await getBallot(nullifier, orgApiToken)
+    // }
 
     // cleanup
 
-    await deleteOrganization(organizationId, integratorId)
+    await deleteOrganization(organizationId, integratorApiKey)
     await deleteIntegrator(integratorId)
 }
 

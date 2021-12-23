@@ -92,6 +92,10 @@ type ElectionDetail = {
   status: "READY" | "ENDED" | "CANCELED" | "PAUSED" | "RESULTS",
   voteCount: number,
   results: Array<Array<{ title: string, value: string }>> // Empty arrays when no results []
+  encryptionPubKeys: {
+    idx: number;
+    key: string;
+  }[]
 }
 export async function getElectionInfoPub(electionId: string, orgApiToken: string) {
   const url = config.apiUrlPrefix + "/v1/pub/elections/" + electionId
@@ -117,7 +121,7 @@ export async function getElectionInfoPub(electionId: string, orgApiToken: string
   return responseBody as ElectionDetail
 }
 
-export async function getElectionSecretInfoPub(electionId: string, cspSharedKey: string, orgApiToken: string) {
+export async function getElectionSecretInfoPub(electionId: string, cspSharedKey: string, orgApiToken: string): Promise<ElectionDetail> {
   const url = config.apiUrlPrefix + "/v1/pub/elections/" + electionId + "/auth/" + cspSharedKey
 
   const response = await fetch(url, {
