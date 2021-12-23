@@ -28,6 +28,7 @@ type QuotaPlan struct {
 	MaxCensusSize   int       `json:"maxCensusSize" db:"max_census_size"`
 	MaxProcessCount int       `json:"maxProcessCount" db:"max_process_count"`
 }
+
 type Organization struct {
 	CreatedUpdated
 	ID               int           `json:"id" db:"id"`

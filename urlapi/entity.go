@@ -18,6 +18,10 @@ import (
 	"go.vocdoni.io/proto/build/go/models"
 )
 
+// IMMEDIATE_PROCESS_CREATION_OFFSET is the average number of blocks it takes to create a
+//  process when its startBlock is set to 0. This is only to be used for estimating timings.
+const IMMEDIATE_PROCESS_CREATION_OFFSET = 3
+
 func (u *URLAPI) enableEntityHandlers() error {
 	if err := u.api.RegisterMethod(
 		"/priv/account/organizations",
@@ -397,7 +401,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	var startBlock uint32
-	startDate := time.Unix(0, 0)
+	startDate := time.Now()
 	// If start date is empty, do not attempt to parse it. Set startBlock to 0, starting the
 	//  process immediately. Otherwise, ensure the startBlock is in the future
 	if req.StartDate != "" {
@@ -518,14 +522,21 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	currentBlockHeight, avgTimes, _ := u.vocClient.GetBlockTimes()
 	if startBlock > 1 && startBlock < currentBlockHeight+vocclient.VOCHAIN_BLOCK_MARGIN {
-		return fmt.Errorf("cannot create process: startDate needs to be at least %ds in the future", vocclient.VOCHAIN_BLOCK_MARGIN*avgTimes[0]/1000)
+		return fmt.Errorf("cannot create process: startDate needs to be at least %ds in the future",
+			vocclient.VOCHAIN_BLOCK_MARGIN*avgTimes[0]/1000)
 	}
 
-	if startBlock, err = u.vocClient.CreateProcess(&models.Process{
+	blockCount := endBlock - startBlock
+	if startBlock == 0 {
+		// If startBlock is set to 0 (process starts asap), set the blockcount to the desired
+		//  end block, minus the expected start block of the process
+		blockCount = blockCount - currentBlockHeight + 3
+	}
+	if err = u.vocClient.CreateProcess(&models.Process{
 		ProcessId:     processID,
 		EntityId:      orgInfo.entityID,
 		StartBlock:    startBlock,
-		BlockCount:    endBlock - startBlock,
+		BlockCount:    blockCount,
 		CensusRoot:    integrator.CspPubKey,
 		CensusURI:     new(string),
 		Status:        models.ProcessStatus_READY,
@@ -537,6 +548,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		MaxCensusSize: &u.config.MaxCensusSize,
 	}, entitySignKeys); err != nil {
 		return fmt.Errorf("could not create process on the vochain: %w", err)
+	}
+
+	// If starting immediately, store current block height as startblock in db
+	if startBlock <= 1 {
+		startBlock = currentBlockHeight + IMMEDIATE_PROCESS_CREATION_OFFSET
 	}
 
 	// TODO fetch actual transaction hash
@@ -552,10 +568,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		endDate:           endDate,
 		censusID:          uuid.NullUUID{},
 		startBlock:        int(startBlock),
-		endBlock:          int(endBlock),
+		endBlock:          int(startBlock + blockCount),
 		confidential:      req.Confidential,
 		hiddenResults:     req.HiddenResults,
 	})
+
 	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: txHash}, ctx)
 }
 
