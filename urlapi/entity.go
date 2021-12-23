@@ -523,7 +523,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(int(avgTimes[0])*vocclient.VOCHAIN_BLOCK_MARGIN)*time.Millisecond))
+	u.txWaitMap.Store(txHash, time.Now())
 	u.dbTransactions.Store(txHash, createElectionQuery{
 		integratorPrivKey: orgInfo.integratorPrivKey,
 		ethAddress:        orgInfo.entityID,
