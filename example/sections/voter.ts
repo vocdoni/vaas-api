@@ -89,7 +89,7 @@ type ElectionDetail = {
     description: string,
     choices: [string]
   }[],
-  status: "READY" | "ENDED" | "CANCELED" | "PAUSED" | "RESULTS",
+  status: "UNKNOWN" | "PAUSED" | "CANCELED" | "UPCOMING" | "ACTIVE" | "ENDED",
   voteCount: number,
   results: Array<Array<{ title: string, value: string }>> // Empty arrays when no results []
   encryptionPubKeys: {

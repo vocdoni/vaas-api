@@ -3,7 +3,6 @@ package urlapi
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -97,9 +96,24 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 		}
 		process.Questions = append(process.Questions, newQuestion)
 	}
-	if len(models.ProcessStatus_name[vc.Status]) > 1 {
-		process.Status = strings.ToTitle(models.ProcessStatus_name[vc.Status])[0:1] +
-			strings.ToLower(models.ProcessStatus_name[vc.Status])[1:]
+
+	// Digest status to something more usable by the client
+	switch vc.Status {
+	case int32(models.ProcessStatus_PROCESS_UNKNOWN):
+		process.Status = "UNKNOWN"
+	case int32(models.ProcessStatus_PAUSED):
+		process.Status = "PAUSED"
+	case int32(models.ProcessStatus_CANCELED):
+		process.Status = "CANCELED"
+	default:
+		blockHeight, _, _ := u.vocClient.GetBlockTimes()
+		if vc.StartBlock >= blockHeight {
+			process.Status = "UPCOMING"
+		} else if vc.StartBlock < blockHeight && vc.EndBlock > blockHeight {
+			process.Status = "ACTIVE"
+		} else {
+			process.Status = "ENDED"
+		}
 	}
 
 	var err error
@@ -219,12 +233,12 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 		}
 		// loop to fetch processes from db, filter by date
 		for _, processID := range fullProcessList {
-			var newProcess *types.Election
 			processIDBytes, err := hex.DecodeString(processID)
 			if err != nil {
 				log.Errorf("cannot decode process id %s: %v", processID, err)
 				continue
 			}
+			var newProcess *types.Election
 			if private {
 				newProcess, err = u.db.GetElection(integratorPrivKey,
 					entityId, processIDBytes)
@@ -243,18 +257,18 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			switch filter {
 			case "active":
 				if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-					appendProcess(&electionList, newProcess, private)
+					appendProcess(&electionList, newProcess, private, int(currentHeight))
 				}
 			case "upcoming":
 				if newProcess.StartBlock > int(currentHeight) {
-					appendProcess(&electionList, newProcess, private)
+					appendProcess(&electionList, newProcess, private, int(currentHeight))
 				}
 			case "ended":
 				if newProcess.EndBlock < int(currentHeight) {
-					appendProcess(&electionList, newProcess, private)
+					appendProcess(&electionList, newProcess, private, int(currentHeight))
 				}
 			case "":
-				appendProcess(&electionList, newProcess, private)
+				appendProcess(&electionList, newProcess, private, int(currentHeight))
 			}
 		}
 	case "blind", "signed":
@@ -304,12 +318,24 @@ func aggregateResults(meta *types.ProcessMetadata,
 }
 
 func appendProcess(electionList *[]types.APIElectionSummary, newProcess *types.Election,
-	private bool) {
+	private bool, blockHeight int) {
+	var status string
+	if newProcess.StartBlock >= blockHeight {
+		status = "UPCOMING"
+	} else if newProcess.StartBlock < blockHeight && newProcess.EndBlock > blockHeight {
+		status = "ACTIVE"
+	} else {
+		status = "ENDED"
+	}
 	if private {
-		*electionList = append(*electionList, reflectElectionPrivate(*newProcess))
+		newProc := reflectElectionPrivate(*newProcess)
+		newProc.Status = status
+		*electionList = append(*electionList, newProc)
 	} else {
 		if !newProcess.Confidential {
-			*electionList = append(*electionList, reflectElectionPublic(*newProcess))
+			newProc := reflectElectionPublic(*newProcess)
+			newProc.Status = status
+			*electionList = append(*electionList, newProc)
 		}
 	}
 }

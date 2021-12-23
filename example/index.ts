@@ -43,7 +43,12 @@ async function main() {
     // const cspSharedKey = await getElectionSharedKey(electionId1, signedElectionId, orgApiToken)
     const cspSharedKey = await getElectionSharedKeyCustom(electionId1, { voterId, signature }, orgApiToken)
     // const electionInfo2 = await getElectionSecretInfoPub(electionId2, cspSharedKey, orgApiToken)
-    const election1DetailsPubAuth = await getElectionSecretInfoPub(electionId1, cspSharedKey, orgApiToken)
+    
+    let election1DetailsPubAuth = await getElectionSecretInfoPub(electionId1, cspSharedKey, orgApiToken)
+    while (election1DetailsPubAuth.status == "UPCOMING") {
+        await wait(5)
+        election1DetailsPubAuth = await getElectionSecretInfoPub(electionId1, cspSharedKey, orgApiToken)
+    }
 
     // NON ANONYMOUS AUTH
     // const tokenR = await getCspSigningTokenPlain(electionId1, signedElectionId, orgApiToken)
@@ -58,9 +63,7 @@ async function main() {
 
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
-
     const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1DetailsPubAuth.encryptionPubKeys)
-    
     const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
     let ballotDetails = await getBallot(nullifier, orgApiToken)
     // optionally wait for the ballot to be registered if not already

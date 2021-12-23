@@ -576,7 +576,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 // CreateProcess submits a transaction to the vochain to
 //  create a process with the given configuration and returns its starting block height
 func (c *Client) CreateProcess(process *models.Process,
-	signingKey *ethereum.SignKeys) (uint32, error) {
+	signingKey *ethereum.SignKeys) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 	p := &models.NewProcessTx{
 		Txtype:  models.TxType_NEW_PROCESS,
@@ -587,22 +587,22 @@ func (c *Client) CreateProcess(process *models.Process,
 	stx := &models.SignedTx{}
 	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &models.Tx_NewProcess{NewProcess: p}})
 	if err != nil {
-		return 0, err
+		return err
 	}
 	if stx.Signature, err = signingKey.Sign(stx.Tx); err != nil {
-		return 0, err
+		return err
 	}
 	if req.Payload, err = proto.Marshal(stx); err != nil {
-		return 0, err
+		return err
 	}
 	resp, err := c.request(req, c.signingKey)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	if !resp.Ok {
-		return 0, fmt.Errorf(resp.Message)
+		return fmt.Errorf(resp.Message)
 	}
-	return p.Process.StartBlock, nil
+	return nil
 }
 
 // SetProcessStatus updates the process given by `pid` status to `status`

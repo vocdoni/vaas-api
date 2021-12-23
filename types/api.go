@@ -80,15 +80,16 @@ type APIElectionInfo struct {
 
 // APIElectionSummary is the struct for returning election info from the database
 type APIElectionSummary struct {
-	OrgEthAddress   types.HexBytes `json:"orgEthAddress,omitempty" db:"organizationEthAddress"`
-	ElectionID      types.HexBytes `json:"electionId,omitempty" db:"processId"`
-	Title           string         `json:"title,omitempty" db:"title"`
-	CensusID        string         `json:"censusId,omitempty" db:"censusId"`
-	StartDate       time.Time      `json:"startDate,omitempty" db:"startDate"`
-	EndDate         time.Time      `json:"endDate,omitempty" db:"endDate"`
-	Confidential    *bool          `json:"confidential,omitempty" db:"confidential"`
-	HiddenResults   *bool          `json:"hiddenResults,omitempty" db:"hiddenResults"`
-	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty" db:"metadataPrivKey"`
+	CensusID        string         `json:"censusId,omitempty"`
+	Confidential    *bool          `json:"confidential,omitempty"`
+	ElectionID      types.HexBytes `json:"electionId,omitempty"`
+	EndDate         time.Time      `json:"endDate,omitempty"`
+	HiddenResults   *bool          `json:"hiddenResults,omitempty"`
+	MetadataPrivKey []byte         `json:"metadataPrivKey,omitempty"`
+	OrgEthAddress   types.HexBytes `json:"orgEthAddress,omitempty"`
+	StartDate       time.Time      `json:"startDate,omitempty"`
+	Status          string         `json:"status,omitempty"`
+	Title           string         `json:"title,omitempty"`
 }
 
 // ProcessMetadata contains the process metadata fields as stored on ipfs
