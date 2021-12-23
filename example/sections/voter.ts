@@ -373,11 +373,11 @@ export async function getCspBlindSignature(electionId: string, tokenR: string, b
 // CSP endpoint calls - Custom
 //////////////////////////////////////////////////////////////////////////
 
-export async function getElectionSharedKeyCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
+export async function getElectionSharedKeyCustom(electionId: string, proof: { voterId: string, signature: string }, orgApiToken: string): Promise<string> {
   const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/sharedkey"
 
   const body = {
-    "authData": [proof.param1, proof.param2] // The custom values that the CSP expects
+    "authData": [electionId, proof.voterId, proof.signature] // The custom values that the CSP expects
   }
 
   const response = await fetch(url, {
@@ -406,11 +406,11 @@ export async function getElectionSharedKeyCustom(electionId: string, proof: { pa
   return sharedkey
 }
 
-export async function getCspSigningTokenPlainCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
+export async function getCspSigningTokenPlainCustom(electionId: string, proof: { voterId: string, signature: string }, orgApiToken: string): Promise<string> {
   const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/ecdsa/auth"
 
   const body = {
-    "authData": [proof.param1, proof.param2] // The custom values that the CSP expects
+    "authData": [electionId, proof.voterId, proof.signature] // The custom values that the CSP expects
   }
 
   const response = await fetch(url, {
@@ -439,11 +439,11 @@ export async function getCspSigningTokenPlainCustom(electionId: string, proof: {
   return tokenR
 }
 
-export async function getCspSigningTokenBlindCustom(electionId: string, proof: { param1: string, param2: string }, orgApiToken: string): Promise<string> {
+export async function getCspSigningTokenBlindCustom(electionId: string, proof: { voterId: string, signature: string }, orgApiToken: string): Promise<string> {
   const url = config.cspUrlPrefix + "/v1/auth/elections/" + electionId + "/blind/auth"
 
   const body = {
-    "authData": [proof.param1, proof.param2] // The custom values that the CSP expects
+    "authData": [electionId, proof.voterId, proof.signature] // The custom values that the CSP expects
   }
 
   const response = await fetch(url, {

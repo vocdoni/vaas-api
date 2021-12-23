@@ -3,6 +3,7 @@ import { createIntegrator, deleteIntegrator } from "./sections/superadmin"
 import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot } from "./sections/voter"
 import { Wallet } from "@ethersproject/wallet"
 import { wait } from "./util/wait"
+import { fakeSign } from "./sections/fake-csp"
 
 async function main() {
     const encryptedResults = false
@@ -32,21 +33,24 @@ async function main() {
     // const electionListPub = await getElectionListPub(electionId1, "active", orgApiToken)
     // const electionInfo1 = await getElectionInfoPub(electionId1, orgApiToken)
 
+    const wallet = Wallet.createRandom()
+    const voterId = "000000000000000000000000" + wallet.address
+    const signature = fakeSign(electionId1, voterId)
+
     // key for confidential election data
     // const cspSharedKey = await getElectionSharedKey(electionId1, signedElectionId, orgApiToken)
-    const cspSharedKey = await getElectionSharedKeyCustom(electionId1, { param1: "123", param2: "234" }, orgApiToken)
+    const cspSharedKey = await getElectionSharedKeyCustom(electionId1, { voterId, signature }, orgApiToken)
     // const electionInfo1 = await getElectionSecretInfoPub(electionId1, cspSharedKey, orgApiToken)
 
     // NON ANONYMOUS AUTH
     // const tokenR = await getCspSigningTokenPlain(electionId1, signedElectionId, orgApiToken)
-    // const tokenR = await getCspSigningTokenPlainCustom(electionId1, { param1: "123", param2: "234" }, orgApiToken)
+    // const tokenR = await getCspSigningTokenPlainCustom(electionId1, { voterId, signature }, orgApiToken)
     // const plainSignature = await getCspPlainSignature(electionId1, tokenR, payload, orgApiToken)
 
     // ANONYMOUS AUTH
     // const tokenR = await getCspSigningTokenBlind(electionId1, signedElectionId, orgApiToken)
-    const tokenR = await getCspSigningTokenBlindCustom(electionId1, { param1: "123", param2: "234" }, orgApiToken)
+    const tokenR = await getCspSigningTokenBlindCustom(electionId1, { voterId, signature }, orgApiToken)
 
-    const wallet = Wallet.createRandom()
     const { hexBlinded: blindedPayload, userSecretData } = getBlindedPayload(electionId1, tokenR, wallet)
 
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
