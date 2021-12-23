@@ -293,7 +293,7 @@ func (c *Client) SetProcessMetadataConfidential(meta types.ProcessMetadata, meta
 	if err != nil {
 		return "", fmt.Errorf("could not marshal process metadata: %v", err)
 	}
-	log.Debugf("encrypting meta with %x", metadataPrivKey)
+	log.Debugf("encrypting metatadata for %x", processId)
 	encryptedMeta, err := apiUtil.EncryptSymmetric(metaBytes, metadataPrivKey)
 	if err != nil {
 		return "", fmt.Errorf("could not encrypt private metadata: %w", err)
