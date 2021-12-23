@@ -492,8 +492,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 			return fmt.Errorf("could not decode metadata private key: %w", err)
 		}
 		// Encrypt and send the process metadata
-		if metaUri, err = u.vocClient.SetProcessMetadataConfidential(
-			metadata, metaPrivKeyBytes, processID); err != nil {
+		if metaUri, err = u.vocClient.SetProcessMetadata(
+			metadata, processID, metaPrivKeyBytes); err != nil {
 			return fmt.Errorf("could not set confidential process metadata: %w", err)
 		}
 
@@ -506,7 +506,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		}
 
 	} else { // Process is not confidential, no need to touch metadata key
-		if metaUri, err = u.vocClient.SetProcessMetadata(metadata, processID); err != nil {
+		if metaUri, err = u.vocClient.SetProcessMetadata(metadata, processID, []byte{}); err != nil {
 			return fmt.Errorf("could not set process metadata: %w", err)
 		}
 	}
@@ -541,7 +541,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
+	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
 	u.dbTransactions.Store(txHash, createElectionQuery{
 		integratorPrivKey: orgInfo.integratorPrivKey,
 		ethAddress:        orgInfo.entityID,

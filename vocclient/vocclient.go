@@ -272,17 +272,25 @@ func (c *Client) SetEntityMetadata(meta types.EntityMetadata,
 
 // SetProcessMetadata pins the given process metadata to IPFS and returns its URI
 func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
-	processId []byte) (string, error) {
+	processId, metadataPrivKey []byte) (string, error) {
 	metaBytes, err := json.Marshal(meta)
 	if err != nil {
 		return "", fmt.Errorf("could not marshal process metadata: %v", err)
 	}
-	metaURI, err := c.AddFile(metaBytes, "ipfs",
-		fmt.Sprintf("%X process metadata", processId))
-	if err != nil {
-		return "", fmt.Errorf("could not post metadata to ipfs: %v", err)
+	if len(metadataPrivKey) > 0 {
+		log.Debugf("encrypting metatadata for %x", processId)
+		encryptedMeta, err := apiUtil.EncryptSymmetric(metaBytes, metadataPrivKey)
+		if err != nil {
+			return "", fmt.Errorf("could not encrypt private metadata: %w", err)
+		}
+		metaBytes, err = json.Marshal(types.RawFile{Payload: encryptedMeta, Version: "1.0"})
+		if err != nil {
+			return "", fmt.Errorf("could not marshal encrypted bytes: %v", err)
+		}
 	}
-	return metaURI, nil
+	return c.AddFile(metaBytes, "ipfs",
+		fmt.Sprintf("%X process metadata", processId))
+
 }
 
 // SetProcessMetadataConfidential encrypts with metadataPrivKey and then pins
