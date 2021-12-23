@@ -34,7 +34,7 @@ async function main() {
     // const electionInfo1 = await getElectionInfoPub(electionId1, orgApiToken)
 
     const wallet = Wallet.createRandom()
-    const voterId = "000000000000000000000000" + wallet.address
+    const voterId = "000000000000000000000000" + wallet.address.slice(2)
     const signature = fakeSign(electionId1, voterId)
 
     // key for confidential election data
