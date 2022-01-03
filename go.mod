@@ -20,6 +20,7 @@ require (
 	go.vocdoni.io/dvote v1.0.4-0.20211222170021-1a8914039ad0
 	go.vocdoni.io/proto v1.13.3-0.20211213155005-46b4177904ba
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
+	golang.org/x/tools v0.1.8 // indirect
 	google.golang.org/protobuf v1.27.1
 )
 
