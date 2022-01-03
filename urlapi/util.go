@@ -320,9 +320,9 @@ func aggregateResults(meta *types.ProcessMetadata,
 func appendProcess(electionList *[]types.APIElectionSummary, newProcess *types.Election,
 	private bool, blockHeight int) {
 	var status string
-	if newProcess.StartBlock >= blockHeight {
+	if newProcess.StartBlock > blockHeight {
 		status = "UPCOMING"
-	} else if newProcess.StartBlock < blockHeight && newProcess.EndBlock > blockHeight {
+	} else if newProcess.StartBlock <= blockHeight && newProcess.EndBlock > blockHeight {
 		status = "ACTIVE"
 	} else {
 		status = "ENDED"

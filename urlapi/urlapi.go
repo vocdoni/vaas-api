@@ -157,7 +157,7 @@ func sendResponse(response interface{}, ctx *httprouter.HTTPContext) error {
 		log.Errorf("error marshaling JSON: %v", err)
 		return fmt.Errorf("error marshaling JSON: %w", err)
 	}
-	if err = ctx.Send(data); err != nil {
+	if err = ctx.Send(data, 200); err != nil {
 		log.Error(err)
 		return err
 	}
