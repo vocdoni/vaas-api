@@ -148,6 +148,21 @@ func TestAppendProcess(t *testing.T) {
 	qt.Assert(t, len(electionList), qt.Equals, 0)
 }
 
+func TestReflectElection(t *testing.T) {
+	entityId := []byte{1, 2, 3}
+	privKey := []byte{4, 5, 6}
+	newElection := &types.Election{
+		OrgEthAddress:   entityId,
+		MetadataPrivKey: privKey,
+	}
+	priv := reflectElectionPrivate(*newElection)
+	qt.Assert(t, bytes.Compare(priv.OrgEthAddress, entityId), qt.Equals, 0)
+	qt.Assert(t, bytes.Compare(priv.MetadataPrivKey, privKey), qt.Equals, 0)
+	pub := reflectElectionPublic(*newElection)
+	qt.Assert(t, bytes.Compare(pub.OrgEthAddress, entityId), qt.Equals, 0)
+	qt.Assert(t, bytes.Compare(pub.MetadataPrivKey, []byte{}), qt.Equals, 0)
+}
+
 func TestEntityKeyEncryption(t *testing.T) {
 	globalKey := []byte("key")
 	generateSignKey := func() []byte {
