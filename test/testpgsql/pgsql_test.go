@@ -22,11 +22,10 @@ func TestMain(m *testing.M) {
 		Sslmode:  "disable",
 		User:     "vocdoni",
 	}
-	if err := API.Start(db, "", "", "", 9000, testcommon.TestCSP{}); err != nil {
+	if err := API.Start(db, "", "", "", 9000); err != nil {
 		log.Printf("SKIPPING: could not start the API: %v", err)
 		return
 	}
-	os.Exit(m.Run())
 	if err := API.DB.Ping(); err != nil {
 		log.Printf("SKIPPING: could not connect to DB: %v", err)
 		return
