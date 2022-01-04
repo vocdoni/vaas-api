@@ -1,9 +1,9 @@
 package testdb
 
 import (
-	"encoding/hex"
-	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	migrate "github.com/rubenv/sql-migrate"
 	"go.vocdoni.io/api/types"
@@ -30,59 +30,129 @@ func New() (*Database, error) {
 	return &Database{}, nil
 }
 
+func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name, email string) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newCspUrlPrefix, newName string) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, error) {
+	return 0, nil
+
+}
+
+func (d *Database) GetIntegrator(id int) (*types.Integrator, error) {
+	return nil, nil
+}
+
+func (d *Database) GetIntegratorByKey(secretApiKey []byte) (*types.Integrator, error) {
+	return nil, nil
+
+}
+
+func (d *Database) DeleteIntegrator(id int) error {
+	return nil
+}
+
+func (d *Database) CountIntegrators() (int, error) {
+	return 0, nil
+
+}
+
+func (d *Database) GetIntegratorApiKeysList() ([][]byte, error) {
+	return nil, nil
+}
+
+func (d *Database) CreatePlan(name string, maxCensusSize, maxProcessCount int) (uuid.UUID, error) {
+	return uuid.UUID{}, nil
+}
+
+func (d *Database) GetPlan(id uuid.UUID) (*types.QuotaPlan, error) {
+	return nil, nil
+}
+
+func (d *Database) GetPlanByName(name string) (*types.QuotaPlan, error) {
+	return nil, nil
+}
+
+func (d *Database) DeletePlan(id uuid.UUID) error {
+	return nil
+
+}
+
+func (d *Database) UpdatePlan(id uuid.UUID, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) GetPlansList() ([]types.QuotaPlan, error) {
+	return nil, nil
+}
+
+func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCipher []byte) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte, newPublicApiToken string) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error) {
+	return nil, nil
+}
+
+func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error {
+	return nil
+
+}
+
+func (d *Database) ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error) {
+	return nil, nil
+}
+
+func (d *Database) CountOrganizations(integratorAPIKey []byte) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
+	return 0, nil
+}
+
+func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error) {
+	return nil, nil
+}
+
+func (d *Database) GetElectionPublic(organizationEthAddress, processID []byte) (*types.Election, error) {
+	return nil, nil
+}
+
+func (d *Database) GetElectionPrivate(organizationEthAddress, processID []byte) (*types.Election, error) {
+	return nil, nil
+}
+
+func (d *Database) ListElections(integratorAPIKey, orgEthAddress []byte) ([]types.Election, error) {
+	return nil, nil
+}
+
 func (d *Database) Ping() error {
 	return nil
 }
 
 func (d *Database) Close() error {
 	return nil
-}
-
-func (d *Database) Entity(entityID []byte) (*types.Organization, error) {
-	if fmt.Sprintf("%x", entityID) == "09fa012e40f844b073fab7fcbd7f7a5716c1a365" {
-		return nil, fmt.Errorf("error adding entity with id: %x", entityID)
-	}
-	if fmt.Sprintf("%x", entityID) == "f6da3e4864d566faf82163a407e84a9001592678" {
-		return nil, fmt.Errorf("cannot fetch entity with ID: %x", entityID)
-	}
-
-	entity := types.Organization{}
-	// entity.ID = entityID
-	// entity.Name = "test entity"
-	// entity.Email = "entity@entity.org"
-
-	// failEidID := hex.EncodeToString(entityID)
-	// if failEidID == "ca526af2aaa0f3e9bb68ab80de4392590f7b153a" {
-	// 	entity.ID = []byte{1}
-	// }
-
-	return &entity, nil
-}
-
-func (d *Database) EntitiesID() ([]string, error) {
-	return nil, nil
-}
-
-func (d *Database) AddEntity(entityID []byte) error {
-	if fmt.Sprintf("%x", entityID) == "09fa012e40f844b073fab7fcbd7f7a5716c1a365" {
-		return fmt.Errorf("error adding entity with id: %x", entityID)
-	}
-	return nil
-}
-
-func (d *Database) DeleteEntity(entityID []byte) error {
-	if fmt.Sprintf("%x", entityID) == "09fa012e40f844b073fab7fcbd7f7a5716c1a365" {
-		return fmt.Errorf("error deleting entity with id: %x", entityID)
-	}
-	return nil
-}
-
-func (d *Database) UpdateEntity(entityID []byte) (int, error) {
-	failEid := hex.EncodeToString(entityID)
-	if failEid == "09fa012e40f844b073fab7fcbd7f7a5716c1a365" {
-		return 0, fmt.Errorf("error updating entity with id: %s", failEid)
-	}
-	return 1, nil
 }
 
 func (d *Database) Migrate(dir migrate.MigrationDirection) (int, error) {

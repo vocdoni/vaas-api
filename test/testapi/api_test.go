@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	qt "github.com/frankban/quicktest"
-	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/test/testcommon"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/log"
@@ -18,18 +17,10 @@ import (
 var API testcommon.TestAPI
 
 func TestMain(m *testing.M) {
-	db := &config.DB{
-		Dbname:   "vaas",
-		Password: "vocdoni",
-		Host:     "127.0.0.1",
-		Port:     5432,
-		Sslmode:  "disable",
-		User:     "vocdoni",
-	}
 	storage := os.TempDir()
 	apiPort := 9000
 	apiAuthToken := "bb1a42df36d0cf3f4dd53d71dffa15780d44c54a5971792acd31974bc2cbceb6"
-	if err := API.Start(db, "/api", apiAuthToken, storage, apiPort); err != nil {
+	if err := API.Start(nil, "/api", apiAuthToken, storage, apiPort); err != nil {
 		log.Fatalf("SKIPPING: could not start the API: %v", err)
 		return
 	}

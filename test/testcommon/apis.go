@@ -7,6 +7,7 @@ import (
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
+	"go.vocdoni.io/api/database/testdb"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -31,8 +32,7 @@ type TestCSP struct {
 	CspPubKey dvoteTypes.HexBytes
 }
 
-// Start creates a new database connection and API endpoint for testing.
-// If dbc is nil the testdb will be used.
+// Start creates a new mock database and API endpoint for testing.
 // If route is nil, then the websockets API, CSP, and Vocone won't be initialized
 // If route is nil, storageDir is not needed
 func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, port int) error {
@@ -50,9 +50,11 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		if t.DB, err = pgsql.New(dbc); err != nil {
 			return err
 		}
-	}
-	if err := pgsql.Migrator("upSync", t.DB); err != nil {
-		log.Fatal(err)
+	} else {
+		t.DB, err = testdb.New()
+		if err := pgsql.Migrator("upSync", t.DB); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if route != "" {
