@@ -24,8 +24,10 @@ func TestIntegrator(t *testing.T) {
 	var resp types.APIResponse
 	err := json.Unmarshal(respBody, &resp)
 	qt.Check(t, err, qt.IsNil)
+	qt.Check(t, resp.ID, qt.Not(qt.Equals), 0)
+	qt.Check(t, len(resp.APIKey) > 0, qt.IsTrue)
 	integrators[0].ID = resp.ID
-	log.Infof("%s", resp)
+	log.Infof("%s", respBody)
 	// cleaning up
 	for _, integrator := range integrators {
 		if err := API.DB.DeleteIntegrator(integrator.ID); err != nil {

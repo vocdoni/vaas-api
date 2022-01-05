@@ -31,15 +31,15 @@ func New() (*Database, error) {
 }
 
 func (d *Database) CreateIntegrator(secretApiKey, cspPubKey []byte, cspUrlPrefix, name, email string) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) UpdateIntegrator(id int, newCspPubKey []byte, newCspUrlPrefix, newName string) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) UpdateIntegratorApiKey(id int, newSecretApiKey []byte) (int, error) {
-	return 0, nil
+	return 1, nil
 
 }
 
@@ -57,7 +57,7 @@ func (d *Database) DeleteIntegrator(id int) error {
 }
 
 func (d *Database) CountIntegrators() (int, error) {
-	return 0, nil
+	return 1, nil
 
 }
 
@@ -83,7 +83,7 @@ func (d *Database) DeletePlan(id uuid.UUID) error {
 }
 
 func (d *Database) UpdatePlan(id uuid.UUID, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) GetPlansList() ([]types.QuotaPlan, error) {
@@ -91,23 +91,23 @@ func (d *Database) GetPlansList() ([]types.QuotaPlan, error) {
 }
 
 func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCipher []byte) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte, newPublicApiToken string) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error) {
@@ -124,11 +124,11 @@ func (d *Database) ListOrganizations(integratorAPIKey []byte, filter *types.List
 }
 
 func (d *Database) CountOrganizations(integratorAPIKey []byte) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error) {
@@ -156,13 +156,13 @@ func (d *Database) Close() error {
 }
 
 func (d *Database) Migrate(dir migrate.MigrationDirection) (int, error) {
-	return 0, nil
+	return 1, nil
 }
 
 func (d *Database) MigrateStatus() (int, int, string, error) {
-	return 0, 0, "", nil
+	return 1, 0, "", nil
 }
 
 func (d *Database) MigrationUpSync() (int, error) {
-	return 0, nil
+	return 1, nil
 }

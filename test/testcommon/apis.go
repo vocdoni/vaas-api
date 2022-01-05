@@ -7,7 +7,6 @@ import (
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/database/pgsql"
-	"go.vocdoni.io/api/database/testdb"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
@@ -49,11 +48,6 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		// Postgres with sqlx
 		if t.DB, err = pgsql.New(dbc); err != nil {
 			return err
-		}
-	} else {
-		t.DB, err = testdb.New()
-		if err := pgsql.Migrator("upSync", t.DB); err != nil {
-			log.Fatal(err)
 		}
 	}
 
