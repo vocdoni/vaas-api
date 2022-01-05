@@ -15,12 +15,12 @@ var API testcommon.TestAPI
 func TestMain(m *testing.M) {
 	API = testcommon.TestAPI{Port: 12000 + rand.Intn(1000)}
 	db := &config.DB{
-		Dbname:   "vaas",
-		Password: "vocdoni",
+		Dbname:   "postgres",
+		Password: "postgres",
 		Host:     "127.0.0.1",
 		Port:     5432,
 		Sslmode:  "disable",
-		User:     "vocdoni",
+		User:     "postgres",
 	}
 	if err := API.Start(db, "", "", "", 9000); err != nil {
 		log.Printf("SKIPPING: could not start the API: %v", err)
