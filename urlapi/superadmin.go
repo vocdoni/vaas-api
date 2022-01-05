@@ -79,7 +79,7 @@ func (u *URLAPI) createIntegratorAccountHandler(
 
 	cspPubKey, err := hex.DecodeString(dvoteUtil.TrimHex(req.CspPubKey))
 	if err != nil {
-		return fmt.Errorf("error decoding csp pub key")
+		return fmt.Errorf("error decoding csp pub key %s", req.CspPubKey)
 	}
 	if resp.ID, err = u.db.CreateIntegrator(apiKey,
 		cspPubKey, req.CspUrlPrefix, req.Name, req.Email); err != nil {
@@ -121,7 +121,7 @@ func (u *URLAPI) resetIntegratorKeyHandler(
 	}
 
 	// Now generate a new api key & update integrator
-	resp := types.APIResponse{APIKey: util.GenerateBearerToken()}
+	resp := types.APIResponse{APIKey: util.GenerateBearerToken(), ID: id}
 	apiKey, err := hex.DecodeString(resp.APIKey)
 	if err != nil {
 		return err

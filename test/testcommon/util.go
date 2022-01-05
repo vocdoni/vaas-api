@@ -1,6 +1,7 @@
 package testcommon
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"time"
@@ -9,19 +10,21 @@ import (
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
+	dvoteutil "go.vocdoni.io/dvote/util"
 )
 
 func CreateIntegrators(size int) []*types.Integrator {
 	mp := make([]*types.Integrator, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
+		cspPub := dvoteutil.RandomHex(32)
+		cspPubKey, _ := hex.DecodeString(cspPub)
 		// retrieve entity ID
 		mp[i] = &types.Integrator{
-			SecretApiKey: []byte(fmt.Sprintf("%d", randomID)),
 			Name:         fmt.Sprintf("Test%d", randomID),
 			Email:        fmt.Sprintf("mail%d@mail.org", randomID),
 			CspUrlPrefix: "csp.vocdoni.net",
-			CspPubKey:    []byte("ff"),
+			CspPubKey:    cspPubKey,
 		}
 	}
 	return mp

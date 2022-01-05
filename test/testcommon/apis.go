@@ -87,7 +87,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		}
 		t.URL = fmt.Sprintf("http://%s:%d%s", TEST_HOST, port, route)
 		t.AuthToken = authToken
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second)
 	}
 	return nil
 }
