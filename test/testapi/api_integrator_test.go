@@ -36,6 +36,15 @@ func TestIntegrator(t *testing.T) {
 	integrators[0].SecretApiKey = []byte(resp.APIKey)
 	log.Infof("%s", respBody)
 
+	// test failure: invalid api auth token
+	req = types.APIRequest{CspUrlPrefix: API.CSP.UrlPrefix,
+		CspPubKey: "zzz",
+		Name:      failIntegrators[0].Name,
+		Email:     failIntegrators[0].Email}
+	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", "1234", "POST", req)
+	qt.Assert(t, statusCode, qt.Equals, 401)
+	log.Infof("%s", respBody)
+
 	// test failure: invalid pubKey
 	req = types.APIRequest{CspUrlPrefix: API.CSP.UrlPrefix,
 		CspPubKey: "zzz",
@@ -43,20 +52,12 @@ func TestIntegrator(t *testing.T) {
 		Email:     failIntegrators[0].Email}
 	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
 	qt.Assert(t, statusCode, qt.Equals, 400)
-	err = json.Unmarshal(respBody, &resp)
-	if err != nil {
-		t.Fatal(err)
-	}
 	log.Infof("%s", respBody)
 
 	// test failure: missing name, email
 	req = types.APIRequest{}
 	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
 	qt.Assert(t, statusCode, qt.Equals, 400)
-	err = json.Unmarshal(respBody, &resp)
-	if err != nil {
-		t.Fatal(err)
-	}
 	log.Infof("%s", respBody)
 
 	// test fetching integrators
