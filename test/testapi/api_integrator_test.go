@@ -18,15 +18,15 @@ func TestIntegrator(t *testing.T) {
 	failIntegrators := testcommon.CreateIntegrators(1)
 
 	// test integrator creation
-	req := types.APIRequest{CspUrlPrefix: integrators[0].CspUrlPrefix,
-		CspPubKey: hex.EncodeToString(integrators[0].CspPubKey),
-		Name:      integrators[0].Name,
-		Email:     integrators[0].Email}
-	respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-	if statusCode != 200 {
-		log.Errorf("error response %s", string(respBody))
-		t.FailNow()
+	req := types.APIRequest{
+		CspUrlPrefix: integrators[0].CspUrlPrefix,
+		CspPubKey:    hex.EncodeToString(integrators[0].CspPubKey),
+		Name:         integrators[0].Name,
+		Email:        integrators[0].Email,
 	}
+	respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
+	log.Infof("%s", respBody)
+	qt.Assert(t, statusCode, qt.Equals, 200)
 	var resp types.APIResponse
 	err := json.Unmarshal(respBody, &resp)
 	qt.Assert(t, err, qt.IsNil)
@@ -34,74 +34,65 @@ func TestIntegrator(t *testing.T) {
 	qt.Check(t, len(resp.APIKey) > 0, qt.IsTrue)
 	integrators[0].ID = resp.ID
 	integrators[0].SecretApiKey = []byte(resp.APIKey)
-	log.Infof("%s", respBody)
 
 	// test failure: invalid api auth token
-	req = types.APIRequest{CspUrlPrefix: API.CSP.UrlPrefix,
-		CspPubKey: "zzz",
-		Name:      failIntegrators[0].Name,
-		Email:     failIntegrators[0].Email}
+	req = types.APIRequest{
+		CspUrlPrefix: API.CSP.UrlPrefix,
+		CspPubKey:    "zzz",
+		Name:         failIntegrators[0].Name,
+		Email:        failIntegrators[0].Email,
+	}
 	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", "1234", "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 401)
 	log.Infof("%s", respBody)
+	qt.Assert(t, statusCode, qt.Equals, 401)
 
 	// test failure: invalid pubKey
-	req = types.APIRequest{CspUrlPrefix: API.CSP.UrlPrefix,
-		CspPubKey: "zzz",
-		Name:      failIntegrators[0].Name,
-		Email:     failIntegrators[0].Email}
+	req = types.APIRequest{
+		CspUrlPrefix: API.CSP.UrlPrefix,
+		CspPubKey:    "zzz",
+		Name:         failIntegrators[0].Name,
+		Email:        failIntegrators[0].Email,
+	}
 	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 400)
 	log.Infof("%s", respBody)
+	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// test failure: missing name, email
-	req = types.APIRequest{}
-	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 400)
+	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", types.APIRequest{})
 	log.Infof("%s", respBody)
+	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// test fetching integrators
 	for _, integrator := range integrators {
 		req := types.APIRequest{}
 		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
 			API.URL, integrator.ID), API.AuthToken, "GET", req)
-		if statusCode != 200 {
-			log.Errorf("error response %s", string(respBody))
-			t.FailNow()
-		}
+		log.Infof("%s", respBody)
+		qt.Assert(t, statusCode, qt.Equals, 200)
 		var resp types.APIResponse
 		err := json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)
-		log.Infof("%s", respBody)
 		qt.Assert(t, resp.Name, qt.Equals, integrator.Name)
 		qt.Assert(t, bytes.Compare(resp.CspPubKey, integrator.CspPubKey), qt.Equals, 0)
 		qt.Assert(t, resp.CspUrlPrefix, qt.Equals, integrator.CspUrlPrefix)
 	}
 
 	// test fetching nonexistent integrator
-	req = types.APIRequest{}
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/222222222222",
-		API.URL), API.AuthToken, "GET", req)
-	qt.Assert(t, statusCode, qt.Equals, 400)
-	err = json.Unmarshal(respBody, &resp)
-	if err != nil {
-		t.Fatal(err)
-	}
+		API.URL), API.AuthToken, "GET", types.APIRequest{})
 	log.Infof("%s", respBody)
+	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// test resetting integrator api keys
 	for _, integrator := range integrators {
 		req := types.APIRequest{}
 		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d/key",
 			API.URL, integrator.ID), API.AuthToken, "PATCH", req)
-		if statusCode != 200 {
-			log.Errorf("error response %s", string(respBody))
-			t.FailNow()
-		}
+		log.Infof("%s", respBody)
+		qt.Assert(t, statusCode, qt.Equals, 200)
 		var resp types.APIResponse
 		err := json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)
-		log.Infof("%s", respBody)
 		qt.Assert(t, resp.ID, qt.Equals, integrator.ID)
 		qt.Assert(t, resp.APIKey, qt.Not(qt.Equals), string(integrator.SecretApiKey))
 		qt.Assert(t, resp.APIKey, qt.Not(qt.Equals), "")
@@ -109,33 +100,24 @@ func TestIntegrator(t *testing.T) {
 	}
 
 	// test fetching nonexistent integrator
-	req = types.APIRequest{}
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/222222222222",
-		API.URL), API.AuthToken, "GET", req)
-	qt.Assert(t, statusCode, qt.Equals, 400)
-	err = json.Unmarshal(respBody, &resp)
-	if err != nil {
-		t.Fatal(err)
-	}
+		API.URL), API.AuthToken, "GET", types.APIRequest{})
 	log.Infof("%s", respBody)
+	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// cleaning up
 	for _, integrator := range integrators {
-		if err := API.DB.DeleteIntegrator(integrator.ID); err != nil {
-			t.Errorf("error deleting test integrator: %v", err)
-		}
+		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
+			API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
+		log.Infof("%s", respBody)
+		qt.Assert(t, statusCode, qt.Equals, 200)
 	}
 
 	// test fetching integrators
 	for _, integrator := range integrators {
-		req := types.APIRequest{}
 		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
-			API.URL, integrator.ID), API.AuthToken, "GET", req)
-		qt.Assert(t, statusCode, qt.Equals, 400)
-		err = json.Unmarshal(respBody, &resp)
-		if err != nil {
-			t.Fatal(err)
-		}
+			API.URL, integrator.ID), API.AuthToken, "GET", types.APIRequest{})
 		log.Infof("%s", respBody)
+		qt.Assert(t, statusCode, qt.Equals, 400)
 	}
 }

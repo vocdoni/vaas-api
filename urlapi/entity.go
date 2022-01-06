@@ -183,6 +183,9 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	if err != nil {
 		return err
 	}
+	if req.Name == "" {
+		return fmt.Errorf("organization name is empty")
+	}
 	orgApiToken := util.GenerateBearerToken()
 
 	ethSignKeys := ethereum.NewSignKeys()

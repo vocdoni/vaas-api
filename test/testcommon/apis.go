@@ -49,7 +49,12 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		if t.DB, err = pgsql.New(dbc); err != nil {
 			return err
 		}
+		if err := pgsql.Migrator("upSync", t.DB); err != nil {
+			log.Fatal(err)
+		}
+		// Start token notifier
 	}
+	integratorTokenNotifier, _ := pgsql.NewNotifier(dbc, "integrator_tokens_update")
 
 	if route != "" {
 		t.StorageDir = storageDir
@@ -85,6 +90,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		if err := urlApi.EnableVotingServiceHandlers(t.DB, client); err != nil {
 			log.Fatal(err)
 		}
+		go integratorTokenNotifier.FetchNewTokens(urlApi)
 		t.URL = fmt.Sprintf("http://%s:%d%s", TEST_HOST, port, route)
 		t.AuthToken = authToken
 		time.Sleep(time.Second)

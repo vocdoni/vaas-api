@@ -6,12 +6,23 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/google/uuid"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
+	dvotetypes "go.vocdoni.io/dvote/types"
 	dvoteutil "go.vocdoni.io/dvote/util"
 )
+
+type testOrganization struct {
+	APIToken       string
+	Name           string
+	Description    string
+	HeaderURI      string
+	AvatarURI      string
+	CreationTxHash string
+	ID             int
+	EthAddress     dvotetypes.HexBytes
+}
 
 func CreateIntegrators(size int) []*types.Integrator {
 	mp := make([]*types.Integrator, size)
@@ -31,18 +42,15 @@ func CreateIntegrators(size int) []*types.Integrator {
 }
 
 // Create a given number of random organizations
-func CreateOrganizations(size int) []*types.Organization {
-	signers := CreateEthRandomKeysBatch(size)
-	mp := make([]*types.Organization, size)
+func CreateOrganizations(size int) []*testOrganization {
+	mp := make([]*testOrganization, size)
 	for i := 0; i < size; i++ {
-		mp[i] = &types.Organization{
-			EthAddress:       signers[i].Address().Bytes(),
-			EthPrivKeyCipher: []byte("ff"),
-			HeaderURI:        "https://",
-			AvatarURI:        "https://",
-			PublicAPIToken:   signers[i].Address().String(),
-			PublicAPIQuota:   1000,
-			QuotaPlanID:      uuid.NullUUID{},
+		randomID := rand.Intn(10000000)
+		mp[i] = &testOrganization{
+			Name:        fmt.Sprintf("Test%d", randomID),
+			Description: fmt.Sprintf("Description%d", randomID),
+			HeaderURI:   "https://headeruri",
+			AvatarURI:   "https://avataruri",
 		}
 	}
 	return mp

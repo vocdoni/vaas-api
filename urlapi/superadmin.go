@@ -8,7 +8,6 @@ import (
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
-	"go.vocdoni.io/dvote/log"
 	dvoteUtil "go.vocdoni.io/dvote/util"
 )
 
@@ -19,7 +18,6 @@ const (
 
 func (u *URLAPI) enableSuperadminHandlers(adminToken string) error {
 	u.api.SetAdminToken(adminToken)
-	log.Infof("admin token;: %s", adminToken)
 	if err := u.api.RegisterMethod(
 		"/admin/accounts",
 		"POST",
@@ -70,6 +68,12 @@ func (u *URLAPI) createIntegratorAccountHandler(
 	req, err := util.UnmarshalRequest(msg)
 	if err != nil {
 		return err
+	}
+	if req.Name == "" {
+		return fmt.Errorf("integrator name is empty")
+	}
+	if req.Email == "" {
+		return fmt.Errorf("integrator email is empty")
 	}
 	resp := types.APIResponse{APIKey: util.GenerateBearerToken()}
 	apiKey, err := hex.DecodeString(resp.APIKey)

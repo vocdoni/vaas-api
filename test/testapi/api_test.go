@@ -20,7 +20,7 @@ var API testcommon.TestAPI
 func TestMain(m *testing.M) {
 	storage := os.TempDir()
 	apiPort := 9000
-	apiAuthToken := "bb1a42df36d0cf3f4dd53d71dffa15780d44c54a5971792acd31974bc2cbceb6"
+	testApiAuthToken := "bb1a42df36d0cf3f4dd53d71dffa15780d44c54a5971792acd31974bc2cbceb6"
 	db := &config.DB{
 		Dbname:   "postgres",
 		Password: "postgres",
@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 		Sslmode:  "disable",
 		User:     "postgres",
 	}
-	if err := API.Start(db, "/api", apiAuthToken, storage, apiPort); err != nil {
+	if err := API.Start(db, "/api", testApiAuthToken, storage, apiPort); err != nil {
 		log.Fatalf("SKIPPING: could not start the API: %v", err)
 		return
 	}
@@ -40,9 +40,10 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func DoRequest(t *testing.T, url, authToken, method string, request types.APIRequest) ([]byte, int) {
-	log.Infof("making request %s to %s", method, url)
+func DoRequest(t *testing.T, url, authToken,
+	method string, request types.APIRequest) ([]byte, int) {
 	data, err := json.Marshal(request)
+	log.Infof("making request %s to %s with token %s, data %s", method, url, authToken, string(data))
 	qt.Check(t, err, qt.IsNil)
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
 	qt.Check(t, err, qt.IsNil)

@@ -34,7 +34,7 @@ func (t *TestAPI) startTestGateway() {
 		log.Fatal(err)
 	}
 
-	vc.SetBlockTimeTarget(time.Second * time.Duration(5*time.Second))
+	vc.SetBlockTimeTarget(time.Second * 5)
 	vc.SetBlockSize(500)
 	go vc.Start()
 	if err = vc.EnableAPI(TEST_HOST, TEST_GW_PORT, TEST_GW_PATH); err != nil {
