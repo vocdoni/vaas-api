@@ -16,13 +16,13 @@ func TestElection(t *testing.T) {
 		integrators[0].CspUrlPrefix, integrators[0].Name, integrators[0].Email)
 	c.Assert(err, qt.IsNil)
 
-	organizations := testcommon.CreateOrganizations(1)
+	organizations := testcommon.CreateDbOrganizations(1)
 	organizations[0].ID, err = API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
 		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
 	c.Assert(err, qt.IsNil)
 
-	elections := testcommon.CreateElections(2)
+	elections := testcommon.CreateDbElections(2)
 	id, err := API.DB.CreateElection(integrators[0].SecretApiKey, organizations[0].EthAddress, elections[0].ProcessID,
 		elections[0].MetadataPrivKey, elections[0].Title, elections[0].StartDate,
 		elections[0].EndDate, uuid.NullUUID{}, 0, 0, true, true)

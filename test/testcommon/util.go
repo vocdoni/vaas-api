@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/google/uuid"
 	sk "github.com/vocdoni/blind-csp/saltedkey"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
@@ -102,6 +103,47 @@ func CreateElections(size int, confidential, encrypted bool) []*testElection {
 			for k := 0; k <= j; k++ {
 				mp[i].Questions[j].Choices = append(mp[i].Questions[j].Choices, fmt.Sprintf("Choice%d", k))
 			}
+		}
+	}
+	return mp
+}
+
+// Create a given number of random organizations
+func CreateDbOrganizations(size int) []*types.Organization {
+	signers := CreateEthRandomKeysBatch(size)
+	mp := make([]*types.Organization, size)
+	for i := 0; i < size; i++ {
+		mp[i] = &types.Organization{
+			EthAddress:       signers[i].Address().Bytes(),
+			EthPrivKeyCipher: []byte("ff"),
+			HeaderURI:        "https://",
+			AvatarURI:        "https://",
+			PublicAPIToken:   signers[i].Address().String(),
+			PublicAPIQuota:   1000,
+			QuotaPlanID:      uuid.NullUUID{},
+		}
+	}
+	return mp
+}
+
+// Create a given number of random Elections
+func CreateDbElections(size int) []*types.Election {
+	var duration time.Duration
+	var err error
+	if duration, err = time.ParseDuration("1.5h"); err != nil {
+		log.Error("unexpected, cannot parse duration")
+	}
+	mp := make([]*types.Election, size)
+	for i := 0; i < size; i++ {
+		randomID := rand.Intn(10000000)
+		mp[i] = &types.Election{
+			ProcessID:       []byte(fmt.Sprintf("%d", randomID)),
+			Title:           fmt.Sprintf("Test%d", randomID),
+			StartDate:       time.Now(),
+			EndDate:         time.Now().Add(duration),
+			Confidential:    true,
+			HiddenResults:   true,
+			MetadataPrivKey: nil,
 		}
 	}
 	return mp

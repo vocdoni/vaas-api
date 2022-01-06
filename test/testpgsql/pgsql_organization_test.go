@@ -18,7 +18,7 @@ func TestOrganization(t *testing.T) {
 		integrators[0].CspUrlPrefix, integrators[0].Name, integrators[0].Email)
 	c.Assert(err, qt.IsNil)
 
-	organizations := testcommon.CreateOrganizations(1)
+	organizations := testcommon.CreateDbOrganizations(1)
 	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
 		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
@@ -66,7 +66,7 @@ func TestOrganizationUpdate(t *testing.T) {
 		integrators[0].CspUrlPrefix, integrators[0].Name, integrators[0].Email)
 	c.Assert(err, qt.IsNil)
 
-	organizations := testcommon.CreateOrganizations(1)
+	organizations := testcommon.CreateDbOrganizations(1)
 	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
 		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
