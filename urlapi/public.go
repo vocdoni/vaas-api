@@ -66,7 +66,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/account/organizations/{organizationId}",
+		"/pub/organizations/{organizationId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getOrganizationHandler,

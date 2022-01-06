@@ -55,6 +55,7 @@ func TestPublic(t *testing.T) {
 	err = json.Unmarshal(respBody, &resp)
 	qt.Assert(t, err, qt.IsNil)
 	organization.ID = resp.ID
+	organization.APIToken = resp.APIToken
 	organization.EthAddress = resp.OrganizationID
 	organization.CreationTxHash = resp.TxHash
 
@@ -197,6 +198,20 @@ func TestPublic(t *testing.T) {
 			qt.Assert(t, len(question.Choices), qt.Equals, len(election.Questions[i].Choices))
 		}
 	}
+
+	// failures: ensure wrong api token fails
+	// TODO implement rate-limiting, use getOrganizationPublic to compare API token
+	// respBody, statusCode = DoRequest(t, API.URL+
+	// 	"/v1/pub/organizations/"+hex.EncodeToString(organization.EthAddress),
+	// 	organization.APIToken+"12", "GET", types.APIRequest{})
+	// log.Infof("%s", respBody)
+	// qt.Assert(t, statusCode, qt.Equals, 400)
+
+	// respBody, statusCode = DoRequest(t, API.URL+
+	// 	"/v1/pub/elections/"+hex.EncodeToString(elections[0].ElectionID),
+	// 	organization.APIToken+"1234", "GET", types.APIRequest{})
+	// log.Infof("%s", respBody)
+	// qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// cleaning up
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/priv/account/organizations/"+
