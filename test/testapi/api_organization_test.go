@@ -26,10 +26,7 @@ func TestOrganization(t *testing.T) {
 			Email:        integrator.Email,
 		}
 		respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-		if statusCode != 200 {
-			log.Errorf("error response %s", string(respBody))
-			t.FailNow()
-		}
+		qt.Assert(t, statusCode, qt.Equals, 200)
 		var resp types.APIResponse
 		err := json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)

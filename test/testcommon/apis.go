@@ -60,11 +60,9 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		t.StorageDir = storageDir
 		// create gateway/vocone
 		go t.startTestGateway()
-		// start testing CSP
-		go t.startTestCSP()
 
 		// start API
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 10)
 		client, err := vocclient.New(t.Gateway, t.Signer)
 		if err != nil {
 			log.Fatal(err)

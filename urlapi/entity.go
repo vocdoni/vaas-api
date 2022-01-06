@@ -747,7 +747,7 @@ func (u *URLAPI) setProcessStatusHandler(
 		status = models.ProcessStatus_PAUSED
 	case "ENDED":
 		status = models.ProcessStatus_ENDED
-	case "CANCELLED":
+	case "CANCELED":
 		status = models.ProcessStatus_CANCELED
 	}
 

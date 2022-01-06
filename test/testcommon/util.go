@@ -6,7 +6,9 @@ import (
 	"math/rand"
 	"time"
 
+	sk "github.com/vocdoni/blind-csp/saltedkey"
 	"go.vocdoni.io/api/types"
+	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	"go.vocdoni.io/dvote/log"
 	dvotetypes "go.vocdoni.io/dvote/types"
@@ -22,6 +24,28 @@ type testOrganization struct {
 	CreationTxHash string
 	ID             int
 	EthAddress     dvotetypes.HexBytes
+}
+
+type testElection struct {
+	Confidential       bool
+	CreationTxHash     string
+	Description        string
+	ElectionID         dvotetypes.HexBytes
+	EncryptionPubKeys  []api.Key
+	EndDate            time.Time
+	Header             string
+	HiddenResults      bool
+	OrganizationID     dvotetypes.HexBytes
+	Questions          []types.Question
+	Results            []types.Result
+	ResultsAggregation string
+	ResultsDisplay     string
+	StartDate          time.Time
+	Status             string
+	StreamURI          string
+	Title              string
+	Type               string
+	VoteCount          uint32
 }
 
 func CreateIntegrators(size int) []*types.Integrator {
@@ -57,23 +81,27 @@ func CreateOrganizations(size int) []*testOrganization {
 }
 
 // Create a given number of random Elections
-func CreateElections(size int) []*types.Election {
-	var duration time.Duration
-	var err error
-	if duration, err = time.ParseDuration("1.5h"); err != nil {
-		log.Error("unexpected, cannot parse duration")
-	}
-	mp := make([]*types.Election, size)
+func CreateElections(size int, confidential, encrypted bool) []*testElection {
+	mp := make([]*testElection, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
-		mp[i] = &types.Election{
-			ProcessID:       []byte(fmt.Sprintf("%d", randomID)),
-			Title:           fmt.Sprintf("Test%d", randomID),
-			StartDate:       time.Now(),
-			EndDate:         time.Now().Add(duration),
-			Confidential:    true,
-			HiddenResults:   true,
-			MetadataPrivKey: nil,
+		mp[i] = &testElection{
+			Title:         fmt.Sprintf("Test%d", randomID),
+			Description:   fmt.Sprintf("Description%d", randomID),
+			Header:        fmt.Sprintf("Header%d", randomID),
+			StreamURI:     fmt.Sprintf("Stream%d", randomID),
+			EndDate:       time.Now().Add(24 * time.Hour),
+			Confidential:  confidential,
+			HiddenResults: encrypted,
+		}
+		for j := 0; j <= i; j++ {
+			mp[i].Questions = append(mp[i].Questions, types.Question{
+				Title:       fmt.Sprintf("Title%d", j),
+				Description: fmt.Sprintf("Description%d", j),
+			})
+			for k := 0; k <= j; k++ {
+				mp[i].Questions[j].Choices = append(mp[i].Questions[j].Choices, fmt.Sprintf("Choice%d", k))
+			}
 		}
 	}
 	return mp
@@ -103,4 +131,23 @@ func RandDate() time.Time {
 // RandBool creates a random bool
 func RandBool() bool {
 	return rand.Float32() < 0.5
+}
+
+func GetCSPSignature(processId []byte, signer *ethereum.SignKeys) string {
+	// extract public key as hexString, decode
+	_, priv := signer.HexString()
+
+	// create saltable private key
+	saltedPrivKey, err := sk.NewSaltedKey(priv)
+	if err != nil {
+		log.Fatal(err)
+	}
+	salt := [sk.SaltSize]byte{}
+	copy(salt[:], processId)
+	// generate salted signature with compressed private key
+	signature, err := saltedPrivKey.SignECDSA(salt, processId)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return hex.EncodeToString(signature)
 }
