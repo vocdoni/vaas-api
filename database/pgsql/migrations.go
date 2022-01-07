@@ -263,6 +263,6 @@ func Migrator(action string, db database.Database) error {
 	if err != nil {
 		return fmt.Errorf("could not retrieve migrations status: (%v)", err)
 	}
-	log.Infof("Total Migrations: %d\nApplied migrations: %d (%s)", total, actual, record)
+	log.Infof("total Migrations: %d\nApplied migrations: %d (%s)", total, actual, record)
 	return nil
 }

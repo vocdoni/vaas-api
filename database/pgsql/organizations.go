@@ -18,7 +18,7 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 	integrator, err := d.GetIntegratorByKey(integratorAPIKey)
 	if err != nil {
 		if err != sql.ErrNoRows {
-			log.Errorf("Tried to createOrganization by uknown API Key %x", integratorAPIKey)
+			log.Errorf("tried to createOrganization by uknown API Key %x", integratorAPIKey)
 			return 0, fmt.Errorf("unkown API key: %x", integratorAPIKey)
 		} else {
 			return 0, fmt.Errorf("createOrganization DB error: %v", err)

@@ -217,7 +217,7 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("Connected to %s at block height %d", client.ActiveEndpoint(), blockHeight)
+	log.Infof("connected to %s at block height %d", client.ActiveEndpoint(), blockHeight)
 
 	// Database Interface
 	var db database.Database

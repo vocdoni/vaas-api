@@ -688,6 +688,6 @@ func (c *Client) getVocHeight() error {
 		return fmt.Errorf("blockTimestamp is 0")
 	}
 	c.blockHeight.timestamp = resp.BlockTimestamp
-	log.Debugf("Block info %v", c.blockHeight)
+	log.Debugf("block info %v", c.blockHeight)
 	return nil
 }
