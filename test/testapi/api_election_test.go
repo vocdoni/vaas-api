@@ -15,6 +15,7 @@ import (
 )
 
 func TestElection(t *testing.T) {
+	t.Parallel()
 	integrator := testcommon.CreateIntegrators(1)[0]
 
 	// create integrator to test with
@@ -61,7 +62,7 @@ func TestElection(t *testing.T) {
 		respBody, statusCode = DoRequest(t, API.URL+
 			"/v1/priv/transactions/"+organization.CreationTxHash,
 			hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err := json.Unmarshal(respBody, &respMined)
 		qt.Assert(t, err, qt.IsNil)
@@ -92,7 +93,7 @@ func TestElection(t *testing.T) {
 		respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/organizations/"+
 			hex.EncodeToString(organization.EthAddress)+"/elections/blind",
 			hex.EncodeToString(integrator.SecretApiKey), "POST", req)
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err = json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)
@@ -111,7 +112,7 @@ func TestElection(t *testing.T) {
 			respBody, statusCode = DoRequest(t, API.URL+
 				"/v1/priv/transactions/"+election.CreationTxHash,
 				hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-			log.Infof("%s", respBody)
+			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
 			err := json.Unmarshal(respBody, &respMined)
 			qt.Assert(t, err, qt.IsNil)
@@ -135,7 +136,7 @@ func TestElection(t *testing.T) {
 			respBody, statusCode = DoRequest(t, API.URL+
 				"/v1/priv/elections/"+hex.EncodeToString(election.ElectionID),
 				hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
-			log.Infof("%s", respBody)
+			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
 			err = json.Unmarshal(respBody, &electionResp)
 			qt.Assert(t, err, qt.IsNil)
@@ -163,7 +164,7 @@ func TestElection(t *testing.T) {
 	respBody, statusCode = DoRequest(t, API.URL+
 		"/v1/priv/organizations/"+hex.EncodeToString(organization.EthAddress)+"/elections",
 		hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	var electionList []types.APIElectionSummary
 	err = json.Unmarshal(respBody, &electionList)
@@ -173,7 +174,7 @@ func TestElection(t *testing.T) {
 	respBody, statusCode = DoRequest(t, API.URL+
 		"/v1/priv/organizations/"+hex.EncodeToString(organization.EthAddress)+"/elections",
 		hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	var activeElectionList []types.APIElectionSummary
 	err = json.Unmarshal(respBody, &activeElectionList)
@@ -188,7 +189,7 @@ func TestElection(t *testing.T) {
 		respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/elections/"+
 			hex.EncodeToString(election.ElectionID)+"/CANCELED",
 			hex.EncodeToString(integrator.SecretApiKey), "PUT", types.APIRequest{})
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err = json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)
@@ -205,7 +206,7 @@ func TestElection(t *testing.T) {
 			respBody, statusCode = DoRequest(t, API.URL+
 				"/v1/priv/transactions/"+election.CreationTxHash,
 				hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-			log.Infof("%s", respBody)
+			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
 			var respMined urlapi.APIMined
 			err := json.Unmarshal(respBody, &respMined)
@@ -224,7 +225,7 @@ func TestElection(t *testing.T) {
 		respBody, statusCode = DoRequest(t, API.URL+
 			"/v1/priv/elections/"+hex.EncodeToString(election.ElectionID),
 			hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err = json.Unmarshal(respBody, &electionResp)
 		qt.Assert(t, err, qt.IsNil)
@@ -235,11 +236,11 @@ func TestElection(t *testing.T) {
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/priv/account/organizations/"+
 		hex.EncodeToString(organization.EthAddress), API.URL),
 		hex.EncodeToString(integrator.SecretApiKey), "DELETE", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
 		API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 }

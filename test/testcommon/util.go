@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"testing"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,7 +12,6 @@ import (
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/api"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	"go.vocdoni.io/dvote/log"
 	dvotetypes "go.vocdoni.io/dvote/types"
 	dvoteutil "go.vocdoni.io/dvote/util"
 )
@@ -127,11 +127,11 @@ func CreateDbOrganizations(size int) []*types.Organization {
 }
 
 // Create a given number of random Elections
-func CreateDbElections(size int) []*types.Election {
+func CreateDbElections(t *testing.T, size int) []*types.Election {
 	var duration time.Duration
 	var err error
 	if duration, err = time.ParseDuration("1.5h"); err != nil {
-		log.Error("unexpected, cannot parse duration")
+		t.Error("unexpected, cannot parse duration")
 	}
 	mp := make([]*types.Election, size)
 	for i := 0; i < size; i++ {
@@ -175,21 +175,21 @@ func RandBool() bool {
 	return rand.Float32() < 0.5
 }
 
-func GetCSPSignature(processId []byte, signer *ethereum.SignKeys) string {
+func GetCSPSignature(t *testing.T, processId []byte, signer *ethereum.SignKeys) string {
 	// extract public key as hexString, decode
 	_, priv := signer.HexString()
 
 	// create saltable private key
 	saltedPrivKey, err := sk.NewSaltedKey(priv)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	salt := [sk.SaltSize]byte{}
 	copy(salt[:], processId)
 	// generate salted signature with compressed private key
 	signature, err := saltedPrivKey.SignECDSA(salt, processId)
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
 	return hex.EncodeToString(signature)
 }

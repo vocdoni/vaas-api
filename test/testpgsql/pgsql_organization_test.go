@@ -7,10 +7,10 @@ import (
 
 	qt "github.com/frankban/quicktest"
 	"go.vocdoni.io/api/test/testcommon"
-	"go.vocdoni.io/dvote/log"
 )
 
 func TestOrganization(t *testing.T) {
+	t.Parallel()
 	c := qt.New(t)
 	integrators := testcommon.CreateIntegrators(1)
 	var err error
@@ -27,7 +27,7 @@ func TestOrganization(t *testing.T) {
 	organizations[0].ID = id
 
 	organization, err := API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
-	log.Infof("%w", organization)
+	t.Logf("%v", organization)
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
 	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCipher), qt.Equals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCipher))

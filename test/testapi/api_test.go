@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 		User:     "postgres",
 	}
 	if err := API.Start(db, "/api", testApiAuthToken, storage, apiPort); err != nil {
-		log.Fatalf("SKIPPING: could not start the API: %v", err)
+		log.Infof("SKIPPING: could not start the API: %v", err)
 		return
 	}
 	if err := API.DB.Ping(); err != nil {
@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 func DoRequest(t *testing.T, url, authToken,
 	method string, request types.APIRequest) ([]byte, int) {
 	data, err := json.Marshal(request)
-	log.Infof("making request %s to %s with token %s, data %s", method, url, authToken, string(data))
+	t.Logf("making request %s to %s with token %s, data %s", method, url, authToken, string(data))
 	qt.Check(t, err, qt.IsNil)
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
 	qt.Check(t, err, qt.IsNil)

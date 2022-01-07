@@ -11,6 +11,7 @@ import (
 )
 
 func TestIntegrator(t *testing.T) {
+	t.Parallel()
 	c := qt.New(t)
 	integrators := testcommon.CreateIntegrators(1)
 	id, err := API.DB.CreateIntegrator(integrators[0].SecretApiKey, integrators[0].CspPubKey,

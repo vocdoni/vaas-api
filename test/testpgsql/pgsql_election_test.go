@@ -9,6 +9,7 @@ import (
 )
 
 func TestElection(t *testing.T) {
+	t.Parallel()
 	c := qt.New(t)
 	integrators := testcommon.CreateIntegrators(1)
 	var err error
@@ -22,7 +23,7 @@ func TestElection(t *testing.T) {
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
 	c.Assert(err, qt.IsNil)
 
-	elections := testcommon.CreateDbElections(2)
+	elections := testcommon.CreateDbElections(t, 2)
 	id, err := API.DB.CreateElection(integrators[0].SecretApiKey, organizations[0].EthAddress, elections[0].ProcessID,
 		elections[0].MetadataPrivKey, elections[0].Title, elections[0].StartDate,
 		elections[0].EndDate, uuid.NullUUID{}, 0, 0, true, true)
@@ -39,12 +40,12 @@ func TestElection(t *testing.T) {
 	c.Assert(len(list), qt.Equals, 1)
 	c.Assert(list[0].Title, qt.DeepEquals, elections[0].Title)
 	// integrator, err := API.DB.GetIntegrator(elections[0].ID)
-	// log.Infof("%w", integrator)
+	// t.Logf("%w", integrator)
 	// c.Assert(err, qt.IsNil)
 	// c.Assert(fmt.Sprintf("%x", integrator.SecretApiKey), qt.DeepEquals, fmt.Sprintf("%x", elections[0].SecretApiKey))
 
 	// keys, err := API.DB.GetIntegratorApiKeysList()
-	// log.Infof("%s", keys)
+	// t.Logf("%s", keys)
 	// cleaning up
 	for _, integrator := range integrators {
 		if err := API.DB.DeleteIntegrator(integrator.ID); err != nil {

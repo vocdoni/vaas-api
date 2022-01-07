@@ -16,6 +16,7 @@ import (
 )
 
 func TestPublic(t *testing.T) {
+	t.Parallel()
 	integrator := testcommon.CreateIntegrators(1)[0]
 	// generate new key pair to use as csp keys so we can test public methods
 	cspSignKeys := ethereum.NewSignKeys()
@@ -69,7 +70,7 @@ func TestPublic(t *testing.T) {
 		respBody, statusCode = DoRequest(t, API.URL+
 			"/v1/priv/transactions/"+organization.CreationTxHash,
 			hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err := json.Unmarshal(respBody, &respMined)
 		qt.Assert(t, err, qt.IsNil)
@@ -100,7 +101,7 @@ func TestPublic(t *testing.T) {
 		respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/organizations/"+
 			hex.EncodeToString(organization.EthAddress)+"/elections/blind",
 			hex.EncodeToString(integrator.SecretApiKey), "POST", req)
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err = json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)
@@ -119,7 +120,7 @@ func TestPublic(t *testing.T) {
 			respBody, statusCode = DoRequest(t, API.URL+
 				"/v1/priv/transactions/"+election.CreationTxHash,
 				hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-			log.Infof("%s", respBody)
+			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
 			err := json.Unmarshal(respBody, &respMined)
 			qt.Assert(t, err, qt.IsNil)
@@ -135,7 +136,7 @@ func TestPublic(t *testing.T) {
 	respBody, statusCode = DoRequest(t, API.URL+
 		"/v1/pub/organizations/"+hex.EncodeToString(organization.EthAddress)+"/elections",
 		organization.APIToken, "GET", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	var pubElectionList []types.APIElectionSummary
 	err = json.Unmarshal(respBody, &pubElectionList)
@@ -148,7 +149,7 @@ func TestPublic(t *testing.T) {
 		respBody, statusCode = DoRequest(t, API.URL+
 			"/v1/pub/elections/"+hex.EncodeToString(election.ElectionID),
 			organization.APIToken, "GET", types.APIRequest{})
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		if election.Confidential {
 			qt.Assert(t, statusCode, qt.Equals, 400)
 			break
@@ -174,12 +175,12 @@ func TestPublic(t *testing.T) {
 
 	// test get elections (priv)
 	for _, election := range elections {
-		cspSignature := testcommon.GetCSPSignature(election.ElectionID, cspSignKeys)
+		cspSignature := testcommon.GetCSPSignature(t, election.ElectionID, cspSignKeys)
 		var electionResp types.APIElectionInfo
 		respBody, statusCode = DoRequest(t, API.URL+
 			"/v1/pub/elections/"+hex.EncodeToString(election.ElectionID)+"/auth/"+cspSignature,
 			organization.APIToken, "GET", types.APIRequest{})
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err = json.Unmarshal(respBody, &electionResp)
 		qt.Assert(t, err, qt.IsNil)
@@ -204,24 +205,24 @@ func TestPublic(t *testing.T) {
 	// respBody, statusCode = DoRequest(t, API.URL+
 	// 	"/v1/pub/organizations/"+hex.EncodeToString(organization.EthAddress),
 	// 	organization.APIToken+"12", "GET", types.APIRequest{})
-	// log.Infof("%s", respBody)
+	// t.Logf("%s", respBody)
 	// qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// respBody, statusCode = DoRequest(t, API.URL+
 	// 	"/v1/pub/elections/"+hex.EncodeToString(elections[0].ElectionID),
 	// 	organization.APIToken+"1234", "GET", types.APIRequest{})
-	// log.Infof("%s", respBody)
+	// t.Logf("%s", respBody)
 	// qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// cleaning up
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/priv/account/organizations/"+
 		hex.EncodeToString(organization.EthAddress), API.URL),
 		hex.EncodeToString(integrator.SecretApiKey), "DELETE", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
 		API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 }

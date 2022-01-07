@@ -10,10 +10,10 @@ import (
 	qt "github.com/frankban/quicktest"
 	"go.vocdoni.io/api/test/testcommon"
 	"go.vocdoni.io/api/types"
-	"go.vocdoni.io/dvote/log"
 )
 
 func TestIntegrator(t *testing.T) {
+	t.Parallel()
 	integrators := testcommon.CreateIntegrators(1)
 	failIntegrators := testcommon.CreateIntegrators(1)
 
@@ -25,7 +25,7 @@ func TestIntegrator(t *testing.T) {
 		Email:        integrators[0].Email,
 	}
 	respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	var resp types.APIResponse
 	err := json.Unmarshal(respBody, &resp)
@@ -43,7 +43,7 @@ func TestIntegrator(t *testing.T) {
 		Email:        failIntegrators[0].Email,
 	}
 	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", "1234", "POST", req)
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 401)
 
 	// test failure: invalid pubKey
@@ -54,12 +54,12 @@ func TestIntegrator(t *testing.T) {
 		Email:        failIntegrators[0].Email,
 	}
 	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// test failure: missing name, email
 	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// test fetching integrators
@@ -67,7 +67,7 @@ func TestIntegrator(t *testing.T) {
 		req := types.APIRequest{}
 		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
 			API.URL, integrator.ID), API.AuthToken, "GET", req)
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		var resp types.APIResponse
 		err := json.Unmarshal(respBody, &resp)
@@ -80,7 +80,7 @@ func TestIntegrator(t *testing.T) {
 	// test fetching nonexistent integrator
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/222222222222",
 		API.URL), API.AuthToken, "GET", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// test resetting integrator api keys
@@ -88,7 +88,7 @@ func TestIntegrator(t *testing.T) {
 		req := types.APIRequest{}
 		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d/key",
 			API.URL, integrator.ID), API.AuthToken, "PATCH", req)
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		var resp types.APIResponse
 		err := json.Unmarshal(respBody, &resp)
@@ -102,14 +102,14 @@ func TestIntegrator(t *testing.T) {
 	// test fetching nonexistent integrator
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/222222222222",
 		API.URL), API.AuthToken, "GET", types.APIRequest{})
-	log.Infof("%s", respBody)
+	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// cleaning up
 	for _, integrator := range integrators {
 		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
 			API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 	}
 
@@ -117,7 +117,7 @@ func TestIntegrator(t *testing.T) {
 	for _, integrator := range integrators {
 		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
 			API.URL, integrator.ID), API.AuthToken, "GET", types.APIRequest{})
-		log.Infof("%s", respBody)
+		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 400)
 	}
 }
