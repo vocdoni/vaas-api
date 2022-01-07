@@ -7,12 +7,19 @@ import (
 	"testing"
 	"time"
 
+	blind "github.com/arnaucube/go-blindsecp256k1"
 	qt "github.com/frankban/quicktest"
+	cspsaltedkey "github.com/vocdoni/blind-csp/saltedkey"
 	"go.vocdoni.io/api/test/testcommon"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	"go.vocdoni.io/dvote/crypto/saltedkey"
 	"go.vocdoni.io/dvote/log"
+	"go.vocdoni.io/dvote/util"
+	dvoteutil "go.vocdoni.io/dvote/util"
+	"go.vocdoni.io/dvote/vochain"
+	"go.vocdoni.io/proto/build/go/models"
 )
 
 func TestPublic(t *testing.T) {
@@ -225,4 +232,60 @@ func TestPublic(t *testing.T) {
 		API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
+}
+
+func getVotePayload(t *testing.T, processID []byte, cspSignKeys *ethereum.SignKeys) []byte {
+	nonce, err := hex.DecodeString(dvoteutil.RandomHex(32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	vote := &vochain.VotePackage{
+		Nonce: fmt.Sprintf("%x", util.RandomHex(32)),
+		Votes: []int{1},
+	}
+	voteBytes, err := json.Marshal(vote)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// generate a tokenR for signing vote
+	k, _ := blind.NewRequestParameters()
+
+	// create salted signer
+	cspPriv, _ := cspSignKeys.HexString()
+	sk, err := cspsaltedkey.NewSaltedKey(cspPriv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// sign vote with blind signature
+	var salt [saltedkey.SaltSize]byte
+	copy(salt[:], processID[:saltedkey.SaltSize])
+	signature, err := sk.SignBlind(salt, voteBytes, k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bundle := &models.CAbundle{
+		ProcessId: processID,
+		Address:   k.Address().Bytes(),
+	}
+	votePackage := &models.VoteEnvelope{
+		Nonce:     nonce,
+		ProcessId: processID,
+		Proof: &models.Proof{
+			Payload: &models.Proof_Ca{
+				Ca: &models.ProofCA{
+					Type:      models.ProofCA_ECDSA_BLIND_PIDSALTED,
+					Bundle:    &models.CAbundle{},
+					Signature: signature,
+				},
+			},
+		},
+		VotePackage: voteBytes,
+	}
+
+	pkg, err := json.Marshal(votePackage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pkg
 }

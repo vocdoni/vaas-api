@@ -3,6 +3,7 @@ module go.vocdoni.io/api
 go 1.16
 
 require (
+	github.com/arnaucube/go-blindsecp256k1 v0.0.0-20210323162413-ccaa6313370d
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/ethereum/go-ethereum v1.10.13
 	github.com/frankban/quicktest v1.14.0
