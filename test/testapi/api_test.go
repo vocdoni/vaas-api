@@ -11,7 +11,6 @@ import (
 	qt "github.com/frankban/quicktest"
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/test/testcommon"
-	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/log"
 )
 
@@ -41,7 +40,7 @@ func TestMain(m *testing.M) {
 }
 
 func DoRequest(t *testing.T, url, authToken,
-	method string, request types.APIRequest) ([]byte, int) {
+	method string, request interface{}) ([]byte, int) {
 	data, err := json.Marshal(request)
 	t.Logf("making request %s to %s with token %s, data %s", method, url, authToken, string(data))
 	qt.Check(t, err, qt.IsNil)
@@ -52,8 +51,12 @@ func DoRequest(t *testing.T, url, authToken,
 		req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	}
 	resp, err := http.DefaultClient.Do(req)
-	qt.Check(t, err, qt.IsNil)
+	qt.Assert(t, err, qt.IsNil)
+	if resp == nil {
+		return nil, resp.StatusCode
+	}
 	respBody, err := io.ReadAll(resp.Body)
 	qt.Check(t, err, qt.IsNil)
+	t.Log(string(respBody))
 	return respBody, resp.StatusCode
 }

@@ -27,8 +27,9 @@ type TestAPI struct {
 }
 
 type TestCSP struct {
-	UrlPrefix string
-	CspPubKey dvoteTypes.HexBytes
+	UrlPrefix   string
+	CspPubKey   dvoteTypes.HexBytes
+	CspSignKeys *ethereum.SignKeys
 }
 
 // Start creates a new mock database and API endpoint for testing.

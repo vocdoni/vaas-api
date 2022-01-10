@@ -1,6 +1,7 @@
 package testapi
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,26 +13,23 @@ import (
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/dvote/crypto/ethereum"
-	"go.vocdoni.io/dvote/log"
+	dvotetypes "go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
 	dvoteutil "go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain"
+	"go.vocdoni.io/proto/build/go/models"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPublic(t *testing.T) {
 	t.Parallel()
 	integrator := testcommon.CreateIntegrators(1)[0]
-	// generate new key pair to use as csp keys so we can test public methods
-	cspSignKeys := ethereum.NewSignKeys()
-	if err := cspSignKeys.Generate(); err != nil {
-		t.Fatalf("could not generate sign keys: %v", err)
-	}
-	pub, _ := cspSignKeys.HexString()
 
+	cspPubKey := hex.EncodeToString(API.CSP.CspPubKey)
 	// create integrator to test with
 	req := types.APIRequest{
 		CspUrlPrefix: integrator.CspUrlPrefix,
-		CspPubKey:    pub,
+		CspPubKey:    cspPubKey,
 		Name:         integrator.Name,
 		Email:        integrator.Email,
 	}
@@ -42,7 +40,7 @@ func TestPublic(t *testing.T) {
 	qt.Assert(t, err, qt.IsNil)
 	integrator.ID = resp.ID
 	if integrator.SecretApiKey, err = hex.DecodeString(resp.APIKey); err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	// create organization to test with
@@ -178,7 +176,7 @@ func TestPublic(t *testing.T) {
 
 	// test get elections (priv)
 	for _, election := range elections {
-		cspSignature := testcommon.GetCSPSignature(t, election.ElectionID, cspSignKeys)
+		cspSignature := testcommon.GetCSPSignature(t, election.ElectionID, API.CSP.CspSignKeys)
 		var electionResp types.APIElectionInfo
 		respBody, statusCode = DoRequest(t, API.URL+
 			"/v1/pub/elections/"+hex.EncodeToString(election.ElectionID)+"/auth/"+cspSignature,
@@ -217,6 +215,8 @@ func TestPublic(t *testing.T) {
 	// t.Logf("%s", respBody)
 	// qt.Assert(t, statusCode, qt.Equals, 400)
 
+	submitVoteSigned(t, elections[0].ElectionID, API.CSP.CspSignKeys, organization.APIToken)
+
 	// cleaning up
 	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/priv/account/organizations/"+
 		hex.EncodeToString(organization.EthAddress), API.URL),
@@ -230,7 +230,57 @@ func TestPublic(t *testing.T) {
 	qt.Assert(t, statusCode, qt.Equals, 200)
 }
 
-func getVotePayload(t *testing.T, processID []byte, cspSignKeys *ethereum.SignKeys) []byte {
+func submitVoteSigned(t *testing.T, processID []byte,
+	cspSignKeys *ethereum.SignKeys, orgAPIToken string) {
+	type authReq struct {
+		AuthData  []string            `json:"authData,omitempty"`
+		TokenR    string              `json:"tokenR,omitempty"`
+		Signature dvotetypes.HexBytes `json:"signature,omitempty"`
+		Payload   dvotetypes.HexBytes `json:"payload,omitempty"`
+		Vote      string              `json:"vote,omitempty"`
+		Nullifier dvotetypes.HexBytes `json:"nullifier,omitempty"`
+	}
+
+	voterWallet := ethereum.NewSignKeys()
+	err := voterWallet.Generate()
+	if err != nil {
+		t.Fatal(err)
+	}
+	signedPID, err := voterWallet.Sign(processID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// fetch tokenR from CSP
+	req := authReq{AuthData: []string{hex.EncodeToString(signedPID)}}
+	respBody, statusCode := DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/auth",
+		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT, testcommon.TEST_CSP_PATH,
+		processID), orgAPIToken, "POST", req)
+	qt.Assert(t, statusCode, qt.Equals, 200)
+	var aResp authReq
+	err = json.Unmarshal(respBody, &aResp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// fetch non-blind signature from csp
+	caBundle := &models.CAbundle{ProcessId: processID, Address: voterWallet.Address().Bytes()}
+	hexCaBundle, err := proto.Marshal(caBundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// hashCaBundle := ethereum.Hash(hexCaBundle)
+
+	// req = authReq{TokenR: aResp.TokenR, Payload: hashCaBundle}
+	req = authReq{TokenR: aResp.TokenR, Payload: hexCaBundle}
+	respBody, statusCode = DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/sign",
+		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT,
+		testcommon.TEST_CSP_PATH, processID), orgAPIToken, "POST", req)
+	qt.Assert(t, statusCode, qt.Equals, 200)
+	err = json.Unmarshal(respBody, &aResp)
+	qt.Assert(t, err, qt.IsNil)
+
+	// create and submit vote package with proof
 	nonce, err := hex.DecodeString(dvoteutil.RandomHex(32))
 	if err != nil {
 		t.Fatal(err)
@@ -244,67 +294,46 @@ func getVotePayload(t *testing.T, processID []byte, cspSignKeys *ethereum.SignKe
 		t.Fatal(err)
 	}
 
-	// create integrator to test with
-	req := types.APIRequest{
-		CspUrlPrefix: integrator.CspUrlPrefix,
-		CspPubKey:    pub,
-		Name:         integrator.Name,
-		Email:        integrator.Email,
+	voteTx := &models.Tx{
+		Payload: &models.Tx_Vote{
+			Vote: &models.VoteEnvelope{
+				Nonce:     nonce,
+				ProcessId: processID,
+				Proof: &models.Proof{
+					Payload: &models.Proof_Ca{
+						Ca: &models.ProofCA{
+							Type:      models.ProofCA_ECDSA_PIDSALTED,
+							Bundle:    caBundle,
+							Signature: aResp.Signature,
+						},
+					},
+				},
+				VotePackage: voteBytes,
+			},
+		},
 	}
-	type authReq struct {
-		authData []string
+
+	signedVoteTx := &models.SignedTx{}
+
+	signedVoteTx.Tx, err = proto.Marshal(voteTx)
+	if err != nil {
+		t.Fatal(err)
 	}
-	respBody, statusCode := DoRequest(t, "http://"+testcommon.TEST_HOST+testcommon.TEST_CSP_PATH+"/v1/auth/elections", API.AuthToken, "GET", req)
+	signedVoteTx.Signature, err = voterWallet.Sign(signedVoteTx.Tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signedVoteTxBytes, err := proto.Marshal(signedVoteTx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = authReq{Vote: base64.StdEncoding.EncodeToString(signedVoteTxBytes)}
+	respBody, statusCode = DoRequest(t, API.URL+fmt.Sprintf(
+		"/v1/pub/elections/%x/vote", processID), orgAPIToken, "POST", req)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	var resp types.APIResponse
-	err := json.Unmarshal(respBody, &resp)
+	err = json.Unmarshal(respBody, &aResp)
 	qt.Assert(t, err, qt.IsNil)
-	integrator.ID = resp.ID
-	if integrator.SecretApiKey, err = hex.DecodeString(resp.APIKey); err != nil {
-		log.Fatal(err)
-	}
-
-	// // generate a tokenR for signing vote
-	// k, _ := blind.NewRequestParameters()
-
-	// // create salted signer
-	// cspPriv, _ := cspSignKeys.HexString()
-	// sk, err := cspsaltedkey.NewSaltedKey(cspPriv)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// // sign vote with blind signature
-	// var salt [saltedkey.SaltSize]byte
-	// copy(salt[:], processID[:saltedkey.SaltSize])
-	// signature, err := sk.SignBlind(salt, voteBytes, k)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// bundle := &models.CAbundle{
-	// 	ProcessId: processID,
-	// 	Address:   k.Address().Bytes(),
-	// }
-	// votePackage := &models.VoteEnvelope{
-	// 	Nonce:     nonce,
-	// 	ProcessId: processID,
-	// 	Proof: &models.Proof{
-	// 		Payload: &models.Proof_Ca{
-	// 			Ca: &models.ProofCA{
-	// 				Type:      models.ProofCA_ECDSA_BLIND_PIDSALTED,
-	// 				Bundle:    &models.CAbundle{
-	// 					ProcessId: processID,
-	// 					Address:   []byte{},
-	// 				},
-	// 				Signature: signature,
-	// 			},
-	// 		},
-	// 	},
-	// 	VotePackage: voteBytes,
-	// }
-
-	// pkg, err := json.Marshal(votePackage)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	return pkg
+	t.Logf("submitted vote with nullifier %x", aResp.Nullifier)
+	qt.Assert(t, len(aResp.Nullifier) > 0, qt.IsTrue)
 }

@@ -18,7 +18,7 @@ const (
 	TEST_HOST     = "127.0.0.1"
 	TEST_GW_PATH  = "/dvote"
 	TEST_GW_PORT  = 9090
-	TEST_CSP_PATH = "/csp"
+	TEST_CSP_PATH = "/v1/auth/elections"
 	TEST_CSP_PORT = 5000
 )
 
@@ -47,11 +47,11 @@ func (t *TestAPI) startTestGateway() {
 
 func (t *TestAPI) startTestCSP() {
 	dir := path.Join(t.StorageDir, "auth")
-	signer := ethereum.SignKeys{}
-	if err := signer.Generate(); err != nil {
+	t.CSP.CspSignKeys = &ethereum.SignKeys{}
+	if err := t.CSP.CspSignKeys.Generate(); err != nil {
 		log.Fatal(err)
 	}
-	_, privKey := signer.HexString()
+	_, privKey := t.CSP.CspSignKeys.HexString()
 	log.Infof("new private key generated: %s", privKey)
 
 	router := httprouter.HTTProuter{}
@@ -62,12 +62,12 @@ func (t *TestAPI) startTestCSP() {
 	log.Infof("using CSP handler %s", authHandler.GetName())
 	// Start the router
 	t.CSP.UrlPrefix = TEST_HOST
-	t.CSP.CspPubKey = signer.PublicKey()
+	t.CSP.CspPubKey = t.CSP.CspSignKeys.PublicKey()
 	if err := router.Init(t.CSP.UrlPrefix, TEST_CSP_PORT); err != nil {
 		log.Fatal(err)
 	}
 	// Create the blind CA API and assign the auth function
-	pub, priv := signer.HexString()
+	pub, priv := t.CSP.CspSignKeys.HexString()
 	log.Infof("CSP root public key: %s", pub)
 	cs, err := csp.NewBlindCSP(priv, path.Join(dir, authHandler.GetName()), authHandler.Auth)
 	if err != nil {

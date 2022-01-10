@@ -160,8 +160,9 @@ github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmV
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/arnaucube/go-blindsecp256k1 v0.0.0-20210203222605-876755a714c3/go.mod h1:10oM1DQMpukFfSzNsjSQG2rE6UjoGsXT4iIxWIiVbu0=
-github.com/arnaucube/go-blindsecp256k1 v0.0.0-20210323162413-ccaa6313370d h1:QRip5Otx+8mDr77Z3AtTi3aq5cksZHyvDarzOo/vj7g=
 github.com/arnaucube/go-blindsecp256k1 v0.0.0-20210323162413-ccaa6313370d/go.mod h1:10oM1DQMpukFfSzNsjSQG2rE6UjoGsXT4iIxWIiVbu0=
+github.com/arnaucube/go-blindsecp256k1 v0.0.0-20211204171003-644e7408753f h1:+9bA9YJEr8gb+F4rsJ2EYIyaB/3+nKcuOiUStTAf1Pg=
+github.com/arnaucube/go-blindsecp256k1 v0.0.0-20211204171003-644e7408753f/go.mod h1:n598ze+TUwDUQ2mbbiKgitcH6UNJlVYX6sLc08iI1nM=
 github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a/go.mod h1:DAHtR1m6lCRdSC2Tm3DSWRPvIPr6xNKyeHdqDQSQT+A=
 github.com/aws/aws-lambda-go v1.13.3/go.mod h1:4UKl9IzQMoD+QF79YdCuzCwp8VbmG4VAQwij/eHl5CU=
 github.com/aws/aws-sdk-go v1.25.48/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
@@ -2168,8 +2169,8 @@ github.com/vocdoni/arbo v0.0.0-20210927131431-d7c756341372/go.mod h1:qJqeB/91mJf
 github.com/vocdoni/arbo v0.0.0-20211217085703-d56ab859f109 h1:jBbX7NQ5ism7BEfxHe0FzKgGU4sKaFgfi70YOx+68BQ=
 github.com/vocdoni/arbo v0.0.0-20211217085703-d56ab859f109/go.mod h1:6Z6HJMTIDGHnP4pGJpKMqUGPWShwKvBp2BwVV5b6PoQ=
 github.com/vocdoni/blind-ca v0.1.4/go.mod h1:4ouWDqlvXrrNS0Csf3hKA3cuDTmKh6nP7kSXF39nT4s=
-github.com/vocdoni/blind-csp v0.1.5-0.20211223130008-9c2870f7425e h1:G1IH1yb2qQDoyeGzpA8lCpSemAJ27N22tk2sutNItfU=
-github.com/vocdoni/blind-csp v0.1.5-0.20211223130008-9c2870f7425e/go.mod h1:yAPZ5hO9lMTY8miMrHaFyqxZfWDFDcbM0rlQBQHjYzc=
+github.com/vocdoni/blind-csp v0.1.5-0.20220110201709-d6424fc6c26a h1:vSy/GlJcIFiqVCsUooXQBCFIf6rB6MpIq35WExljCmc=
+github.com/vocdoni/blind-csp v0.1.5-0.20220110201709-d6424fc6c26a/go.mod h1:hvtwB6sMn71feZeto9AzMO3dyH4CkRZ2bdzBoJ4iREQ=
 github.com/vocdoni/eth-storage-proof v0.1.4-0.20201128112323-de7513ce5e25/go.mod h1:NLA1A55raZ1VNMmKulPUm+Lu9CVetCDVuDCYk5bSYrE=
 github.com/vocdoni/go-external-ip v0.0.0-20210705122950-fae6195a1d44/go.mod h1:o/kqzlz81Aq5/++p7zIRaaOiEUmCOiap7ulEAUeSQWI=
 github.com/vocdoni/go-snark v0.0.0-20210709152824-f6e4c27d7319 h1:W8N7yfnWsVD3l2Sh0pTtXCDd4+LNh58lE427D1U9SVY=
@@ -2309,8 +2310,12 @@ go.vocdoni.io/dvote v0.6.1-0.20210206210936-a0407e833753/go.mod h1:HhMMtdnkLI3uj
 go.vocdoni.io/dvote v1.0.0/go.mod h1:C9wjSWCzy33Bl2sNiF/2ie/oxcERR3uRD2G2c/NDeH0=
 go.vocdoni.io/dvote v1.0.4-0.20210806163627-9494efbc5382/go.mod h1:kl66EQmAjR252HCRQL756bZQnuvcXZZ3HuaABItf+0E=
 go.vocdoni.io/dvote v1.0.4-0.20211025120558-83c64f440044/go.mod h1:t2O6ExMry8na9bqrYiGH4AZ5ukXYAolUnIFGntmS63c=
-go.vocdoni.io/dvote v1.0.4-0.20211222170021-1a8914039ad0 h1:9nN3aLTbM+Vs0/yU7OvQLgqRveRyiFRZCLZ5ahRQB98=
-go.vocdoni.io/dvote v1.0.4-0.20211222170021-1a8914039ad0/go.mod h1:E79Q1Ry6uQQ3p8BrjPcqxhS+H3IhPPnglwFnrjjxi/w=
+go.vocdoni.io/dvote v1.0.4-0.20220106155015-213430fa0a2e h1:11/D2oxZaPMjqVvG6wnlLBCCNvW/ME1P04XFocBQC6A=
+go.vocdoni.io/dvote v1.0.4-0.20220106155015-213430fa0a2e/go.mod h1:Pd6+BZF3QCpGjjKGkFP0Eh73Q2XDB63FYmatWJzphNg=
+go.vocdoni.io/dvote v1.0.4-0.20220110200210-2083ecac7607 h1:ucqHEegsw6bE54kV3b+kVEkBA6fi+K2YK2iXHRhPON4=
+go.vocdoni.io/dvote v1.0.4-0.20220110200210-2083ecac7607/go.mod h1:Pd6+BZF3QCpGjjKGkFP0Eh73Q2XDB63FYmatWJzphNg=
+go.vocdoni.io/dvote v1.0.4-0.20220110201139-84e9ef1eefe6 h1:mc2XYfYGFcqkLx0s3xAbddLWNXrmFej8hUx5I/nKfV0=
+go.vocdoni.io/dvote v1.0.4-0.20220110201139-84e9ef1eefe6/go.mod h1:Pd6+BZF3QCpGjjKGkFP0Eh73Q2XDB63FYmatWJzphNg=
 go.vocdoni.io/proto v0.1.7/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=
 go.vocdoni.io/proto v0.1.8/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=
 go.vocdoni.io/proto v0.1.9-0.20210304214308-6f7363b52750/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=

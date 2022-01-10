@@ -3,7 +3,6 @@ module go.vocdoni.io/api
 go 1.16
 
 require (
-	github.com/arnaucube/go-blindsecp256k1 v0.0.0-20210323162413-ccaa6313370d
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/ethereum/go-ethereum v1.10.13
 	github.com/frankban/quicktest v1.14.0
@@ -17,8 +16,8 @@ require (
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
-	github.com/vocdoni/blind-csp v0.1.5-0.20211223130008-9c2870f7425e
-	go.vocdoni.io/dvote v1.0.4-0.20211222170021-1a8914039ad0
+	github.com/vocdoni/blind-csp v0.1.5-0.20220110201709-d6424fc6c26a
+	go.vocdoni.io/dvote v1.0.4-0.20220110201139-84e9ef1eefe6
 	go.vocdoni.io/proto v1.13.3-0.20211213155005-46b4177904ba
 	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
 	golang.org/x/tools v0.1.8 // indirect
