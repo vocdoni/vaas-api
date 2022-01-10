@@ -268,7 +268,7 @@ func (u *URLAPI) getVoteHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 	var resp types.APIResponse
 	resp.Registered = new(bool)
-	if resp.ProcessID, *resp.Registered, err = u.vocClient.GetVoteStatus(nullifier); err != nil {
+	if resp.ElectionID, *resp.Registered, err = u.vocClient.GetVoteStatus(nullifier); err != nil {
 		return fmt.Errorf("could not get envelope status for vote with nullifier %x: %w", nullifier, err)
 	}
 	if *resp.Registered {
