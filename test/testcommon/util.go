@@ -57,7 +57,6 @@ func CreateIntegrators(size int) []*types.Integrator {
 		cspPubKey, _ := hex.DecodeString(cspPub)
 		// retrieve entity ID
 		mp[i] = &types.Integrator{
-			SecretApiKey: []byte(fmt.Sprintf("key%d", randomID)),
 			Name:         fmt.Sprintf("Test%d", randomID),
 			Email:        fmt.Sprintf("mail%d@mail.org", randomID),
 			CspUrlPrefix: "csp.vocdoni.net",

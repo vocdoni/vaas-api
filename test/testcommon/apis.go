@@ -54,7 +54,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 			}
 		}
 		if err := pgsql.Migrator("upSync", t.DB); err != nil {
-			log.Fatal(err)
+			log.Warn(err)
 		}
 		// Start token notifier
 	}

@@ -3,6 +3,7 @@ package testpgsql
 import (
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	qt "github.com/frankban/quicktest"
@@ -14,6 +15,7 @@ func TestIntegrator(t *testing.T) {
 	t.Parallel()
 	c := qt.New(t)
 	integrators := testcommon.CreateIntegrators(1)
+	integrators[0].SecretApiKey = []byte(fmt.Sprintf("key%d", rand.Intn(10000)))
 	id, err := API.DB.CreateIntegrator(integrators[0].SecretApiKey, integrators[0].CspPubKey,
 		integrators[0].CspUrlPrefix, integrators[0].Name, integrators[0].Email)
 	c.Assert(err, qt.IsNil)
