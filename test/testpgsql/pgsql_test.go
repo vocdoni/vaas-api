@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 	db := &config.DB{
 		Dbname:   "postgres",
 		Password: "postgres",
-		Host:     "127.0.0.1",
+		Host:     "postgres",
 		Port:     5432,
 		Sslmode:  "disable",
 		User:     "postgres",
