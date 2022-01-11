@@ -23,13 +23,13 @@ func TestMain(m *testing.M) {
 	db := &config.DB{
 		Dbname:   "postgres",
 		Password: "postgres",
-		Host:     "localhost",
+		Host:     "postgres",
 		Port:     5432,
 		Sslmode:  "disable",
 		User:     "postgres",
 	}
 	if err := API.Start(db, "/api", testApiAuthToken, storage, apiPort); err != nil {
-		log.Infof("SKIPPING: could not start the API: %v", err)
+		log.Fatalf("SKIPPING: could not start the API: %v", err)
 		return
 	}
 	if err := API.DB.Ping(); err != nil {
