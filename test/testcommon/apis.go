@@ -48,7 +48,10 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 	if dbc != nil {
 		// Postgres with sqlx
 		if t.DB, err = pgsql.New(dbc); err != nil {
-			return err
+			dbc.Host = "localhost"
+			if t.DB, err = pgsql.New(dbc); err != nil {
+				return err
+			}
 		}
 		if err := pgsql.Migrator("upSync", t.DB); err != nil {
 			log.Fatal(err)
@@ -59,14 +62,18 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 
 	if route != "" {
 		t.StorageDir = storageDir
+
+		done := make(chan interface{}, 2)
 		// create gateway/vocone
-		go t.startTestGateway()
+		go t.startTestGateway(done)
+		<-done
 
 		// create CSP service
-		go t.startTestCSP()
+		go t.startTestCSP(done)
+		<-done
 
 		// start API
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 5)
 		client, err := vocclient.New(t.Gateway, t.Signer)
 		if err != nil {
 			log.Fatal(err)
