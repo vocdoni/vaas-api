@@ -36,6 +36,10 @@ jobs:
           # -race can easily make the crypto stuff 10x slower
           go test -vet=off -timeout=10m -race -covermode atomic -coverprofile=covprofile ./...
 
+      - name: Debug on failure
+        if: failure()
+        uses: mxschmitt/action-tmate@v3
+
       - name: Go analyze
         run: |
           diff -u <(echo -n) <(gofmt -s -d $(git ls-files '*.go'))
