@@ -2310,12 +2310,9 @@ go.vocdoni.io/dvote v0.6.1-0.20210206210936-a0407e833753/go.mod h1:HhMMtdnkLI3uj
 go.vocdoni.io/dvote v1.0.0/go.mod h1:C9wjSWCzy33Bl2sNiF/2ie/oxcERR3uRD2G2c/NDeH0=
 go.vocdoni.io/dvote v1.0.4-0.20210806163627-9494efbc5382/go.mod h1:kl66EQmAjR252HCRQL756bZQnuvcXZZ3HuaABItf+0E=
 go.vocdoni.io/dvote v1.0.4-0.20211025120558-83c64f440044/go.mod h1:t2O6ExMry8na9bqrYiGH4AZ5ukXYAolUnIFGntmS63c=
-go.vocdoni.io/dvote v1.0.4-0.20220106155015-213430fa0a2e h1:11/D2oxZaPMjqVvG6wnlLBCCNvW/ME1P04XFocBQC6A=
 go.vocdoni.io/dvote v1.0.4-0.20220106155015-213430fa0a2e/go.mod h1:Pd6+BZF3QCpGjjKGkFP0Eh73Q2XDB63FYmatWJzphNg=
-go.vocdoni.io/dvote v1.0.4-0.20220110200210-2083ecac7607 h1:ucqHEegsw6bE54kV3b+kVEkBA6fi+K2YK2iXHRhPON4=
-go.vocdoni.io/dvote v1.0.4-0.20220110200210-2083ecac7607/go.mod h1:Pd6+BZF3QCpGjjKGkFP0Eh73Q2XDB63FYmatWJzphNg=
-go.vocdoni.io/dvote v1.0.4-0.20220110201139-84e9ef1eefe6 h1:mc2XYfYGFcqkLx0s3xAbddLWNXrmFej8hUx5I/nKfV0=
-go.vocdoni.io/dvote v1.0.4-0.20220110201139-84e9ef1eefe6/go.mod h1:Pd6+BZF3QCpGjjKGkFP0Eh73Q2XDB63FYmatWJzphNg=
+go.vocdoni.io/dvote v1.0.4-0.20220111153822-b20400f34b56 h1:K/TGVtCtR3jNvyb9psY1US3ZnqwJDY4l97fHbts7K70=
+go.vocdoni.io/dvote v1.0.4-0.20220111153822-b20400f34b56/go.mod h1:m0xCzkjquvX/PIeoZlN1gBaY8TucLAxYCijuCZbXJpI=
 go.vocdoni.io/proto v0.1.7/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=
 go.vocdoni.io/proto v0.1.8/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=
 go.vocdoni.io/proto v0.1.9-0.20210304214308-6f7363b52750/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=

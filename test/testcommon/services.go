@@ -33,7 +33,6 @@ func (t *TestAPI) startTestGateway() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	vc.SetBlockTimeTarget(time.Second)
 	vc.SetBlockSize(500)
 	go vc.Start()
@@ -55,6 +54,7 @@ func (t *TestAPI) startTestCSP() {
 	log.Infof("new private key generated: %s", privKey)
 
 	router := httprouter.HTTProuter{}
+	router.PrometheusID = "csp-chi"
 	authHandler := handlers.Handlers["dummy"]
 	if err := authHandler.Init(dir); err != nil {
 		log.Fatal(err)

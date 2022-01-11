@@ -73,6 +73,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		}
 
 		var httpRouter httprouter.HTTProuter
+		httpRouter.PrometheusID = "api-chi"
 		if err = httpRouter.Init(TEST_HOST, port); err != nil {
 			log.Fatal(err)
 		}
