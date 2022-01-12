@@ -3,6 +3,7 @@ package urlapi
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -213,13 +214,12 @@ func (u *URLAPI) getProcessInfoConfidentialHandler(msg *bearerstdapi.BearerStand
 // getOrganizationHandler fetches an entity
 func (u *URLAPI) getOrganizationHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
-	// authenticate integrator has permission to edit this entity
-	orgInfo, err := u.authEntityPermissions(msg, ctx)
+	ethAddress, err := hex.DecodeString(ctx.URLParam("organizationId"))
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid organizationId: %w", err)
 	}
 	// Fetch process from vochain
-	metaUri, _, _, err := u.vocClient.GetAccount(orgInfo.organization.EthAddress)
+	metaUri, _, _, err := u.vocClient.GetAccount(ethAddress)
 	if err != nil {
 		return fmt.Errorf("unable to get account: %w", err)
 	}
