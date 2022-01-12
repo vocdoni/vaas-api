@@ -16,7 +16,7 @@ import (
 	dvoteutil "go.vocdoni.io/dvote/util"
 )
 
-type testOrganization struct {
+type TestOrganization struct {
 	APIToken       string
 	Name           string
 	Description    string
@@ -27,7 +27,7 @@ type testOrganization struct {
 	EthAddress     dvotetypes.HexBytes
 }
 
-type testElection struct {
+type TestElection struct {
 	Confidential       bool
 	CreationTxHash     string
 	Description        string
@@ -67,11 +67,11 @@ func CreateIntegrators(size int) []*types.Integrator {
 }
 
 // Create a given number of random organizations
-func CreateOrganizations(size int) []*testOrganization {
-	mp := make([]*testOrganization, size)
+func CreateOrganizations(size int) []*TestOrganization {
+	mp := make([]*TestOrganization, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
-		mp[i] = &testOrganization{
+		mp[i] = &TestOrganization{
 			Name:        fmt.Sprintf("Test%d", randomID),
 			Description: fmt.Sprintf("Description%d", randomID),
 			HeaderURI:   "https://headeruri",
@@ -82,11 +82,11 @@ func CreateOrganizations(size int) []*testOrganization {
 }
 
 // Create a given number of random Elections
-func CreateElections(size int, confidential, encrypted bool) []*testElection {
-	mp := make([]*testElection, size)
+func CreateElections(size int, confidential, encrypted bool) []*TestElection {
+	mp := make([]*TestElection, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
-		mp[i] = &testElection{
+		mp[i] = &TestElection{
 			Title:         fmt.Sprintf("Test%d", randomID),
 			Description:   fmt.Sprintf("Description%d", randomID),
 			Header:        fmt.Sprintf("Header%d", randomID),

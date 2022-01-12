@@ -3,7 +3,6 @@ package testapi
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -11,67 +10,10 @@ import (
 	"go.vocdoni.io/api/test/testcommon"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/urlapi"
-	"go.vocdoni.io/dvote/log"
 )
 
 func TestElection(t *testing.T) {
 	t.Parallel()
-	integrator := testcommon.CreateIntegrators(1)[0]
-
-	// create integrator to test with
-	req := types.APIRequest{
-		CspUrlPrefix: integrator.CspUrlPrefix,
-		CspPubKey:    hex.EncodeToString(integrator.CspPubKey),
-		Name:         integrator.Name,
-		Email:        integrator.Email,
-	}
-	respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-	var resp types.APIResponse
-	err := json.Unmarshal(respBody, &resp)
-	qt.Assert(t, err, qt.IsNil)
-	integrator.ID = resp.ID
-	if integrator.SecretApiKey, err = hex.DecodeString(resp.APIKey); err != nil {
-		log.Fatal(err)
-	}
-
-	// create organization to test with
-	organization := testcommon.CreateOrganizations(1)[0]
-	req = types.APIRequest{
-		Name:        organization.Name,
-		Description: organization.Description,
-		Header:      organization.HeaderURI,
-		Avatar:      organization.AvatarURI,
-	}
-	respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/account/organizations",
-		hex.EncodeToString(integrator.SecretApiKey), "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &resp)
-	qt.Assert(t, err, qt.IsNil)
-	organization.ID = resp.ID
-	organization.EthAddress = resp.OrganizationID
-	organization.CreationTxHash = resp.TxHash
-
-	// create organization: check txHash has been mined
-	var respMined urlapi.APIMined
-	for numTries := 5; numTries > 0; numTries-- {
-		if numTries != 5 {
-			time.Sleep(time.Second * 4)
-		}
-		req = types.APIRequest{}
-		respBody, statusCode = DoRequest(t, API.URL+
-			"/v1/priv/transactions/"+organization.CreationTxHash,
-			hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-		t.Logf("%s", respBody)
-		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &respMined)
-		qt.Assert(t, err, qt.IsNil)
-		// if mined, break loop
-		if respMined.Mined != nil && *respMined.Mined {
-			break
-		}
-	}
-	qt.Assert(t, *respMined.Mined, qt.IsTrue)
 
 	// test create different kinds of elections
 	elections := testcommon.CreateElections(1, false, false)
@@ -80,7 +22,7 @@ func TestElection(t *testing.T) {
 
 	for _, election := range elections {
 		var resp *types.APIResponse
-		req = types.APIRequest{
+		req := types.APIRequest{
 			Title:         election.Title,
 			Description:   election.Description,
 			Header:        election.Header,
@@ -90,28 +32,29 @@ func TestElection(t *testing.T) {
 			HiddenResults: election.HiddenResults,
 			Questions:     election.Questions,
 		}
-		respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/organizations/"+
-			hex.EncodeToString(organization.EthAddress)+"/elections/blind",
-			hex.EncodeToString(integrator.SecretApiKey), "POST", req)
+		respBody, statusCode := DoRequest(t, API.URL+"/v1/priv/organizations/"+
+			hex.EncodeToString(testOrganizations[0].EthAddress)+"/elections/blind",
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err = json.Unmarshal(respBody, &resp)
+		err := json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)
 		election.ElectionID = resp.ElectionID
-		election.OrganizationID = organization.EthAddress
+		election.OrganizationID = testOrganizations[0].EthAddress
 		election.CreationTxHash = resp.TxHash
 	}
 
 	// create election: check txHash has been mined
+	var respMined urlapi.APIMined
 	for _, election := range elections {
 		for numTries := 10; numTries > 0; numTries-- {
 			if numTries != 10 {
 				time.Sleep(time.Second * 4)
 			}
-			req = types.APIRequest{}
-			respBody, statusCode = DoRequest(t, API.URL+
+			req := types.APIRequest{}
+			respBody, statusCode := DoRequest(t, API.URL+
 				"/v1/priv/transactions/"+election.CreationTxHash,
-				hex.EncodeToString(integrator.SecretApiKey), "GET", req)
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
 			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
 			err := json.Unmarshal(respBody, &respMined)
@@ -133,12 +76,12 @@ func TestElection(t *testing.T) {
 			if status != "" {
 				time.Sleep(2 * time.Second)
 			}
-			respBody, statusCode = DoRequest(t, API.URL+
+			respBody, statusCode := DoRequest(t, API.URL+
 				"/v1/priv/elections/"+hex.EncodeToString(election.ElectionID),
-				hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
-			err = json.Unmarshal(respBody, &electionResp)
+			err := json.Unmarshal(respBody, &electionResp)
 			qt.Assert(t, err, qt.IsNil)
 			qt.Assert(t, electionResp.Description, qt.Equals, election.Description)
 			qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
@@ -159,56 +102,35 @@ func TestElection(t *testing.T) {
 		}
 		qt.Assert(t, electionResp.Status, qt.Equals, "ACTIVE")
 	}
+}
 
-	// get election list
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(organization.EthAddress)+"/elections",
-		hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-	var electionList []types.APIElectionSummary
-	err = json.Unmarshal(respBody, &electionList)
-	qt.Assert(t, err, qt.IsNil)
-
-	// get active election list
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(organization.EthAddress)+"/elections",
-		hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-	var activeElectionList []types.APIElectionSummary
-	err = json.Unmarshal(respBody, &activeElectionList)
-	qt.Assert(t, err, qt.IsNil)
-
-	qt.Assert(t, len(electionList), qt.Equals, len(elections))
-	qt.Assert(t, len(electionList), qt.Equals, len(activeElectionList))
-
+func TestElectionStatus(t *testing.T) {
 	// test set election status
-	for _, election := range elections {
+	for _, election := range testElections {
 		var resp *types.APIResponse
-		respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/elections/"+
+		respBody, statusCode := DoRequest(t, API.URL+"/v1/priv/elections/"+
 			hex.EncodeToString(election.ElectionID)+"/CANCELED",
-			hex.EncodeToString(integrator.SecretApiKey), "PUT", types.APIRequest{})
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "PUT", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err = json.Unmarshal(respBody, &resp)
+		err := json.Unmarshal(respBody, &resp)
 		qt.Assert(t, err, qt.IsNil)
 		election.CreationTxHash = resp.TxHash
 	}
 
 	// set election status: check txHash has been mined
-	for _, election := range elections {
+	var respMined urlapi.APIMined
+	for _, election := range testElections {
 		for numTries := 10; numTries > 0; numTries-- {
 			if numTries != 10 {
 				time.Sleep(time.Second * 4)
 			}
-			req = types.APIRequest{}
-			respBody, statusCode = DoRequest(t, API.URL+
+			req := types.APIRequest{}
+			respBody, statusCode := DoRequest(t, API.URL+
 				"/v1/priv/transactions/"+election.CreationTxHash,
-				hex.EncodeToString(integrator.SecretApiKey), "GET", req)
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
 			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
-			var respMined urlapi.APIMined
 			err := json.Unmarshal(respBody, &respMined)
 			qt.Assert(t, err, qt.IsNil)
 			// if mined, break loop
@@ -216,31 +138,45 @@ func TestElection(t *testing.T) {
 				break
 			}
 		}
+		qt.Assert(t, respMined.Mined != nil, qt.IsTrue)
 		qt.Assert(t, *respMined.Mined, qt.IsTrue)
 	}
 
 	// test get election statuses
-	for _, election := range elections {
+	for _, election := range testElections {
 		var electionResp types.APIElectionInfo
-		respBody, statusCode = DoRequest(t, API.URL+
+		respBody, statusCode := DoRequest(t, API.URL+
 			"/v1/priv/elections/"+hex.EncodeToString(election.ElectionID),
-			hex.EncodeToString(integrator.SecretApiKey), "GET", types.APIRequest{})
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err = json.Unmarshal(respBody, &electionResp)
+		err := json.Unmarshal(respBody, &electionResp)
 		qt.Assert(t, err, qt.IsNil)
 		qt.Assert(t, electionResp.Status, qt.Equals, "CANCELED")
 	}
+}
 
-	// cleaning up
-	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/priv/account/organizations/"+
-		hex.EncodeToString(organization.EthAddress), API.URL),
-		hex.EncodeToString(integrator.SecretApiKey), "DELETE", types.APIRequest{})
+func TestElectionList(t *testing.T) {
+	// get election list
+	respBody, statusCode := DoRequest(t, API.URL+
+		"/v1/priv/organizations/"+hex.EncodeToString(testOrganizations[1].EthAddress)+"/elections",
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
+	var electionList []types.APIElectionSummary
+	err := json.Unmarshal(respBody, &electionList)
+	qt.Assert(t, err, qt.IsNil)
 
-	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
-		API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
+	// get active election list
+	respBody, statusCode = DoRequest(t, API.URL+
+		"/v1/priv/organizations/"+hex.EncodeToString(testOrganizations[1].EthAddress)+"/elections",
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
+	var activeElectionList []types.APIElectionSummary
+	err = json.Unmarshal(respBody, &activeElectionList)
+	qt.Assert(t, err, qt.IsNil)
+
+	qt.Assert(t, len(electionList), qt.Equals, len(testActiveElections))
+	qt.Assert(t, len(electionList), qt.Equals, len(activeElectionList))
 }

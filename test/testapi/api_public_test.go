@@ -13,7 +13,6 @@ import (
 	qt "github.com/frankban/quicktest"
 	"go.vocdoni.io/api/test/testcommon"
 	"go.vocdoni.io/api/types"
-	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	dvotetypes "go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
@@ -32,142 +31,21 @@ type authReq struct {
 	Nullifier dvotetypes.HexBytes `json:"nullifier,omitempty"`
 }
 
-func TestPublic(t *testing.T) {
+func TestGetElectionsPub(t *testing.T) {
 	t.Parallel()
-	integrator := testcommon.CreateIntegrators(1)[0]
-
-	cspPubKey := hex.EncodeToString(API.CSP.CspPubKey)
-	// create integrator to test with
-	req := types.APIRequest{
-		CspUrlPrefix: integrator.CspUrlPrefix,
-		CspPubKey:    cspPubKey,
-		Name:         integrator.Name,
-		Email:        integrator.Email,
-	}
-	respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-	var resp types.APIResponse
-	err := json.Unmarshal(respBody, &resp)
-	qt.Assert(t, err, qt.IsNil)
-	integrator.ID = resp.ID
-	if integrator.SecretApiKey, err = hex.DecodeString(resp.APIKey); err != nil {
-		t.Fatal(err)
-	}
-
-	// create organization to test with
-	organization := testcommon.CreateOrganizations(1)[0]
-	req = types.APIRequest{
-		Name:        organization.Name,
-		Description: organization.Description,
-		Header:      organization.HeaderURI,
-		Avatar:      organization.AvatarURI,
-	}
-	respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/account/organizations",
-		hex.EncodeToString(integrator.SecretApiKey), "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &resp)
-	qt.Assert(t, err, qt.IsNil)
-	organization.ID = resp.ID
-	organization.APIToken = resp.APIToken
-	organization.EthAddress = resp.OrganizationID
-	organization.CreationTxHash = resp.TxHash
-
-	// create organization: check txHash has been mined
-	var respMined urlapi.APIMined
-	for numTries := 5; numTries > 0; numTries-- {
-		if numTries != 5 {
-			time.Sleep(time.Second * 4)
-		}
-		req = types.APIRequest{}
-		respBody, statusCode = DoRequest(t, API.URL+
-			"/v1/priv/transactions/"+organization.CreationTxHash,
-			hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-		t.Logf("%s", respBody)
-		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &respMined)
-		qt.Assert(t, err, qt.IsNil)
-		// if mined, break loop
-		if respMined.Mined != nil && *respMined.Mined {
-			break
-		}
-	}
-	qt.Assert(t, *respMined.Mined, qt.IsTrue)
-
-	// test create different kinds of elections
-	elections := testcommon.CreateElections(1, false, false)
-	elections = append(elections, testcommon.CreateElections(1, true, false)...)
-	elections = append(elections, testcommon.CreateElections(1, true, true)...)
-
-	for _, election := range elections {
-		var resp *types.APIResponse
-		req = types.APIRequest{
-			Title:         election.Title,
-			Description:   election.Description,
-			Header:        election.Header,
-			StreamURI:     election.StreamURI,
-			EndDate:       election.EndDate.Format("2006-01-02T15:04:05.000Z"),
-			Confidential:  election.Confidential,
-			HiddenResults: election.HiddenResults,
-			Questions:     election.Questions,
-		}
-		respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/organizations/"+
-			hex.EncodeToString(organization.EthAddress)+"/elections/blind",
-			hex.EncodeToString(integrator.SecretApiKey), "POST", req)
-		t.Logf("%s", respBody)
-		qt.Assert(t, statusCode, qt.Equals, 200)
-		err = json.Unmarshal(respBody, &resp)
-		qt.Assert(t, err, qt.IsNil)
-		election.ElectionID = resp.ElectionID
-		election.OrganizationID = organization.EthAddress
-		election.CreationTxHash = resp.TxHash
-	}
-
-	// create election: check txHash has been mined
-	for _, election := range elections {
-		for numTries := 10; numTries > 0; numTries-- {
-			if numTries != 10 {
-				time.Sleep(time.Second * 4)
-			}
-			req = types.APIRequest{}
-			respBody, statusCode = DoRequest(t, API.URL+
-				"/v1/priv/transactions/"+election.CreationTxHash,
-				hex.EncodeToString(integrator.SecretApiKey), "GET", req)
-			t.Logf("%s", respBody)
-			qt.Assert(t, statusCode, qt.Equals, 200)
-			err := json.Unmarshal(respBody, &respMined)
-			qt.Assert(t, err, qt.IsNil)
-			// if mined, break loop
-			if respMined.Mined != nil && *respMined.Mined {
-				break
-			}
-		}
-		qt.Assert(t, *respMined.Mined, qt.IsTrue)
-	}
-
-	// get election list- public call (should exclude private elections)
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/pub/organizations/"+hex.EncodeToString(organization.EthAddress)+"/elections",
-		organization.APIToken, "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-	var pubElectionList []types.APIElectionSummary
-	err = json.Unmarshal(respBody, &pubElectionList)
-	qt.Assert(t, err, qt.IsNil)
-	qt.Assert(t, len(pubElectionList), qt.Equals, 1)
-
 	// test get elections (pub)
-	for _, election := range elections {
+	for _, election := range testElections {
 		var electionResp types.APIElectionInfo
-		respBody, statusCode = DoRequest(t, API.URL+
+		respBody, statusCode := DoRequest(t, API.URL+
 			"/v1/pub/elections/"+hex.EncodeToString(election.ElectionID),
-			organization.APIToken, "GET", types.APIRequest{})
+			testOrganizations[0].APIToken, "GET", types.APIRequest{})
 		t.Logf("%s", respBody)
 		if election.Confidential {
 			qt.Assert(t, statusCode, qt.Equals, 400)
 			break
 		}
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err = json.Unmarshal(respBody, &electionResp)
+		err := json.Unmarshal(respBody, &electionResp)
 		qt.Assert(t, err, qt.IsNil)
 		qt.Assert(t, electionResp.Description, qt.Equals, election.Description)
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
@@ -184,17 +62,20 @@ func TestPublic(t *testing.T) {
 			qt.Assert(t, len(question.Choices), qt.Equals, len(election.Questions[i].Choices))
 		}
 	}
+}
 
+func TestGetElectionsPriv(t *testing.T) {
+	t.Parallel()
 	// test get elections (priv)
-	for _, election := range elections {
+	for _, election := range testElections {
 		cspSignature := testcommon.GetCSPSignature(t, election.ElectionID, API.CSP.CspSignKeys)
 		var electionResp types.APIElectionInfo
-		respBody, statusCode = DoRequest(t, API.URL+
+		respBody, statusCode := DoRequest(t, API.URL+
 			"/v1/pub/elections/"+hex.EncodeToString(election.ElectionID)+"/auth/"+cspSignature,
-			organization.APIToken, "GET", types.APIRequest{})
+			testOrganizations[0].APIToken, "GET", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err = json.Unmarshal(respBody, &electionResp)
+		err := json.Unmarshal(respBody, &electionResp)
 		qt.Assert(t, err, qt.IsNil)
 		qt.Assert(t, electionResp.Description, qt.Equals, election.Description)
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
@@ -211,44 +92,24 @@ func TestPublic(t *testing.T) {
 			qt.Assert(t, len(question.Choices), qt.Equals, len(election.Questions[i].Choices))
 		}
 	}
+}
 
-	// failures: ensure wrong api token fails
-	// TODO implement rate-limiting, use getOrganizationPublic to compare API token
-	// respBody, statusCode = DoRequest(t, API.URL+
-	// 	"/v1/pub/organizations/"+hex.EncodeToString(organization.EthAddress),
-	// 	organization.APIToken+"12", "GET", types.APIRequest{})
-	// t.Logf("%s", respBody)
-	// qt.Assert(t, statusCode, qt.Equals, 400)
-
-	// respBody, statusCode = DoRequest(t, API.URL+
-	// 	"/v1/pub/elections/"+hex.EncodeToString(elections[0].ElectionID),
-	// 	organization.APIToken+"1234", "GET", types.APIRequest{})
-	// t.Logf("%s", respBody)
-	// qt.Assert(t, statusCode, qt.Equals, 400)
+func TestVote(t *testing.T) {
+	t.Parallel()
 
 	// test signed ecdsa voting
-	signedNullifier := submitVoteSigned(t, elections[0].ElectionID,
-		API.CSP.CspSignKeys, organization.APIToken)
+	signedNullifier := submitVoteSigned(t, testActiveElections[0].ElectionID,
+		API.CSP.CspSignKeys, testOrganizations[1].APIToken)
 
 	// test blind signature voting
-	blindNullifier := submitVoteBlind(t, elections[0].ElectionID,
-		API.CSP.CspSignKeys, organization.APIToken)
+	blindNullifier := submitVoteBlind(t, testActiveElections[0].ElectionID,
+		API.CSP.CspSignKeys, testOrganizations[1].APIToken)
 
 	// verify both votes were accepted
-	verifyNullifier(t, signedNullifier, elections[0].ElectionID, organization.APIToken)
-	verifyNullifier(t, blindNullifier, elections[0].ElectionID, organization.APIToken)
-
-	// cleaning up
-	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/priv/account/organizations/"+
-		hex.EncodeToString(organization.EthAddress), API.URL),
-		hex.EncodeToString(integrator.SecretApiKey), "DELETE", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
-
-	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
-		API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
+	verifyNullifier(t, signedNullifier, testActiveElections[0].ElectionID,
+		testOrganizations[1].APIToken)
+	verifyNullifier(t, blindNullifier, testActiveElections[0].ElectionID,
+		testOrganizations[1].APIToken)
 }
 
 func verifyNullifier(t *testing.T, nullifier, processID dvotetypes.HexBytes, orgAPIToken string) {
