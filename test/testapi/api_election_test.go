@@ -138,7 +138,7 @@ func TestElectionStatus(t *testing.T) {
 				break
 			}
 		}
-		qt.Assert(t, respMined.Mined != nil, qt.IsTrue)
+		qt.Assert(t, respMined.Mined, qt.Not(qt.IsNil))
 		qt.Assert(t, *respMined.Mined, qt.IsTrue)
 	}
 
