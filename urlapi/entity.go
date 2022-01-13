@@ -581,9 +581,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
 // GET https://server/v1/priv/organizations/<organizationId>/elections/blind
+// GET https://server/v1/priv/organizations/<organizationId>/elections/paused
+// GET https://server/v1/priv/organizations/<organizationId>/elections/canceled
 // GET https://server/v1/priv/organizations/<organizationId>/elections/active
-// GET https://server/v1/pprivub/organizations/<organizationId>/elections/ended
 // GET https://server/v1/priv/organizations/<organizationId>/elections/upcoming
+// GET https://server/v1/priv/organizations/<organizationId>/elections/ended
 // listProcessesPrivateHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {

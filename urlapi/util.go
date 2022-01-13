@@ -3,6 +3,7 @@ package urlapi
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -215,14 +216,53 @@ func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
 func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byte,
 	private bool) ([]types.APIElectionSummary, error) {
 	var electionList []types.APIElectionSummary
+	filter = strings.ToUpper(filter)
 	switch filter {
-	case "active", "ended", "upcoming", "":
+	case "PAUSED", "CANCELED", "ENDED", "":
 		var fullProcessList []string
 		currentHeight, _, _ := u.vocClient.GetBlockTimes()
 		// loop to fetch all processes
 		for {
 			tempProcessList, err := u.vocClient.GetProcessList(entityId,
-				"", "", "", 0, false, len(fullProcessList), 64)
+				filter, "", "", 0, false, len(fullProcessList), 64)
+			if err != nil {
+				return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
+			}
+			fullProcessList = append(fullProcessList, tempProcessList...)
+			if len(tempProcessList) < 64 {
+				break
+			}
+		}
+		// loop to fetch processes from db
+		for _, processID := range fullProcessList {
+			processIDBytes, err := hex.DecodeString(processID)
+			if err != nil {
+				log.Errorf("cannot decode process id %s: %v", processID, err)
+				continue
+			}
+			var newProcess *types.Election
+			if private {
+				newProcess, err = u.db.GetElection(integratorPrivKey,
+					entityId, processIDBytes)
+			} else {
+				newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
+			}
+			if err != nil {
+				log.Warnf("could not get election,"+
+					" process %x may no be in db: %v", processIDBytes, err)
+				continue
+			}
+			newProcess.OrgEthAddress = entityId
+			newProcess.ProcessID = processIDBytes
+			appendProcess(&electionList, newProcess, private, int(currentHeight))
+		}
+	case "ACTIVE", "UPCOMING":
+		var fullProcessList []string
+		currentHeight, _, _ := u.vocClient.GetBlockTimes()
+		// loop to fetch all READY processes
+		for {
+			tempProcessList, err := u.vocClient.GetProcessList(entityId,
+				"READY", "", "", 0, false, len(fullProcessList), 64)
 			if err != nil {
 				return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
 			}
@@ -255,20 +295,14 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 
 			// filter processes by date
 			switch filter {
-			case "active":
+			case "ACTIVE":
 				if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
 					appendProcess(&electionList, newProcess, private, int(currentHeight))
 				}
-			case "upcoming":
+			case "UPCOMING":
 				if newProcess.StartBlock > int(currentHeight) {
 					appendProcess(&electionList, newProcess, private, int(currentHeight))
 				}
-			case "ended":
-				if newProcess.EndBlock < int(currentHeight) {
-					appendProcess(&electionList, newProcess, private, int(currentHeight))
-				}
-			case "":
-				appendProcess(&electionList, newProcess, private, int(currentHeight))
 			}
 		}
 	case "blind", "signed":

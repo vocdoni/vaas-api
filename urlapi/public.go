@@ -93,9 +93,11 @@ func (u *URLAPI) registerPublicKeyHandler(
 
 // GET https://server/v1/pub/organizations/<organizationId>/elections/signed
 // GET https://server/v1/pub/organizations/<organizationId>/elections/blind
+// GET https://server/v1/pub/organizations/<organizationId>/elections/paused
+// GET https://server/v1/pub/organizations/<organizationId>/elections/canceled
 // GET https://server/v1/pub/organizations/<organizationId>/elections/active
-// GET https://server/v1/pub/organizations/<organizationId>/elections/ended
 // GET https://server/v1/pub/organizations/<organizationId>/elections/upcoming
+// GET https://server/v1/pub/organizations/<organizationId>/elections/ended
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
