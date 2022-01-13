@@ -184,7 +184,8 @@ func TestElectionList(t *testing.T) {
 
 	// get active election list
 	respBody, statusCode = DoRequest(t,
-		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/active", API.URL, testOrganizations[1].EthAddress),
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/active",
+			API.URL, testOrganizations[1].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
@@ -193,9 +194,9 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, err, qt.IsNil)
 
 	// get eleciton lists with empty filters
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(
-		testOrganizations[1].EthAddress)+"/elections/upcoming",
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/upcoming",
+			API.URL, testOrganizations[1].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
@@ -204,9 +205,9 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, len(emptyElectionList), qt.Equals, 0)
 
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(
-		testOrganizations[1].EthAddress)+"/elections/ended",
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/ended",
+			API.URL, testOrganizations[1].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
@@ -214,9 +215,9 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, len(emptyElectionList), qt.Equals, 0)
 
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(
-		testOrganizations[1].EthAddress)+"/elections/canceled",
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/canceled",
+			API.URL, testOrganizations[1].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
@@ -224,9 +225,9 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, len(emptyElectionList), qt.Equals, 0)
 
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(
-		testOrganizations[1].EthAddress)+"/elections/paused",
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/paused",
+			API.URL, testOrganizations[1].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
