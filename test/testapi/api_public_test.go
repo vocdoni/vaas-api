@@ -36,8 +36,8 @@ func TestGetElectionsPub(t *testing.T) {
 	// test get elections (pub)
 	for _, election := range testElections {
 		var electionResp types.APIElectionInfo
-		respBody, statusCode := DoRequest(t, API.URL+
-			"/v1/pub/elections/"+hex.EncodeToString(election.ElectionID),
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/pub/elections/%x", API.URL, election.ElectionID),
 			testOrganizations[0].APIToken, "GET", types.APIRequest{})
 		t.Logf("%s", respBody)
 		if election.Confidential {
@@ -70,8 +70,8 @@ func TestGetElectionsPriv(t *testing.T) {
 	for _, election := range testElections {
 		cspSignature := testcommon.GetCSPSignature(t, election.ElectionID, API.CSP.CspSignKeys)
 		var electionResp types.APIElectionInfo
-		respBody, statusCode := DoRequest(t, API.URL+
-			"/v1/pub/elections/"+hex.EncodeToString(election.ElectionID)+"/auth/"+cspSignature,
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/pub/elections/%x/auth/%s", API.URL, election.ElectionID, cspSignature),
 			testOrganizations[0].APIToken, "GET", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
@@ -121,8 +121,8 @@ func verifyNullifier(t *testing.T, nullifier, processID dvotetypes.HexBytes, org
 			// sleep total of 30 seconds for vote to be confirmed
 			time.Sleep(time.Second * 3)
 		}
-		respBody, statusCode = DoRequest(t, API.URL+
-			"/v1/pub/nullifiers/"+hex.EncodeToString(nullifier),
+		respBody, statusCode = DoRequest(t,
+			fmt.Sprintf("%s/v1/pub/nullifiers/%x", API.URL, nullifier),
 			orgAPIToken, "GET", types.APIRequest{})
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		err := json.Unmarshal(respBody, &resp)
@@ -224,8 +224,9 @@ func submitVoteSigned(t *testing.T, processID []byte,
 		t.Fatal(err)
 	}
 	req = authReq{Vote: base64.StdEncoding.EncodeToString(signedVoteTxBytes)}
-	respBody, statusCode = DoRequest(t, API.URL+fmt.Sprintf(
-		"/v1/pub/elections/%x/vote", processID), orgAPIToken, "POST", req)
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/pub/elections/%x/vote", API.URL, processID),
+		orgAPIToken, "POST", req)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	err = json.Unmarshal(respBody, &aResp)
 	qt.Assert(t, err, qt.IsNil)
@@ -341,8 +342,9 @@ func submitVoteBlind(t *testing.T, processID []byte,
 		t.Fatal(err)
 	}
 	req = authReq{Vote: base64.StdEncoding.EncodeToString(signedVoteTxBytes)}
-	respBody, statusCode = DoRequest(t, API.URL+fmt.Sprintf(
-		"/v1/pub/elections/%x/vote", processID), orgAPIToken, "POST", req)
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/pub/elections/%x/vote", API.URL, processID),
+		orgAPIToken, "POST", req)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	err = json.Unmarshal(respBody, &aResp)
 	qt.Assert(t, err, qt.IsNil)

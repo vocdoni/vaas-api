@@ -3,6 +3,7 @@ package testapi
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -32,8 +33,9 @@ func TestElection(t *testing.T) {
 			HiddenResults: election.HiddenResults,
 			Questions:     election.Questions,
 		}
-		respBody, statusCode := DoRequest(t, API.URL+"/v1/priv/organizations/"+
-			hex.EncodeToString(testOrganizations[0].EthAddress)+"/elections/blind",
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind",
+				API.URL, testOrganizations[0].EthAddress),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
@@ -52,8 +54,8 @@ func TestElection(t *testing.T) {
 				time.Sleep(time.Second * 4)
 			}
 			req := types.APIRequest{}
-			respBody, statusCode := DoRequest(t, API.URL+
-				"/v1/priv/transactions/"+election.CreationTxHash,
+			respBody, statusCode := DoRequest(t,
+				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
 				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
 			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
@@ -76,8 +78,8 @@ func TestElection(t *testing.T) {
 			if status != "" {
 				time.Sleep(2 * time.Second)
 			}
-			respBody, statusCode := DoRequest(t, API.URL+
-				"/v1/priv/elections/"+hex.EncodeToString(election.ElectionID),
+			respBody, statusCode := DoRequest(t,
+				fmt.Sprintf("%s/v1/priv/elections/%x", API.URL, election.ElectionID),
 				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
@@ -108,8 +110,8 @@ func TestElectionStatus(t *testing.T) {
 	// test set election status
 	for _, election := range testElections {
 		var resp *types.APIResponse
-		respBody, statusCode := DoRequest(t, API.URL+"/v1/priv/elections/"+
-			hex.EncodeToString(election.ElectionID)+"/CANCELED",
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/priv/elections/%x/CANCELED", API.URL, election.ElectionID),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "PUT", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
@@ -126,8 +128,8 @@ func TestElectionStatus(t *testing.T) {
 				time.Sleep(time.Second * 4)
 			}
 			req := types.APIRequest{}
-			respBody, statusCode := DoRequest(t, API.URL+
-				"/v1/priv/transactions/"+election.CreationTxHash,
+			respBody, statusCode := DoRequest(t,
+				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
 				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
 			t.Logf("%s", respBody)
 			qt.Assert(t, statusCode, qt.Equals, 200)
@@ -145,8 +147,8 @@ func TestElectionStatus(t *testing.T) {
 	// test get election statuses
 	for _, election := range testElections {
 		var electionResp types.APIElectionInfo
-		respBody, statusCode := DoRequest(t, API.URL+
-			"/v1/priv/elections/"+hex.EncodeToString(election.ElectionID),
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/priv/elections/%x", API.URL, election.ElectionID),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
@@ -158,8 +160,8 @@ func TestElectionStatus(t *testing.T) {
 
 func TestElectionList(t *testing.T) {
 	// get election list
-	respBody, statusCode := DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(testOrganizations[1].EthAddress)+"/elections",
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections", API.URL, testOrganizations[1].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
@@ -168,8 +170,8 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, err, qt.IsNil)
 
 	// get active election list
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(testOrganizations[1].EthAddress)+"/elections",
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections", API.URL, testOrganizations[1].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)

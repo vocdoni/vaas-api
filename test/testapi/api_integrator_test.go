@@ -22,7 +22,8 @@ func TestIntegrator(t *testing.T) {
 		Name:         integrators[0].Name,
 		Email:        integrators[0].Email,
 	}
-	respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/admin/accounts", API.URL), API.AuthToken, "POST", req)
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	var resp types.APIResponse
@@ -36,8 +37,9 @@ func TestIntegrator(t *testing.T) {
 	// test fetching integrators
 	for _, integrator := range integrators {
 		req := types.APIRequest{}
-		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
-			API.URL, integrator.ID), API.AuthToken, "GET", req)
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/admin/accounts/%d", API.URL, integrator.ID),
+			API.AuthToken, "GET", req)
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		var resp types.APIResponse
@@ -51,8 +53,9 @@ func TestIntegrator(t *testing.T) {
 	// test resetting integrator api keys
 	for _, integrator := range integrators {
 		req := types.APIRequest{}
-		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d/key",
-			API.URL, integrator.ID), API.AuthToken, "PATCH", req)
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/admin/accounts/%d/key", API.URL, integrator.ID),
+			API.AuthToken, "PATCH", req)
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		var resp types.APIResponse
@@ -66,16 +69,18 @@ func TestIntegrator(t *testing.T) {
 
 	// cleaning up
 	for _, integrator := range integrators {
-		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
-			API.URL, integrator.ID), API.AuthToken, "DELETE", types.APIRequest{})
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/admin/accounts/%d", API.URL, integrator.ID),
+			API.AuthToken, "DELETE", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 	}
 
 	// test fetching integrators
 	for _, integrator := range integrators {
-		respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/%d",
-			API.URL, integrator.ID), API.AuthToken, "GET", types.APIRequest{})
+		respBody, statusCode := DoRequest(t,
+			fmt.Sprintf("%s/v1/admin/accounts/%d", API.URL, integrator.ID),
+			API.AuthToken, "GET", types.APIRequest{})
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 400)
 	}
@@ -91,7 +96,8 @@ func TestCreateIntegratorFail(t *testing.T) {
 		Name:         failIntegrators[0].Name,
 		Email:        failIntegrators[0].Email,
 	}
-	respBody, statusCode := DoRequest(t, API.URL+"/v1/admin/accounts", "1234", "POST", req)
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/admin/accounts", API.URL), "1234", "POST", req)
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 401)
 
@@ -102,12 +108,15 @@ func TestCreateIntegratorFail(t *testing.T) {
 		Name:         failIntegrators[0].Name,
 		Email:        failIntegrators[0].Email,
 	}
-	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
+	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts", API.URL),
+		API.AuthToken, "POST", req)
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// test failure: missing name, email
-	respBody, statusCode = DoRequest(t, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", types.APIRequest{})
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/admin/accounts", API.URL),
+		API.AuthToken, "POST", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 }
@@ -115,8 +124,9 @@ func TestCreateIntegratorFail(t *testing.T) {
 func TestFetchIntegratorFail(t *testing.T) {
 	t.Parallel()
 	// test fetching nonexistent integrator
-	respBody, statusCode := DoRequest(t, fmt.Sprintf("%s/v1/admin/accounts/222222222222",
-		API.URL), API.AuthToken, "GET", types.APIRequest{})
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/admin/accounts/222222222222", API.URL),
+		API.AuthToken, "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 }

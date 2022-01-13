@@ -23,7 +23,8 @@ func TestOrganization(t *testing.T) {
 		Header:      organization.HeaderURI,
 		Avatar:      organization.AvatarURI,
 	}
-	respBody, statusCode := DoRequest(t, API.URL+"/v1/priv/account/organizations",
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
@@ -45,8 +46,8 @@ func TestOrganization(t *testing.T) {
 			time.Sleep(time.Second * 4)
 		}
 		req = types.APIRequest{}
-		respBody, statusCode = DoRequest(t, API.URL+
-			"/v1/priv/transactions/"+organization.CreationTxHash,
+		respBody, statusCode = DoRequest(t,
+			fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, organization.CreationTxHash),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
 		t.Logf("%s", respBody)
 		qt.Assert(t, statusCode, qt.Equals, 200)
@@ -60,8 +61,8 @@ func TestOrganization(t *testing.T) {
 	qt.Assert(t, *respMined.Mined, qt.IsTrue)
 
 	// now fetch the organization we created
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/account/organizations/"+hex.EncodeToString(organization.EthAddress),
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, organization.EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
@@ -75,15 +76,15 @@ func TestOrganization(t *testing.T) {
 	qt.Assert(t, resp.Header, qt.Equals, organization.HeaderURI)
 
 	// cleaning up
-	respBody, statusCode = DoRequest(t, fmt.Sprintf("%s/v1/priv/account/organizations/"+
-		hex.EncodeToString(organization.EthAddress), API.URL),
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, organization.EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "DELETE", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	// fail get organization: should be deleted
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/account/organizations/"+hex.EncodeToString(organization.EthAddress),
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, organization.EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
@@ -99,7 +100,8 @@ func TestCreateOrganizationFailure(t *testing.T) {
 		Header:      organization.HeaderURI,
 		Avatar:      organization.AvatarURI,
 	}
-	respBody, statusCode := DoRequest(t, API.URL+"/v1/priv/account/organizations",
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
 		"1234", "POST", req)
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 401)
@@ -110,7 +112,8 @@ func TestCreateOrganizationFailure(t *testing.T) {
 		Header:      organization.HeaderURI,
 		Avatar:      organization.AvatarURI,
 	}
-	respBody, statusCode = DoRequest(t, API.URL+"/v1/priv/account/organizations",
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
@@ -119,15 +122,15 @@ func TestCreateOrganizationFailure(t *testing.T) {
 func TestGetOrganizationFailure(t *testing.T) {
 	t.Parallel()
 	// fail get organization: bad id
-	respBody, statusCode := DoRequest(t, API.URL+
-		"/v1/priv/account/organizations/"+"1234",
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations/%s", API.URL, "1234"),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// fail get organization: bad api key
-	respBody, statusCode = DoRequest(t, API.URL+
-		"/v1/priv/account/organizations/"+hex.EncodeToString(testOrganizations[0].EthAddress),
+	respBody, statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, testOrganizations[0].EthAddress),
 		hex.EncodeToString(testIntegrators[1].SecretApiKey), "GET", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 400)
@@ -137,8 +140,8 @@ func TestGetOrganizationFailure(t *testing.T) {
 func TestResetAPIToken(t *testing.T) {
 	t.Parallel()
 	// reset the organization api token
-	respBody, statusCode := DoRequest(t, API.URL+
-		"/v1/priv/account/organizations/"+hex.EncodeToString(testOrganizations[0].EthAddress)+"/key",
+	respBody, statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations/%x/key", API.URL, testOrganizations[0].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "PATCH", types.APIRequest{})
 	t.Logf("%s", respBody)
 	qt.Assert(t, statusCode, qt.Equals, 200)
