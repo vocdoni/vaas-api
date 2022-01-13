@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -28,11 +29,21 @@ func TestMain(m *testing.M) {
 	storage := os.TempDir()
 	apiPort := 9000
 	testApiAuthToken := "bb1a42df36d0cf3f4dd53d71dffa15780d44c54a5971792acd31974bc2cbceb6"
+	// check for TEST_DB_HOST env var. If not exist, don't run the db tests
+	dbHost := os.Getenv("TEST_DB_HOST")
+	if dbHost == "" {
+		log.Infof("SKIPPING: database host not set")
+		return
+	}
+	dbPort, err := strconv.Atoi(os.Getenv("TEST_DB_PORT"))
+	if err != nil {
+		dbPort = 5432
+	}
 	db := &config.DB{
 		Dbname:   "postgres",
 		Password: "postgres",
-		Host:     "postgres",
-		Port:     5432,
+		Host:     dbHost,
+		Port:     dbPort,
 		Sslmode:  "disable",
 		User:     "postgres",
 	}

@@ -48,10 +48,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 	if dbc != nil {
 		// Postgres with sqlx
 		if t.DB, err = pgsql.New(dbc); err != nil {
-			dbc.Host = "localhost"
-			if t.DB, err = pgsql.New(dbc); err != nil {
-				return err
-			}
+			return err
 		}
 		if err := pgsql.Migrator("upSync", t.DB); err != nil {
 			log.Warn(err)
