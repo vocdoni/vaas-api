@@ -107,6 +107,7 @@ func TestElection(t *testing.T) {
 }
 
 func TestElectionStatus(t *testing.T) {
+	t.Parallel()
 	// test set election status
 	for _, election := range testElections {
 		var resp *types.APIResponse
@@ -159,6 +160,7 @@ func TestElectionStatus(t *testing.T) {
 }
 
 func TestElectionList(t *testing.T) {
+	t.Parallel()
 	// get election list
 	respBody, statusCode := DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections", API.URL, testOrganizations[1].EthAddress),
