@@ -55,11 +55,19 @@ func DoRequest(t *testing.T, url, authToken,
 	data, err := json.Marshal(request)
 	if t != nil {
 		t.Logf("making request %s to %s with token %s, data %s", method, url, authToken, string(data))
-		qt.Check(t, err, qt.IsNil)
+		qt.Assert(t, err, qt.IsNil)
+	} else {
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(data))
 	if t != nil {
-		qt.Check(t, err, qt.IsNil)
+		qt.Assert(t, err, qt.IsNil)
+	} else {
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
@@ -68,14 +76,22 @@ func DoRequest(t *testing.T, url, authToken,
 	resp, err := http.DefaultClient.Do(req)
 	if t != nil {
 		qt.Assert(t, err, qt.IsNil)
+	} else {
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	if resp == nil {
 		return nil, resp.StatusCode
 	}
 	respBody, err := io.ReadAll(resp.Body)
 	if t != nil {
-		qt.Check(t, err, qt.IsNil)
+		qt.Assert(t, err, qt.IsNil)
 		t.Log(string(respBody))
+	} else {
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	return respBody, resp.StatusCode
 }

@@ -31,8 +31,8 @@ func TestOrganization(t *testing.T) {
 	var resp types.APIResponse
 	err := json.Unmarshal(respBody, &resp)
 	qt.Assert(t, err, qt.IsNil)
-	qt.Check(t, len(resp.APIToken) > 0, qt.IsTrue)
-	qt.Check(t, len(resp.TxHash) > 0, qt.IsTrue)
+	qt.Check(t, resp.APIToken, qt.Not(qt.HasLen), 0)
+	qt.Check(t, resp.TxHash, qt.Not(qt.HasLen), 0)
 	organization.ID = resp.ID
 	organization.EthAddress = resp.OrganizationID
 	organization.APIToken = resp.APIToken
@@ -68,7 +68,7 @@ func TestOrganization(t *testing.T) {
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	err = json.Unmarshal(respBody, &resp)
 	qt.Assert(t, err, qt.IsNil)
-	qt.Assert(t, len(resp.APIToken) > 0, qt.IsTrue)
+	qt.Assert(t, resp.APIToken, qt.Not(qt.HasLen), 0)
 	organization.APIToken = resp.APIToken
 	qt.Assert(t, resp.Name, qt.Equals, organization.Name)
 	qt.Assert(t, resp.Description, qt.Equals, organization.Description)
@@ -148,6 +148,6 @@ func TestResetAPIToken(t *testing.T) {
 	var resp types.APIResponse
 	err := json.Unmarshal(respBody, &resp)
 	qt.Assert(t, err, qt.IsNil)
-	qt.Assert(t, len(resp.APIToken) > 0, qt.IsTrue)
+	qt.Assert(t, resp.APIToken, qt.Not(qt.HasLen), 0)
 	qt.Assert(t, resp.APIToken, qt.Not(qt.Equals), testOrganizations[0].APIToken)
 }

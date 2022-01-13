@@ -89,15 +89,15 @@ func TestElection(t *testing.T) {
 			qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 			qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
 			qt.Assert(t, electionResp.StreamURI, qt.Equals, election.StreamURI)
-			qt.Assert(t, len(electionResp.Questions), qt.Equals, len(election.Questions))
+			qt.Assert(t, electionResp.Questions, qt.HasLen, len(election.Questions))
 			qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 				qt.Equals, hex.EncodeToString(election.OrganizationID))
-			qt.Assert(t, len(electionResp.ElectionID) > 0, qt.IsTrue)
+			qt.Assert(t, electionResp.ElectionID, qt.Not(qt.HasLen), 0)
 			election.ElectionID = electionResp.ElectionID
 			for i, question := range electionResp.Questions {
 				qt.Assert(t, question.Title, qt.Equals, election.Questions[i].Title)
 				qt.Assert(t, question.Description, qt.Equals, election.Questions[i].Description)
-				qt.Assert(t, len(question.Choices), qt.Equals, len(election.Questions[i].Choices))
+				qt.Assert(t, question.Choices, qt.HasLen, len(election.Questions[i].Choices))
 			}
 			status = electionResp.Status
 			numTries--
@@ -203,7 +203,7 @@ func TestElectionList(t *testing.T) {
 	var emptyElectionList []types.APIElectionSummary
 	err = json.Unmarshal(respBody, &emptyElectionList)
 	qt.Assert(t, err, qt.IsNil)
-	qt.Assert(t, len(emptyElectionList), qt.Equals, 0)
+	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
 	respBody, statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/ended",
@@ -213,7 +213,7 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	err = json.Unmarshal(respBody, &emptyElectionList)
 	qt.Assert(t, err, qt.IsNil)
-	qt.Assert(t, len(emptyElectionList), qt.Equals, 0)
+	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
 	respBody, statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/canceled",
@@ -223,7 +223,7 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	err = json.Unmarshal(respBody, &emptyElectionList)
 	qt.Assert(t, err, qt.IsNil)
-	qt.Assert(t, len(emptyElectionList), qt.Equals, 0)
+	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
 	respBody, statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/paused",
@@ -233,8 +233,8 @@ func TestElectionList(t *testing.T) {
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	err = json.Unmarshal(respBody, &emptyElectionList)
 	qt.Assert(t, err, qt.IsNil)
-	qt.Assert(t, len(emptyElectionList), qt.Equals, 0)
+	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
-	qt.Assert(t, len(electionList), qt.Equals, len(testActiveElections))
-	qt.Assert(t, len(electionList), qt.Equals, len(activeElectionList))
+	qt.Assert(t, electionList, qt.HasLen, len(testActiveElections))
+	qt.Assert(t, electionList, qt.HasLen, len(activeElectionList))
 }

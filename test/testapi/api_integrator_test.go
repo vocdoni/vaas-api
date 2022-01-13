@@ -30,7 +30,7 @@ func TestIntegrator(t *testing.T) {
 	err := json.Unmarshal(respBody, &resp)
 	qt.Assert(t, err, qt.IsNil)
 	qt.Check(t, resp.ID, qt.Not(qt.Equals), 0)
-	qt.Check(t, len(resp.APIKey) > 0, qt.IsTrue)
+	qt.Check(t, resp.APIKey, qt.Not(qt.HasLen), 0)
 	integrators[0].ID = resp.ID
 	integrators[0].SecretApiKey = []byte(resp.APIKey)
 

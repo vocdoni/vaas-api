@@ -51,15 +51,15 @@ func TestGetElectionsPub(t *testing.T) {
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 		qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
 		qt.Assert(t, electionResp.StreamURI, qt.Equals, election.StreamURI)
-		qt.Assert(t, len(electionResp.Questions), qt.Equals, len(election.Questions))
+		qt.Assert(t, electionResp.Questions, qt.HasLen, len(election.Questions))
 		qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 			qt.Equals, hex.EncodeToString(election.OrganizationID))
-		qt.Assert(t, len(electionResp.ElectionID) > 0, qt.IsTrue)
+		qt.Assert(t, electionResp.ElectionID, qt.Not(qt.HasLen), 0)
 		election.ElectionID = electionResp.ElectionID
 		for i, question := range electionResp.Questions {
 			qt.Assert(t, question.Title, qt.Equals, election.Questions[i].Title)
 			qt.Assert(t, question.Description, qt.Equals, election.Questions[i].Description)
-			qt.Assert(t, len(question.Choices), qt.Equals, len(election.Questions[i].Choices))
+			qt.Assert(t, question.Choices, qt.HasLen, len(election.Questions[i].Choices))
 		}
 	}
 }
@@ -81,15 +81,15 @@ func TestGetElectionsPriv(t *testing.T) {
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 		qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
 		qt.Assert(t, electionResp.StreamURI, qt.Equals, election.StreamURI)
-		qt.Assert(t, len(electionResp.Questions), qt.Equals, len(election.Questions))
+		qt.Assert(t, electionResp.Questions, qt.HasLen, len(election.Questions))
 		qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 			qt.Equals, hex.EncodeToString(election.OrganizationID))
-		qt.Assert(t, len(electionResp.ElectionID) > 0, qt.IsTrue)
+		qt.Assert(t, electionResp.ElectionID, qt.Not(qt.HasLen), 0)
 		election.ElectionID = electionResp.ElectionID
 		for i, question := range electionResp.Questions {
 			qt.Assert(t, question.Title, qt.Equals, election.Questions[i].Title)
 			qt.Assert(t, question.Description, qt.Equals, election.Questions[i].Description)
-			qt.Assert(t, len(question.Choices), qt.Equals, len(election.Questions[i].Choices))
+			qt.Assert(t, question.Choices, qt.HasLen, len(election.Questions[i].Choices))
 		}
 	}
 }
@@ -176,15 +176,15 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	qt.Assert(t, err, qt.IsNil)
 
 	// create and submit vote package with proof
-	nonce, err := hex.DecodeString(dvoteutil.RandomHex(32))
-	if err != nil {
-		t.Fatal(err)
-	}
 	vote := &vochain.VotePackage{
-		Nonce: fmt.Sprintf("%x", util.RandomHex(32)),
+		Nonce: util.RandomHex(32),
 		Votes: []int{1},
 	}
 	voteBytes, err := json.Marshal(vote)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nonce, err := hex.DecodeString(dvoteutil.RandomHex(32))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,7 +231,7 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	err = json.Unmarshal(respBody, &aResp)
 	qt.Assert(t, err, qt.IsNil)
 	t.Logf("submitted vote with nullifier %x", aResp.Nullifier)
-	qt.Assert(t, len(aResp.Nullifier) > 0, qt.IsTrue)
+	qt.Assert(t, aResp.Nullifier, qt.Not(qt.HasLen), 0)
 	return aResp.Nullifier
 }
 
@@ -349,6 +349,6 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	err = json.Unmarshal(respBody, &aResp)
 	qt.Assert(t, err, qt.IsNil)
 	t.Logf("submitted vote with nullifier %x", aResp.Nullifier)
-	qt.Assert(t, len(aResp.Nullifier) > 0, qt.IsTrue)
+	qt.Assert(t, aResp.Nullifier, qt.Not(qt.HasLen), 0)
 	return aResp.Nullifier
 }
