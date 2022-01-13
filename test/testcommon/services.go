@@ -22,7 +22,7 @@ const (
 	TEST_CSP_PORT = 5000
 )
 
-func (t *TestAPI) startTestGateway(done chan interface{}) {
+func (t *TestAPI) startTestGateway() {
 	storageDir := filepath.Join(t.StorageDir, ".voconed")
 	oracle := ethereum.SignKeys{}
 	if err := oracle.Generate(); err != nil {
@@ -40,11 +40,9 @@ func (t *TestAPI) startTestGateway(done chan interface{}) {
 		log.Fatal(err)
 	}
 	t.Gateway = "http://" + TEST_HOST + ":" + strconv.Itoa(TEST_GW_PORT) + TEST_GW_PATH
-	done <- 0
-	select {}
 }
 
-func (t *TestAPI) startTestCSP(done chan interface{}) {
+func (t *TestAPI) startTestCSP() {
 	dir := path.Join(t.StorageDir, "auth")
 	t.CSP.CspSignKeys = &ethereum.SignKeys{}
 	if err := t.CSP.CspSignKeys.Generate(); err != nil {
@@ -76,6 +74,4 @@ func (t *TestAPI) startTestCSP(done chan interface{}) {
 	if err := cs.ServeAPI(&router, TEST_CSP_PATH); err != nil {
 		log.Fatal(err)
 	}
-	done <- 0
-	select {}
 }

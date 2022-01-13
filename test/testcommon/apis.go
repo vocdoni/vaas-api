@@ -63,14 +63,11 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 	if route != "" {
 		t.StorageDir = storageDir
 
-		done := make(chan interface{}, 2)
 		// create gateway/vocone
-		go t.startTestGateway(done)
-		<-done
+		t.startTestGateway()
 
 		// create CSP service
-		go t.startTestCSP(done)
-		<-done
+		t.startTestCSP()
 
 		// start API
 		time.Sleep(time.Second * 5)
