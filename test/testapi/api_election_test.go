@@ -133,7 +133,8 @@ func TestElectionStatus(t *testing.T) {
 	statusCode := DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/canceled",
 			API.URL, testOrganizations[1].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &activeElectionList)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey),
+		"GET", types.APIRequest{}, &activeElectionList)
 
 	qt.Assert(t, statusCode, qt.Equals, 200)
 

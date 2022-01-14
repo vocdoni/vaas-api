@@ -79,6 +79,11 @@ $ npm install
 $ npm start
 ```
 #### Tests
+In order to run the integration tests, a postgres database server needs to be running locally on your machine. In addition, you need to set the following environment variables:
+`TEST_DB_HOST`
+`TEST_DB_PORT` (optional, default: `5432`)
+
+Otherwise, the integration tests will be skipped.
 
 ```bash
 $ go test ./...
