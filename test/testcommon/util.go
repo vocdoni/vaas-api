@@ -45,7 +45,7 @@ type TestElection struct {
 	Status             string
 	StreamURI          string
 	Title              string
-	Type               string
+	ProofType          string
 	VoteCount          uint32
 }
 
@@ -86,6 +86,10 @@ func CreateElections(size int, confidential, encrypted bool) []*TestElection {
 	mp := make([]*TestElection, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
+		proofType := types.PROOF_TYPE_BLIND
+		if randomID%2 == 0 {
+			proofType = types.PROOF_TYPE_ECDSA
+		}
 		mp[i] = &TestElection{
 			Title:         fmt.Sprintf("Test%d", randomID),
 			Description:   fmt.Sprintf("Description%d", randomID),
@@ -94,6 +98,7 @@ func CreateElections(size int, confidential, encrypted bool) []*TestElection {
 			EndDate:       time.Now().Add(24 * time.Hour),
 			Confidential:  confidential,
 			HiddenResults: encrypted,
+			ProofType:     proofType,
 		}
 		for j := 0; j <= i; j++ {
 			mp[i].Questions = append(mp[i].Questions, types.Question{
@@ -144,6 +149,7 @@ func CreateDbElections(t *testing.T, size int) []*types.Election {
 			Confidential:    true,
 			HiddenResults:   true,
 			MetadataPrivKey: nil,
+			ProofType:       types.PROOF_TYPE_BLIND,
 		}
 	}
 	return mp

@@ -33,8 +33,8 @@ func TestElection(t *testing.T) {
 			Questions:     election.Questions,
 		}
 		statusCode := DoRequest(t,
-			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind",
-				API.URL, testOrganizations[0].EthAddress),
+			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/%s",
+				API.URL, testOrganizations[0].EthAddress, election.ProofType),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		election.ElectionID = resp.ElectionID
@@ -80,6 +80,7 @@ func TestElection(t *testing.T) {
 			qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
 			qt.Assert(t, electionResp.StreamURI, qt.Equals, election.StreamURI)
 			qt.Assert(t, electionResp.Questions, qt.HasLen, len(election.Questions))
+			qt.Assert(t, electionResp.ProofType, qt.Equals, election.ProofType)
 			qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 				qt.Equals, hex.EncodeToString(election.OrganizationID))
 			qt.Assert(t, electionResp.ElectionID, qt.Not(qt.HasLen), 0)

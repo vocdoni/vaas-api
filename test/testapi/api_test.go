@@ -110,6 +110,7 @@ func DoRequest(t *testing.T, url, authToken,
 			log.Fatal(err)
 		}
 	}
+	log.Infof(string(respBody))
 	if resp.StatusCode != 200 {
 		return resp.StatusCode
 	}
@@ -227,7 +228,7 @@ func createElections(organization *testcommon.TestOrganization) []*testcommon.Te
 			Questions:     election.Questions,
 		}
 		statusCode := DoRequest(nil,
-			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind", API.URL, organization.EthAddress),
+			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/%s", API.URL, organization.EthAddress, election.ProofType),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 		if statusCode != 200 {
 			log.Fatalf("could not create testing organization")
