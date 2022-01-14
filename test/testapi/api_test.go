@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -62,7 +63,7 @@ func TestMain(m *testing.M) {
 }
 
 func DoRequest(t *testing.T, url, authToken,
-	method string, request interface{}) ([]byte, int) {
+	method string, request interface{}, response interface{}) int {
 	data, err := json.Marshal(request)
 	if t != nil {
 		t.Logf("making request %s to %s with token %s, data %s", method, url, authToken, string(data))
@@ -93,18 +94,29 @@ func DoRequest(t *testing.T, url, authToken,
 		}
 	}
 	if resp == nil {
-		return nil, resp.StatusCode
+		return resp.StatusCode
 	}
 	respBody, err := io.ReadAll(resp.Body)
 	if t != nil {
-		qt.Assert(t, err, qt.IsNil)
 		t.Log(string(respBody))
+		qt.Assert(t, err, qt.IsNil)
 	} else {
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	return respBody, resp.StatusCode
+	if resp.StatusCode != 200 {
+		return resp.StatusCode
+	}
+	err = json.Unmarshal(respBody, response)
+	if t != nil {
+		qt.Assert(t, err, qt.IsNil)
+	} else {
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	return resp.StatusCode
 }
 
 func setupTestIntegrators() {
@@ -119,16 +131,15 @@ func setupTestIntegrators() {
 			Name:         integrator.Name,
 			Email:        integrator.Email,
 		}
-		respBody, statusCode := DoRequest(nil, API.URL+"/v1/admin/accounts", API.AuthToken, "POST", req)
+		var resp types.APIResponse
+		statusCode := DoRequest(nil,
+			fmt.Sprintf("%s/v1/admin/accounts", API.URL),
+			API.AuthToken, "POST", req, &resp)
 		if statusCode != 200 {
 			log.Fatalf("could not create testing integrator")
 		}
-		var resp types.APIResponse
-		err := json.Unmarshal(respBody, &resp)
-		if err != nil {
-			log.Fatalf("could not create testing integrator: %v", err)
-		}
 		integrator.ID = resp.ID
+		var err error
 		if integrator.SecretApiKey, err = hex.DecodeString(resp.APIKey); err != nil {
 			log.Fatal(err)
 		}
@@ -146,15 +157,12 @@ func setupTestOrganizations() {
 			Header:      organization.HeaderURI,
 			Avatar:      organization.AvatarURI,
 		}
-		respBody, statusCode := DoRequest(nil, API.URL+"/v1/priv/account/organizations",
-			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
+		var resp types.APIResponse
+		statusCode := DoRequest(nil,
+			fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 		if statusCode != 200 {
 			log.Fatalf("could not create testing organization")
-		}
-		var resp types.APIResponse
-		err := json.Unmarshal(respBody, &resp)
-		if err != nil {
-			log.Fatalf("could not create testing organization: %v", err)
 		}
 		organization.ID = resp.ID
 		organization.EthAddress = resp.OrganizationID
@@ -168,15 +176,11 @@ func setupTestOrganizations() {
 				time.Sleep(time.Second * 4)
 			}
 			req = types.APIRequest{}
-			respBody, statusCode = DoRequest(nil, API.URL+
-				"/v1/priv/transactions/"+organization.CreationTxHash,
-				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
+			statusCode = DoRequest(nil,
+				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, organization.CreationTxHash),
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			if statusCode != 200 {
 				log.Fatalf("could not create testing organization")
-			}
-			err := json.Unmarshal(respBody, &respMined)
-			if err != nil {
-				log.Fatalf("could not create testing organization: %v", err)
 			}
 			// if mined, break loop
 			if respMined.Mined != nil && *respMined.Mined {
@@ -217,15 +221,11 @@ func createElections(organization *testcommon.TestOrganization) []*testcommon.Te
 			HiddenResults: election.HiddenResults,
 			Questions:     election.Questions,
 		}
-		respBody, statusCode := DoRequest(nil, API.URL+"/v1/priv/organizations/"+
-			hex.EncodeToString(organization.EthAddress)+"/elections/blind",
-			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
+		statusCode := DoRequest(nil,
+			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind", API.URL, organization.EthAddress),
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 		if statusCode != 200 {
 			log.Fatalf("could not create testing organization")
-		}
-		err := json.Unmarshal(respBody, &resp)
-		if err != nil {
-			log.Fatalf("could not create testing organization: %v", err)
 		}
 		election.ElectionID = resp.ElectionID
 		election.OrganizationID = organization.EthAddress
@@ -242,17 +242,13 @@ func checkElectionsMined(elections []*testcommon.TestElection) {
 				time.Sleep(time.Second * 4)
 			}
 			req := types.APIRequest{}
-			respBody, statusCode := DoRequest(nil, API.URL+
-				"/v1/priv/transactions/"+election.CreationTxHash,
-				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
-			// if mined, break loop
+			statusCode := DoRequest(nil,
+				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			if statusCode != 200 {
 				log.Fatalf("could not create testing organization")
 			}
-			err := json.Unmarshal(respBody, &respMined)
-			if err != nil {
-				log.Fatalf("could not create testing organization: %v", err)
-			}
+			// if mined, break loop
 			if respMined.Mined != nil && *respMined.Mined {
 				break
 			}

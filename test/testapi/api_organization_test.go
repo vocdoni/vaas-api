@@ -2,7 +2,6 @@ package testapi
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -23,14 +22,11 @@ func TestOrganization(t *testing.T) {
 		Header:      organization.HeaderURI,
 		Avatar:      organization.AvatarURI,
 	}
-	respBody, statusCode := DoRequest(t,
-		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
 	var resp types.APIResponse
-	err := json.Unmarshal(respBody, &resp)
-	qt.Assert(t, err, qt.IsNil)
+	statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
+	qt.Assert(t, statusCode, qt.Equals, 200)
 	qt.Check(t, resp.APIToken, qt.Not(qt.HasLen), 0)
 	qt.Check(t, resp.TxHash, qt.Not(qt.HasLen), 0)
 	organization.ID = resp.ID
@@ -46,13 +42,10 @@ func TestOrganization(t *testing.T) {
 			time.Sleep(time.Second * 4)
 		}
 		req = types.APIRequest{}
-		respBody, statusCode = DoRequest(t,
+		statusCode = DoRequest(t,
 			fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, organization.CreationTxHash),
-			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
-		t.Logf("%s", respBody)
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &respMined)
-		qt.Assert(t, err, qt.IsNil)
 		// if mined, break loop
 		if respMined.Mined != nil && *respMined.Mined {
 			break
@@ -61,13 +54,10 @@ func TestOrganization(t *testing.T) {
 	qt.Assert(t, *respMined.Mined, qt.IsTrue)
 
 	// now fetch the organization we created
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, organization.EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &resp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &resp)
-	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, resp.APIToken, qt.Not(qt.HasLen), 0)
 	organization.APIToken = resp.APIToken
 	qt.Assert(t, resp.Name, qt.Equals, organization.Name)
@@ -76,17 +66,16 @@ func TestOrganization(t *testing.T) {
 	qt.Assert(t, resp.Header, qt.Equals, organization.HeaderURI)
 
 	// cleaning up
-	respBody, statusCode = DoRequest(t,
+	var emptyResp interface{}
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, organization.EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "DELETE", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "DELETE", types.APIRequest{}, &emptyResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	// fail get organization: should be deleted
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, organization.EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &emptyResp)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 }
 
@@ -100,10 +89,10 @@ func TestCreateOrganizationFailure(t *testing.T) {
 		Header:      organization.HeaderURI,
 		Avatar:      organization.AvatarURI,
 	}
-	respBody, statusCode := DoRequest(t,
+	var resp interface{}
+	statusCode := DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
-		"1234", "POST", req)
-	t.Logf("%s", respBody)
+		"1234", "POST", req, &resp)
 	qt.Assert(t, statusCode, qt.Equals, 401)
 
 	// create organization failure: empty name
@@ -112,27 +101,25 @@ func TestCreateOrganizationFailure(t *testing.T) {
 		Header:      organization.HeaderURI,
 		Avatar:      organization.AvatarURI,
 	}
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 }
 
 func TestGetOrganizationFailure(t *testing.T) {
 	t.Parallel()
 	// fail get organization: bad id
-	respBody, statusCode := DoRequest(t,
+	var resp interface{}
+	statusCode := DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/account/organizations/%s", API.URL, "1234"),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &resp)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 	// fail get organization: bad api key
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, testOrganizations[0].EthAddress),
-		hex.EncodeToString(testIntegrators[1].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[1].SecretApiKey), "GET", types.APIRequest{}, &resp)
 	qt.Assert(t, statusCode, qt.Equals, 400)
 
 }
@@ -140,14 +127,11 @@ func TestGetOrganizationFailure(t *testing.T) {
 func TestResetAPIToken(t *testing.T) {
 	t.Parallel()
 	// reset the organization api token
-	respBody, statusCode := DoRequest(t,
-		fmt.Sprintf("%s/v1/priv/account/organizations/%x/key", API.URL, testOrganizations[0].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "PATCH", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
 	var resp types.APIResponse
-	err := json.Unmarshal(respBody, &resp)
-	qt.Assert(t, err, qt.IsNil)
+	statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations/%x/key", API.URL, testOrganizations[0].EthAddress),
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "PATCH", types.APIRequest{}, &resp)
+	qt.Assert(t, statusCode, qt.Equals, 200)
 	qt.Assert(t, resp.APIToken, qt.Not(qt.HasLen), 0)
 	qt.Assert(t, resp.APIToken, qt.Not(qt.Equals), testOrganizations[0].APIToken)
 }

@@ -36,17 +36,14 @@ func TestGetElectionsPub(t *testing.T) {
 	// test get elections (pub)
 	for _, election := range testElections {
 		var electionResp types.APIElectionInfo
-		respBody, statusCode := DoRequest(t,
+		statusCode := DoRequest(t,
 			fmt.Sprintf("%s/v1/pub/elections/%x", API.URL, election.ElectionID),
-			testOrganizations[0].APIToken, "GET", types.APIRequest{})
-		t.Logf("%s", respBody)
+			testOrganizations[0].APIToken, "GET", types.APIRequest{}, &electionResp)
 		if election.Confidential {
 			qt.Assert(t, statusCode, qt.Equals, 400)
 			break
 		}
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &electionResp)
-		qt.Assert(t, err, qt.IsNil)
 		qt.Assert(t, electionResp.Description, qt.Equals, election.Description)
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 		qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
@@ -70,13 +67,10 @@ func TestGetElectionsPriv(t *testing.T) {
 	for _, election := range testElections {
 		cspSignature := testcommon.GetCSPSignature(t, election.ElectionID, API.CSP.CspSignKeys)
 		var electionResp types.APIElectionInfo
-		respBody, statusCode := DoRequest(t,
+		statusCode := DoRequest(t,
 			fmt.Sprintf("%s/v1/pub/elections/%x/auth/%s", API.URL, election.ElectionID, cspSignature),
-			testOrganizations[0].APIToken, "GET", types.APIRequest{})
-		t.Logf("%s", respBody)
+			testOrganizations[0].APIToken, "GET", types.APIRequest{}, &electionResp)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &electionResp)
-		qt.Assert(t, err, qt.IsNil)
 		qt.Assert(t, electionResp.Description, qt.Equals, election.Description)
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 		qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
@@ -113,7 +107,6 @@ func TestVote(t *testing.T) {
 }
 
 func verifyNullifier(t *testing.T, nullifier, processID dvotetypes.HexBytes, orgAPIToken string) {
-	var respBody []byte
 	var statusCode int
 	var resp types.APIResponse
 	for i := 0; i < 10; i++ {
@@ -121,12 +114,10 @@ func verifyNullifier(t *testing.T, nullifier, processID dvotetypes.HexBytes, org
 			// sleep total of 30 seconds for vote to be confirmed
 			time.Sleep(time.Second * 3)
 		}
-		respBody, statusCode = DoRequest(t,
+		statusCode = DoRequest(t,
 			fmt.Sprintf("%s/v1/pub/nullifiers/%x", API.URL, nullifier),
-			orgAPIToken, "GET", types.APIRequest{})
+			orgAPIToken, "GET", types.APIRequest{}, &resp)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &resp)
-		qt.Assert(t, err, qt.IsNil)
 		// if vote is confirmed, break loop
 		if resp.Registered != nil && *resp.Registered {
 			break
@@ -151,15 +142,11 @@ func submitVoteSigned(t *testing.T, processID []byte,
 
 	// fetch tokenR from CSP
 	req := authReq{AuthData: []string{hex.EncodeToString(signedPID)}}
-	respBody, statusCode := DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/auth",
-		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT, testcommon.TEST_CSP_PATH,
-		processID), orgAPIToken, "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 200)
 	var aResp authReq
-	err = json.Unmarshal(respBody, &aResp)
-	if err != nil {
-		t.Fatal(err)
-	}
+	statusCode := DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/auth",
+		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT, testcommon.TEST_CSP_PATH,
+		processID), orgAPIToken, "POST", req, &aResp)
+	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	// fetch non-blind signature from csp
 	caBundle := &models.CAbundle{ProcessId: processID, Address: voterWallet.Address().Bytes()}
@@ -168,12 +155,10 @@ func submitVoteSigned(t *testing.T, processID []byte,
 		t.Fatal(err)
 	}
 	req = authReq{TokenR: aResp.TokenR, Payload: hexCaBundle}
-	respBody, statusCode = DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/sign",
+	statusCode = DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/sign",
 		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT,
-		testcommon.TEST_CSP_PATH, processID), orgAPIToken, "POST", req)
+		testcommon.TEST_CSP_PATH, processID), orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &aResp)
-	qt.Assert(t, err, qt.IsNil)
 
 	// create and submit vote package with proof
 	vote := &vochain.VotePackage{
@@ -224,12 +209,10 @@ func submitVoteSigned(t *testing.T, processID []byte,
 		t.Fatal(err)
 	}
 	req = authReq{Vote: base64.StdEncoding.EncodeToString(signedVoteTxBytes)}
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/pub/elections/%x/vote", API.URL, processID),
-		orgAPIToken, "POST", req)
+		orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &aResp)
-	qt.Assert(t, err, qt.IsNil)
 	t.Logf("submitted vote with nullifier %x", aResp.Nullifier)
 	qt.Assert(t, aResp.Nullifier, qt.Not(qt.HasLen), 0)
 	return aResp.Nullifier
@@ -249,15 +232,11 @@ func submitVoteBlind(t *testing.T, processID []byte,
 
 	// fetch tokenR from CSP
 	req := authReq{AuthData: []string{hex.EncodeToString(signedPID)}}
-	respBody, statusCode := DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/blind/auth",
-		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT, testcommon.TEST_CSP_PATH,
-		processID), orgAPIToken, "POST", req)
-	qt.Assert(t, statusCode, qt.Equals, 200)
 	var aResp authReq
-	err = json.Unmarshal(respBody, &aResp)
-	if err != nil {
-		t.Fatal(err)
-	}
+	statusCode := DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/blind/auth",
+		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT, testcommon.TEST_CSP_PATH,
+		processID), orgAPIToken, "POST", req, &aResp)
+	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	hexTokenR, err := hex.DecodeString(aResp.TokenR)
 	if err != nil {
@@ -283,12 +262,10 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	}
 
 	req = authReq{TokenR: aResp.TokenR, Payload: hexBlinded.Bytes()}
-	respBody, statusCode = DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/blind/sign",
+	statusCode = DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/blind/sign",
 		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT,
-		testcommon.TEST_CSP_PATH, processID), orgAPIToken, "POST", req)
+		testcommon.TEST_CSP_PATH, processID), orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &aResp)
-	qt.Assert(t, err, qt.IsNil)
 
 	// unblind received signature with the saved userSecretData
 	unblindedSignature := blind.Unblind(new(big.Int).SetBytes(aResp.Signature), userSecretData)
@@ -342,12 +319,10 @@ func submitVoteBlind(t *testing.T, processID []byte,
 		t.Fatal(err)
 	}
 	req = authReq{Vote: base64.StdEncoding.EncodeToString(signedVoteTxBytes)}
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/pub/elections/%x/vote", API.URL, processID),
-		orgAPIToken, "POST", req)
+		orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &aResp)
-	qt.Assert(t, err, qt.IsNil)
 	t.Logf("submitted vote with nullifier %x", aResp.Nullifier)
 	qt.Assert(t, aResp.Nullifier, qt.Not(qt.HasLen), 0)
 	return aResp.Nullifier

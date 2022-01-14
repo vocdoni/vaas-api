@@ -2,7 +2,6 @@ package testapi
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -33,14 +32,11 @@ func TestElection(t *testing.T) {
 			HiddenResults: election.HiddenResults,
 			Questions:     election.Questions,
 		}
-		respBody, statusCode := DoRequest(t,
+		statusCode := DoRequest(t,
 			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind",
 				API.URL, testOrganizations[0].EthAddress),
-			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req)
-		t.Logf("%s", respBody)
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &resp)
-		qt.Assert(t, err, qt.IsNil)
 		election.ElectionID = resp.ElectionID
 		election.OrganizationID = testOrganizations[0].EthAddress
 		election.CreationTxHash = resp.TxHash
@@ -54,13 +50,10 @@ func TestElection(t *testing.T) {
 				time.Sleep(time.Second * 4)
 			}
 			req := types.APIRequest{}
-			respBody, statusCode := DoRequest(t,
+			statusCode := DoRequest(t,
 				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
-				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
-			t.Logf("%s", respBody)
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			qt.Assert(t, statusCode, qt.Equals, 200)
-			err := json.Unmarshal(respBody, &respMined)
-			qt.Assert(t, err, qt.IsNil)
 			// if mined, break loop
 			if respMined.Mined != nil && *respMined.Mined {
 				break
@@ -78,13 +71,10 @@ func TestElection(t *testing.T) {
 			if status != "" {
 				time.Sleep(2 * time.Second)
 			}
-			respBody, statusCode := DoRequest(t,
+			statusCode := DoRequest(t,
 				fmt.Sprintf("%s/v1/priv/elections/%x", API.URL, election.ElectionID),
-				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-			t.Logf("%s", respBody)
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &electionResp)
 			qt.Assert(t, statusCode, qt.Equals, 200)
-			err := json.Unmarshal(respBody, &electionResp)
-			qt.Assert(t, err, qt.IsNil)
 			qt.Assert(t, electionResp.Description, qt.Equals, election.Description)
 			qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 			qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
@@ -111,13 +101,10 @@ func TestElectionStatus(t *testing.T) {
 	// test set election status
 	for _, election := range testElections {
 		var resp *types.APIResponse
-		respBody, statusCode := DoRequest(t,
+		statusCode := DoRequest(t,
 			fmt.Sprintf("%s/v1/priv/elections/%x/CANCELED", API.URL, election.ElectionID),
-			hex.EncodeToString(testIntegrators[0].SecretApiKey), "PUT", types.APIRequest{})
-		t.Logf("%s", respBody)
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "PUT", types.APIRequest{}, &resp)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &resp)
-		qt.Assert(t, err, qt.IsNil)
 		election.CreationTxHash = resp.TxHash
 	}
 
@@ -129,13 +116,10 @@ func TestElectionStatus(t *testing.T) {
 				time.Sleep(time.Second * 4)
 			}
 			req := types.APIRequest{}
-			respBody, statusCode := DoRequest(t,
+			statusCode := DoRequest(t,
 				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
-				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req)
-			t.Logf("%s", respBody)
+				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			qt.Assert(t, statusCode, qt.Equals, 200)
-			err := json.Unmarshal(respBody, &respMined)
-			qt.Assert(t, err, qt.IsNil)
 			// if mined, break loop
 			if respMined.Mined != nil && *respMined.Mined {
 				break
@@ -146,26 +130,21 @@ func TestElectionStatus(t *testing.T) {
 	}
 
 	// get canceled election list
-	respBody, statusCode := DoRequest(t, API.URL+
-		"/v1/priv/organizations/"+hex.EncodeToString(
-		testOrganizations[1].EthAddress)+"/elections/canceled",
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
 	var activeElectionList []types.APIElectionSummary
-	err := json.Unmarshal(respBody, &activeElectionList)
-	qt.Assert(t, err, qt.IsNil)
+	statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/canceled",
+			API.URL, testOrganizations[1].EthAddress),
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &activeElectionList)
+
+	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	// test get election statuses
 	for _, election := range testElections {
 		var electionResp types.APIElectionInfo
-		respBody, statusCode := DoRequest(t,
+		statusCode := DoRequest(t,
 			fmt.Sprintf("%s/v1/priv/elections/%x", API.URL, election.ElectionID),
-			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-		t.Logf("%s", respBody)
+			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &electionResp)
 		qt.Assert(t, statusCode, qt.Equals, 200)
-		err := json.Unmarshal(respBody, &electionResp)
-		qt.Assert(t, err, qt.IsNil)
 		qt.Assert(t, electionResp.Status, qt.Equals, "CANCELED")
 	}
 }
@@ -173,66 +152,48 @@ func TestElectionStatus(t *testing.T) {
 func TestElectionList(t *testing.T) {
 	t.Parallel()
 	// get election list
-	respBody, statusCode := DoRequest(t,
-		fmt.Sprintf("%s/v1/priv/organizations/%x/elections", API.URL, testOrganizations[1].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
-	qt.Assert(t, statusCode, qt.Equals, 200)
 	var electionList []types.APIElectionSummary
-	err := json.Unmarshal(respBody, &electionList)
-	qt.Assert(t, err, qt.IsNil)
+	statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections", API.URL, testOrganizations[1].EthAddress),
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &electionList)
+	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	// get active election list
-	respBody, statusCode = DoRequest(t,
+	var activeElectionList []types.APIElectionSummary
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/active",
 			API.URL, testOrganizations[1].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &activeElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	var activeElectionList []types.APIElectionSummary
-	err = json.Unmarshal(respBody, &activeElectionList)
-	qt.Assert(t, err, qt.IsNil)
 
 	// get eleciton lists with empty filters
-	respBody, statusCode = DoRequest(t,
+	var emptyElectionList []types.APIElectionSummary
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/upcoming",
 			API.URL, testOrganizations[1].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &emptyElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	var emptyElectionList []types.APIElectionSummary
-	err = json.Unmarshal(respBody, &emptyElectionList)
-	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/ended",
 			API.URL, testOrganizations[1].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &emptyElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &emptyElectionList)
-	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/canceled",
 			API.URL, testOrganizations[1].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &emptyElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &emptyElectionList)
-	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
-	respBody, statusCode = DoRequest(t,
+	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/paused",
 			API.URL, testOrganizations[1].EthAddress),
-		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{})
-	t.Logf("%s", respBody)
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &emptyElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
-	err = json.Unmarshal(respBody, &emptyElectionList)
-	qt.Assert(t, err, qt.IsNil)
 	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
 
 	qt.Assert(t, electionList, qt.HasLen, len(testActiveElections))
