@@ -3,6 +3,9 @@ name: Main
 
 on: [push, pull_request]
 
+
+env: 
+  POSTGRES_PORT: $(shuf -i 50000-60000 -n 1)
 jobs:
   go-tests:
     runs-on: self-hosted
@@ -21,7 +24,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - $(POSTGRES_PORT):5432
     defaults:
       run:
         shell: bash
@@ -32,7 +35,7 @@ jobs:
       - name: Go test
         env:
           TEST_DB_HOST: postgres
-          TEST_DB_PORT: 5432
+          TEST_DB_PORT: $(POSTGRES_PORT)
         run: |
           # we run vet in another step
           go test -coverpkg=./... -vet=off -timeout=1m -coverprofile=covprofile ./...
