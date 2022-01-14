@@ -51,7 +51,6 @@ func TestGetElectionsPub(t *testing.T) {
 		qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 			qt.Equals, hex.EncodeToString(election.OrganizationID))
 		qt.Assert(t, electionResp.ElectionID, qt.Not(qt.HasLen), 0)
-		election.ElectionID = electionResp.ElectionID
 		for i, question := range electionResp.Questions {
 			qt.Assert(t, question.Title, qt.Equals, election.Questions[i].Title)
 			qt.Assert(t, question.Description, qt.Equals, election.Questions[i].Description)
@@ -78,7 +77,6 @@ func TestGetElectionsPriv(t *testing.T) {
 		qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 			qt.Equals, hex.EncodeToString(election.OrganizationID))
 		qt.Assert(t, electionResp.ElectionID, qt.Not(qt.HasLen), 0)
-		election.ElectionID = electionResp.ElectionID
 		for i, question := range electionResp.Questions {
 			qt.Assert(t, question.Title, qt.Equals, election.Questions[i].Title)
 			qt.Assert(t, question.Description, qt.Equals, election.Questions[i].Description)
