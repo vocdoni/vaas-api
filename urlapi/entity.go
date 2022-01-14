@@ -393,10 +393,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	processID, err := hex.DecodeString(dvoteutil.RandomHex(32))
-	if err != nil {
-		return fmt.Errorf("could not decode process ID: %w", err)
-	}
+	processID := dvoteutil.RandomBytes(32)
 	entitySignKeys, err := decryptEntityKeys(
 		orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey)
 	if err != nil {
@@ -495,9 +492,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// If election is confidential, generate a private metadata key and encrypt it.
 	// store this key with the election
 	if req.Confidential {
-		if metaPrivKeyBytes, err = hex.DecodeString(dvoteutil.RandomHex(32)); err != nil {
-			return fmt.Errorf("could not decode metadata private key: %w", err)
-		}
+		metaPrivKeyBytes = dvoteutil.RandomBytes(32)
 		// Encrypt and send the process metadata
 		if metaUri, err = u.vocClient.SetProcessMetadata(
 			metadata, processID, metaPrivKeyBytes); err != nil {

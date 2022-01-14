@@ -16,7 +16,6 @@ import (
 	"go.vocdoni.io/dvote/crypto/ethereum"
 	dvotetypes "go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
-	dvoteutil "go.vocdoni.io/dvote/util"
 	"go.vocdoni.io/dvote/vochain"
 	"go.vocdoni.io/proto/build/go/models"
 	"google.golang.org/protobuf/proto"
@@ -169,15 +168,11 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-	nonce, err := hex.DecodeString(dvoteutil.RandomHex(32))
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	voteTx := &models.Tx{
 		Payload: &models.Tx_Vote{
 			Vote: &models.VoteEnvelope{
-				Nonce:     nonce,
+				Nonce:     util.RandomBytes(32),
 				ProcessId: processID,
 				Proof: &models.Proof{
 					Payload: &models.Proof_Ca{
@@ -271,12 +266,8 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	unblindedSignature := blind.Unblind(new(big.Int).SetBytes(aResp.Signature), userSecretData)
 
 	// create and submit vote package with proof
-	nonce, err := hex.DecodeString(dvoteutil.RandomHex(32))
-	if err != nil {
-		t.Fatal(err)
-	}
 	vote := &vochain.VotePackage{
-		Nonce: fmt.Sprintf("%x", util.RandomHex(32)),
+		Nonce: util.RandomHex(32),
 		Votes: []int{1},
 	}
 	voteBytes, err := json.Marshal(vote)
@@ -287,7 +278,7 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	voteTx := &models.Tx{
 		Payload: &models.Tx_Vote{
 			Vote: &models.VoteEnvelope{
-				Nonce:     nonce,
+				Nonce:     util.RandomBytes(32),
 				ProcessId: processID,
 				Proof: &models.Proof{
 					Payload: &models.Proof_Ca{
