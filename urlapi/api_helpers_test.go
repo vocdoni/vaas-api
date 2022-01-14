@@ -108,34 +108,29 @@ func TestAppendProcess(t *testing.T) {
 	electionList := []types.APIElectionSummary{}
 	appendProcess(&electionList, &types.Election{
 		StartBlock: 200,
-	}, private, 199)
+	}, private, "UPCOMING")
 	qt.Assert(t, electionList[0].Status, qt.Equals, "UPCOMING")
 	// active process
 	electionList = []types.APIElectionSummary{}
 	appendProcess(&electionList, &types.Election{
 		StartBlock: 200,
 		EndBlock:   400,
-	}, private, 200)
+	}, private, "ACTIVE")
 	qt.Assert(t, electionList[0].Status, qt.Equals, "ACTIVE")
 	electionList = []types.APIElectionSummary{}
-	appendProcess(&electionList, &types.Election{
-		StartBlock: 200,
-		EndBlock:   400,
-	}, private, 399)
-	qt.Assert(t, electionList[0].Status, qt.Equals, "ACTIVE")
 	// ended process
 	electionList = []types.APIElectionSummary{}
 	appendProcess(&electionList, &types.Election{
 		StartBlock: 200,
 		EndBlock:   400,
-	}, private, 400)
+	}, private, "ENDED")
 	qt.Assert(t, electionList[0].Status, qt.Equals, "ENDED")
 	// confidential process, private request
 	electionList = []types.APIElectionSummary{}
 	appendProcess(&electionList, &types.Election{
 		Confidential:    true,
 		MetadataPrivKey: []byte{0, 1, 2, 3, 4},
-	}, private, 0)
+	}, private, "")
 	qt.Assert(t, bytes.Compare(electionList[0].MetadataPrivKey, []byte{0, 1, 2, 3, 4}), qt.Equals, 0)
 
 	// confidential process, public request
@@ -144,7 +139,7 @@ func TestAppendProcess(t *testing.T) {
 	appendProcess(&electionList, &types.Election{
 		Confidential:    true,
 		MetadataPrivKey: []byte{0, 1, 2, 3, 4},
-	}, private, 0)
+	}, private, "")
 	qt.Assert(t, len(electionList), qt.Equals, 0)
 }
 

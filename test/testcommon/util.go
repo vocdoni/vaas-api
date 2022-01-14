@@ -82,14 +82,10 @@ func CreateOrganizations(size int) []*TestOrganization {
 }
 
 // Create a given number of random Elections
-func CreateElections(size int, confidential, encrypted bool) []*TestElection {
+func CreateElections(size int, confidential, encrypted bool, proofType string) []*TestElection {
 	mp := make([]*TestElection, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
-		proofType := types.PROOF_TYPE_BLIND
-		if randomID%2 == 0 {
-			proofType = types.PROOF_TYPE_ECDSA
-		}
 		mp[i] = &TestElection{
 			Title:         fmt.Sprintf("Test%d", randomID),
 			Description:   fmt.Sprintf("Description%d", randomID),

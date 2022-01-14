@@ -221,7 +221,6 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 	switch filter {
 	case "PAUSED", "CANCELED", "ENDED", "":
 		var fullProcessList []string
-		currentHeight, _, _ := u.vocClient.GetBlockTimes()
 		// loop to fetch all processes
 		for {
 			tempProcessList, err := u.vocClient.GetProcessList(entityId,
@@ -255,7 +254,7 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			}
 			newProcess.OrgEthAddress = entityId
 			newProcess.ProcessID = processIDBytes
-			appendProcess(&electionList, newProcess, private, int(currentHeight))
+			appendProcess(&electionList, newProcess, private, filter)
 		}
 	case "ACTIVE", "UPCOMING":
 		var fullProcessList []string
@@ -298,16 +297,62 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			switch filter {
 			case "ACTIVE":
 				if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-					appendProcess(&electionList, newProcess, private, int(currentHeight))
+					appendProcess(&electionList, newProcess, private, filter)
 				}
 			case "UPCOMING":
 				if newProcess.StartBlock > int(currentHeight) {
-					appendProcess(&electionList, newProcess, private, int(currentHeight))
+					appendProcess(&electionList, newProcess, private, filter)
 				}
 			}
 		}
-	case "blind", "signed":
-		return nil, fmt.Errorf("filter %s unimplemented", filter)
+	case "BLIND", "SIGNED":
+		var fullProcessList []string
+		// loop to fetch all processes
+		for {
+			tempProcessList, err := u.vocClient.GetProcessList(entityId,
+				"", "", "", 0, false, len(fullProcessList), 64)
+			if err != nil {
+				return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
+			}
+			fullProcessList = append(fullProcessList, tempProcessList...)
+			if len(tempProcessList) < 64 {
+				break
+			}
+		}
+		// loop to fetch processes from db
+		for _, processID := range fullProcessList {
+			processIDBytes, err := hex.DecodeString(processID)
+			if err != nil {
+				log.Errorf("cannot decode process id %s: %v", processID, err)
+				continue
+			}
+			var newProcess *types.Election
+			if private {
+				newProcess, err = u.db.GetElection(integratorPrivKey,
+					entityId, processIDBytes)
+			} else {
+				newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
+			}
+			if err != nil {
+				log.Warnf("could not get election,"+
+					" process %x may no be in db: %v", processIDBytes, err)
+				continue
+			}
+			newProcess.OrgEthAddress = entityId
+			newProcess.ProcessID = processIDBytes
+
+			// filter processes by date
+			switch filter {
+			case "BLIND":
+				if newProcess.ProofType == "blind" {
+					appendProcess(&electionList, newProcess, private, "")
+				}
+			case "SIGNED":
+				if newProcess.ProofType == "ecdsa" {
+					appendProcess(&electionList, newProcess, private, "")
+				}
+			}
+		}
 	default:
 		return nil, fmt.Errorf("%s not a valid filter", filter)
 
@@ -353,15 +398,7 @@ func aggregateResults(meta *types.ProcessMetadata,
 }
 
 func appendProcess(electionList *[]types.APIElectionSummary, newProcess *types.Election,
-	private bool, blockHeight int) {
-	var status string
-	if newProcess.StartBlock > blockHeight {
-		status = "UPCOMING"
-	} else if newProcess.StartBlock <= blockHeight && newProcess.EndBlock > blockHeight {
-		status = "ACTIVE"
-	} else {
-		status = "ENDED"
-	}
+	private bool, status string) {
 	if private {
 		newProc := reflectElectionPrivate(*newProcess)
 		newProc.Status = status
@@ -386,6 +423,7 @@ func reflectElectionPrivate(election types.Election) types.APIElectionSummary {
 		Confidential:    &election.Confidential,
 		HiddenResults:   &election.HiddenResults,
 		MetadataPrivKey: election.MetadataPrivKey,
+		ProofType:       election.ProofType,
 	}
 	// uuid.Nil returns a full zero-value uuid string. if there is no census uuid,
 	// set the censusID string to empty so it is left out of the json response.
@@ -405,6 +443,7 @@ func reflectElectionPublic(election types.Election) types.APIElectionSummary {
 		EndDate:       election.EndDate,
 		Confidential:  &election.Confidential,
 		HiddenResults: &election.HiddenResults,
+		ProofType:     election.ProofType,
 	}
 	// uuid.Nil returns a full zero-value uuid string. if there is no census uuid,
 	// set the censusID string to empty so it is left out of the json response.

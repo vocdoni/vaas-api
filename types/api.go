@@ -95,6 +95,7 @@ type APIElectionSummary struct {
 	StartDate       time.Time      `json:"startDate,omitempty"`
 	Status          string         `json:"status,omitempty"`
 	Title           string         `json:"title,omitempty"`
+	ProofType       string         `json:"proofType,omitempty"`
 }
 
 // ProcessMetadata contains the process metadata fields as stored on ipfs

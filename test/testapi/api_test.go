@@ -212,9 +212,9 @@ func setupTestElections() {
 }
 
 func createElections(organization *testcommon.TestOrganization) []*testcommon.TestElection {
-	elections := testcommon.CreateElections(1, false, false)
-	elections = append(elections, testcommon.CreateElections(1, true, false)...)
-	elections = append(elections, testcommon.CreateElections(1, true, true)...)
+	elections := testcommon.CreateElections(1, false, false, types.PROOF_TYPE_BLIND)
+	elections = append(elections, testcommon.CreateElections(1, true, false, types.PROOF_TYPE_ECDSA)...)
+	elections = append(elections, testcommon.CreateElections(1, true, true, types.PROOF_TYPE_ECDSA)...)
 	for _, election := range elections {
 		var resp types.APIResponse
 		req := types.APIRequest{
