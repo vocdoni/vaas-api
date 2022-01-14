@@ -8,6 +8,11 @@ import (
 	"go.vocdoni.io/dvote/types"
 )
 
+const (
+	PROOF_TYPE_ECDSA = "ecdsa"
+	PROOF_TYPE_BLIND = "blind"
+)
+
 // APIRequest contains all of the possible request fields.
 // Fields must be in alphabetical order
 // Those fields with valid zero-values (such as bool) must be pointers
@@ -73,6 +78,7 @@ type APIElectionInfo struct {
 	Status    string    `json:"status,omitempty"`
 	StreamURI string    `json:"streamUri,omitempty"`
 	Title     string    `json:"title,omitempty"`
+	ProofType string    `json:"proofType,omitempty"`
 	Type      string    `json:"type,omitempty"`
 	VoteCount uint32    `json:"voteCount,omitempty"`
 }

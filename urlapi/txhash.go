@@ -38,6 +38,7 @@ type createElectionQuery struct {
 	startDate         time.Time
 	endDate           time.Time
 	censusID          uuid.NullUUID
+	proofType         string
 	startBlock        int
 	endBlock          int
 	confidential      bool
@@ -88,7 +89,7 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		}
 	case createElectionQuery:
 		if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress, queryTx.electionID, queryTx.encryptedMetaKey,
-			queryTx.title, queryTx.startDate, queryTx.endDate, queryTx.censusID, queryTx.startBlock, queryTx.endBlock,
+			queryTx.title, queryTx.proofType, queryTx.startDate, queryTx.endDate, queryTx.censusID, queryTx.startBlock, queryTx.endBlock,
 			queryTx.confidential, queryTx.hiddenResults); err != nil {
 			return fmt.Errorf("could not create election: %w", err)
 		}

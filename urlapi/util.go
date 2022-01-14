@@ -50,7 +50,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 }
 
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
-	results *types.VochainResults, meta *types.ProcessMetadata) (types.APIElectionInfo, error) {
+	results *types.VochainResults, meta *types.ProcessMetadata, proofType string) (types.APIElectionInfo, error) {
 	process := types.APIElectionInfo{
 		Description:        meta.Description["default"],
 		OrganizationID:     vc.EntityID,
@@ -60,6 +60,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 		ResultsDisplay:     meta.Results.Display,
 		StreamURI:          meta.Media.StreamURI,
 		Title:              meta.Title["default"],
+		ProofType:          proofType,
 	}
 	if vc.Envelope.EncryptedVotes {
 		keys, err := u.vocClient.GetProcessPubKeys(vc.ID)

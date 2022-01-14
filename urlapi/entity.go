@@ -381,11 +381,17 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 //  the given metadata, either with signed or blind signature voting
 func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
-	// TODO use blind/signed
 	// authenticate integrator has permission to edit this entity
 	orgInfo, err := u.authEntityPermissions(msg, ctx)
 	if err != nil {
 		return err
+	}
+
+	electionType := ctx.URLParam("type")
+	switch electionType {
+	case types.PROOF_TYPE_BLIND, types.PROOF_TYPE_ECDSA:
+	default:
+		return fmt.Errorf("election proof type %s is invalid", electionType)
 	}
 
 	req, err := util.UnmarshalRequest(msg)
@@ -562,6 +568,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		encryptedMetaKey:  metaPrivKeyBytes,
 		electionID:        processID,
 		title:             req.Title,
+		proofType:         electionType,
 		startDate:         startDate,
 		endDate:           endDate,
 		censusID:          uuid.NullUUID{},
@@ -643,7 +650,7 @@ func (u *URLAPI) getProcessHandler(
 		return err
 	}
 	// Parse all the information
-	resp, err := u.parseProcessInfo(vochainProcess, results, processMetadata)
+	resp, err := u.parseProcessInfo(vochainProcess, results, processMetadata, dbElection.ProofType)
 	if err != nil {
 		return fmt.Errorf("could not parse information for process %x: %w", processId, err)
 	}

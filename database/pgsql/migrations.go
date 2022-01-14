@@ -151,6 +151,7 @@ CREATE TABLE elections (
     integrator_api_key BYTEA NOT NULL,
     process_id BYTEA NOT NULL,
     title TEXT NOT NULL,
+    proof_type TEXT NOT NULL,
     census_id uuid,
     start_date timestamp without time zone,
     end_date timestamp without time zone,
