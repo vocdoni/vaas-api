@@ -63,7 +63,8 @@ func TestGetElectionsPriv(t *testing.T) {
 	t.Parallel()
 	// test get elections (priv)
 	for _, election := range testElections {
-		cspSignature := testcommon.GetCSPSignature(t, election.ElectionID, API.CSP.CspSignKeys)
+		cspSignature := fmt.Sprintf("%x",
+			testcommon.GetCSPSignature(t, election.ElectionID, API.CSP.CspSignKeys))
 		var electionResp types.APIElectionInfo
 		statusCode := DoRequest(t,
 			fmt.Sprintf("%s/v1/pub/elections/%x/auth/%s", API.URL, election.ElectionID, cspSignature),
@@ -141,7 +142,7 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	req := authReq{AuthData: []string{hex.EncodeToString(signedPID)}}
 	var aResp authReq
 	statusCode := DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/auth",
-		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT, testcommon.TEST_CSP_PATH,
+		testcommon.TestHost, testcommon.TestCSPPort, testcommon.TestCSPPath,
 		processID), orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
@@ -153,8 +154,8 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	}
 	req = authReq{TokenR: aResp.TokenR, Payload: hexCaBundle}
 	statusCode = DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/ecdsa/sign",
-		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT,
-		testcommon.TEST_CSP_PATH, processID), orgAPIToken, "POST", req, &aResp)
+		testcommon.TestHost, testcommon.TestCSPPort,
+		testcommon.TestCSPPath, processID), orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	// create and submit vote package with proof
@@ -227,7 +228,7 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	req := authReq{AuthData: []string{hex.EncodeToString(signedPID)}}
 	var aResp authReq
 	statusCode := DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/blind/auth",
-		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT, testcommon.TEST_CSP_PATH,
+		testcommon.TestHost, testcommon.TestCSPPort, testcommon.TestCSPPath,
 		processID), orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
@@ -256,8 +257,8 @@ func submitVoteBlind(t *testing.T, processID []byte,
 
 	req = authReq{TokenR: aResp.TokenR, Payload: hexBlinded.Bytes()}
 	statusCode = DoRequest(t, fmt.Sprintf("http://%s:%d%s/%x/blind/sign",
-		testcommon.TEST_HOST, testcommon.TEST_CSP_PORT,
-		testcommon.TEST_CSP_PATH, processID), orgAPIToken, "POST", req, &aResp)
+		testcommon.TestHost, testcommon.TestCSPPort,
+		testcommon.TestCSPPath, processID), orgAPIToken, "POST", req, &aResp)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
 	// unblind received signature with the saved userSecretData

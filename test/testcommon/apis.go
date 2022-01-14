@@ -74,8 +74,9 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		}
 
 		var httpRouter httprouter.HTTProuter
+		// set router prometheusID so it does not conflict with any other router services
 		httpRouter.PrometheusID = "api-chi"
-		if err = httpRouter.Init(TEST_HOST, port); err != nil {
+		if err = httpRouter.Init(TestHost, port); err != nil {
 			log.Fatal(err)
 		}
 		// Rest api
@@ -95,7 +96,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 			log.Fatal(err)
 		}
 		go integratorTokenNotifier.FetchNewTokens(urlApi)
-		t.URL = fmt.Sprintf("http://%s:%d%s", TEST_HOST, port, route)
+		t.URL = fmt.Sprintf("http://%s:%d%s", TestHost, port, route)
 		t.AuthToken = authToken
 		time.Sleep(time.Second)
 	}

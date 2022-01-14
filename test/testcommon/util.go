@@ -175,7 +175,7 @@ func RandBool() bool {
 	return rand.Float32() < 0.5
 }
 
-func GetCSPSignature(t *testing.T, processId []byte, signer *ethereum.SignKeys) string {
+func GetCSPSignature(t *testing.T, processId []byte, signer *ethereum.SignKeys) []byte {
 	// extract public key as hexString, decode
 	_, priv := signer.HexString()
 
@@ -191,5 +191,5 @@ func GetCSPSignature(t *testing.T, processId []byte, signer *ethereum.SignKeys) 
 	if err != nil {
 		t.Error(err)
 	}
-	return hex.EncodeToString(signature)
+	return signature
 }
