@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -27,7 +28,10 @@ var testElections []*testcommon.TestElection
 var testActiveElections []*testcommon.TestElection
 
 func TestMain(m *testing.M) {
-	storage := os.TempDir()
+	storage, err := ioutil.TempDir("/tmp", ".vaas-test")
+	if err != nil {
+		log.Fatal(err)
+	}
 	apiPort := 9000
 	testApiAuthToken := "bb1a42df36d0cf3f4dd53d71dffa15780d44c54a5971792acd31974bc2cbceb6"
 	// check for TEST_DB_HOST env var. If not exist, don't run the db tests
@@ -59,6 +63,7 @@ func TestMain(m *testing.M) {
 	setupTestIntegrators()
 	setupTestOrganizations()
 	setupTestElections()
+	os.RemoveAll("/tmp/.vaas-test")
 	os.Exit(m.Run())
 }
 
