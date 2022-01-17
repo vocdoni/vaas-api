@@ -14,13 +14,6 @@ docker-compose up -d
 echo "### Waiting for API to be ready"
 sleep 5
 
-echo "### Running tests ###"
-docker-compose run test timeout 300 ./vaastest --host vaasapi:8000 --method=generateTokens --usersNumber=500 --logLevel=info
-grab "$?"
-
-docker-compose run test timeout 300 ./vaastest --host vaasapi:8000 --method=registrationFlow --usersNumber=500 --logLevel=info
-grab "$?"
-
 echo "### Post run logs ###"
 docker-compose logs --tail 300
 
