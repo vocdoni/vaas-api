@@ -3,22 +3,24 @@ package testpgsql
 import (
 	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"testing"
 
 	qt "github.com/frankban/quicktest"
 	"go.vocdoni.io/api/test/testcommon"
-	"go.vocdoni.io/dvote/log"
 )
 
 func TestOrganization(t *testing.T) {
+	t.Parallel()
 	c := qt.New(t)
 	integrators := testcommon.CreateIntegrators(1)
 	var err error
+	integrators[0].SecretApiKey = []byte(fmt.Sprintf("key%d", rand.Intn(10000)))
 	integrators[0].ID, err = API.DB.CreateIntegrator(integrators[0].SecretApiKey, integrators[0].CspPubKey,
 		integrators[0].CspUrlPrefix, integrators[0].Name, integrators[0].Email)
 	c.Assert(err, qt.IsNil)
 
-	organizations := testcommon.CreateOrganizations(1)
+	organizations := testcommon.CreateDbOrganizations(1)
 	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
 		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
@@ -27,7 +29,7 @@ func TestOrganization(t *testing.T) {
 	organizations[0].ID = id
 
 	organization, err := API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
-	log.Infof("%w", organization)
+	t.Logf("%v", organization)
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
 	c.Assert(fmt.Sprintf("%x", organization.EthPrivKeyCipher), qt.Equals, fmt.Sprintf("%x", organizations[0].EthPrivKeyCipher))
@@ -62,11 +64,12 @@ func TestOrganizationUpdate(t *testing.T) {
 	c := qt.New(t)
 	integrators := testcommon.CreateIntegrators(1)
 	var err error
+	integrators[0].SecretApiKey = []byte(fmt.Sprintf("key%d", rand.Intn(10000)))
 	integrators[0].ID, err = API.DB.CreateIntegrator(integrators[0].SecretApiKey, integrators[0].CspPubKey,
 		integrators[0].CspUrlPrefix, integrators[0].Name, integrators[0].Email)
 	c.Assert(err, qt.IsNil)
 
-	organizations := testcommon.CreateOrganizations(1)
+	organizations := testcommon.CreateDbOrganizations(1)
 	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
 		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)

@@ -66,7 +66,7 @@ func (u *URLAPI) enablePublicHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
-		"/pub/account/organizations/{organizationId}",
+		"/pub/organizations/{organizationId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePublic,
 		u.getOrganizationHandler,
@@ -93,9 +93,11 @@ func (u *URLAPI) registerPublicKeyHandler(
 
 // GET https://server/v1/pub/organizations/<organizationId>/elections/signed
 // GET https://server/v1/pub/organizations/<organizationId>/elections/blind
+// GET https://server/v1/pub/organizations/<organizationId>/elections/paused
+// GET https://server/v1/pub/organizations/<organizationId>/elections/canceled
 // GET https://server/v1/pub/organizations/<organizationId>/elections/active
-// GET https://server/v1/pub/organizations/<organizationId>/elections/ended
 // GET https://server/v1/pub/organizations/<organizationId>/elections/upcoming
+// GET https://server/v1/pub/organizations/<organizationId>/elections/ended
 // listProcessesHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -268,7 +270,7 @@ func (u *URLAPI) getVoteHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 	var resp types.APIResponse
 	resp.Registered = new(bool)
-	if resp.ProcessID, *resp.Registered, err = u.vocClient.GetVoteStatus(nullifier); err != nil {
+	if resp.ElectionID, *resp.Registered, err = u.vocClient.GetVoteStatus(nullifier); err != nil {
 		return fmt.Errorf("could not get envelope status for vote with nullifier %x: %w", nullifier, err)
 	}
 	if *resp.Registered {

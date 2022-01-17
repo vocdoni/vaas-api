@@ -51,7 +51,6 @@ type APIResponse struct {
 	Name           string         `json:"name,omitempty"`
 	Nullifier      string         `json:"nullifier,omitempty"`
 	OrganizationID types.HexBytes `json:"organizationId,omitempty"`
-	ProcessID      types.HexBytes `json:"processId,omitempty"`
 	Registered     *bool          `json:"registered,omitempty"`
 	TxHash         string         `json:"txHash,omitempty"`
 }

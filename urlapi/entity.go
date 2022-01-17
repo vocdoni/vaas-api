@@ -183,6 +183,9 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	if err != nil {
 		return err
 	}
+	if req.Name == "" {
+		return fmt.Errorf("organization name is empty")
+	}
 	orgApiToken := util.GenerateBearerToken()
 
 	ethSignKeys := ethereum.NewSignKeys()
@@ -390,10 +393,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	processID, err := hex.DecodeString(dvoteutil.RandomHex(32))
-	if err != nil {
-		return fmt.Errorf("could not decode process ID: %w", err)
-	}
+	processID := dvoteutil.RandomBytes(32)
 	entitySignKeys, err := decryptEntityKeys(
 		orgInfo.organization.EthPrivKeyCipher, u.globalOrganizationKey)
 	if err != nil {
@@ -492,9 +492,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// If election is confidential, generate a private metadata key and encrypt it.
 	// store this key with the election
 	if req.Confidential {
-		if metaPrivKeyBytes, err = hex.DecodeString(dvoteutil.RandomHex(32)); err != nil {
-			return fmt.Errorf("could not decode metadata private key: %w", err)
-		}
+		metaPrivKeyBytes = dvoteutil.RandomBytes(32)
 		// Encrypt and send the process metadata
 		if metaUri, err = u.vocClient.SetProcessMetadata(
 			metadata, processID, metaPrivKeyBytes); err != nil {
@@ -578,9 +576,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
 // GET https://server/v1/priv/organizations/<organizationId>/elections/blind
+// GET https://server/v1/priv/organizations/<organizationId>/elections/paused
+// GET https://server/v1/priv/organizations/<organizationId>/elections/canceled
 // GET https://server/v1/priv/organizations/<organizationId>/elections/active
-// GET https://server/v1/pprivub/organizations/<organizationId>/elections/ended
 // GET https://server/v1/priv/organizations/<organizationId>/elections/upcoming
+// GET https://server/v1/priv/organizations/<organizationId>/elections/ended
 // listProcessesPrivateHandler' lists signed, blind, active, ended, or upcoming processes
 func (u *URLAPI) listProcessesPrivateHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	ctx *httprouter.HTTPContext) error {
@@ -744,7 +744,7 @@ func (u *URLAPI) setProcessStatusHandler(
 		status = models.ProcessStatus_PAUSED
 	case "ENDED":
 		status = models.ProcessStatus_ENDED
-	case "CANCELLED":
+	case "CANCELED":
 		status = models.ProcessStatus_CANCELED
 	}
 

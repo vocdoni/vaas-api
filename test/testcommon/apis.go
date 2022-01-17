@@ -2,6 +2,7 @@ package testcommon
 
 import (
 	"fmt"
+	"time"
 
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
@@ -15,54 +16,75 @@ import (
 )
 
 type TestAPI struct {
-	DB        database.Database
-	Port      int
-	Signer    *ethereum.SignKeys
-	URL       string
-	AuthToken string
-	CSP       TestCSP
-	Gateways  []string
+	DB         database.Database
+	Port       int
+	Signer     *ethereum.SignKeys
+	URL        string
+	AuthToken  string
+	CSP        TestCSP
+	Gateway    string
+	StorageDir string
 }
 
 type TestCSP struct {
-	UrlPrefix string
-	CspPubKey dvoteTypes.HexBytes
+	UrlPrefix   string
+	CspPubKey   dvoteTypes.HexBytes
+	CspSignKeys *ethereum.SignKeys
 }
 
-// Start creates a new database connection and API endpoint for testing.
-// If dbc is nill the testdb will be used.
-// If route is nill, then the websockets API won't be initialized
-func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateway string, port int, csp TestCSP) error {
+// Start creates a new mock database and API endpoint for testing.
+// If route is nil, then the websockets API, CSP, and Vocone won't be initialized
+// If route is nil, storageDir is not needed
+func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, port int) error {
 	log.Init("info", "stdout")
 	var err error
 	if route != "" {
 		// Signer
 		t.Signer = ethereum.NewSignKeys()
-		t.Signer.Generate()
+		if err = t.Signer.Generate(); err != nil {
+			log.Fatal(err)
+		}
 	}
 	if dbc != nil {
 		// Postgres with sqlx
 		if t.DB, err = pgsql.New(dbc); err != nil {
 			return err
 		}
+		if err := pgsql.Migrator("upSync", t.DB); err != nil {
+			log.Warn(err)
+		}
+		// Start token notifier
 	}
+	integratorTokenNotifier, _ := pgsql.NewNotifier(dbc, "integrator_tokens_update")
 
 	if route != "" {
-		client, err := vocclient.New(gateway, t.Signer)
+		t.StorageDir = storageDir
+
+		// create gateway/vocone
+		t.startTestGateway()
+
+		// create CSP service
+		t.startTestCSP()
+
+		// start API
+		time.Sleep(time.Second * 5)
+		client, err := vocclient.New(t.Gateway, t.Signer)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		var httpRouter httprouter.HTTProuter
-		if err = httpRouter.Init("127.0.0.1", port); err != nil {
+		// set router prometheusID so it does not conflict with any other router services
+		httpRouter.PrometheusID = "api-chi"
+		if err = httpRouter.Init(TestHost, port); err != nil {
 			log.Fatal(err)
 		}
 		// Rest api
 		urlApi, err := urlapi.NewURLAPI(&httpRouter, &config.API{
 			Route:      route,
 			ListenPort: port,
-			AdminToken: "test",
-			GatewayUrl: gateway,
+			AdminToken: authToken,
+			GatewayUrl: t.Gateway,
 		}, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -73,9 +95,10 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken string, gateway string,
 		if err := urlApi.EnableVotingServiceHandlers(t.DB, client); err != nil {
 			log.Fatal(err)
 		}
-		t.URL = fmt.Sprintf("http://127.0.0.1:%d/api", port)
+		go integratorTokenNotifier.FetchNewTokens(urlApi)
+		t.URL = fmt.Sprintf("http://%s:%d%s", TestHost, port, route)
 		t.AuthToken = authToken
-		t.CSP = csp
+		time.Sleep(time.Second)
 	}
 	return nil
 }
