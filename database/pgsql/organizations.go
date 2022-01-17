@@ -14,14 +14,16 @@ import (
 	"go.vocdoni.io/dvote/log"
 )
 
-func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error) {
+func (d *Database) CreateOrganizationTx(integratorAPIKey, ethAddress,
+	ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken,
+	headerUri, avatarUri string) (*sql.Tx, error) {
 	integrator, err := d.GetIntegratorByKey(integratorAPIKey)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			log.Errorf("tried to createOrganization by uknown API Key %x", integratorAPIKey)
-			return 0, fmt.Errorf("unkown API key: %x", integratorAPIKey)
+			return nil, fmt.Errorf("unkown API key: %x", integratorAPIKey)
 		} else {
-			return 0, fmt.Errorf("createOrganization DB error: %v", err)
+			return nil, fmt.Errorf("createOrganization DB error: %v", err)
 		}
 	}
 
@@ -49,19 +51,20 @@ func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCi
 				:header_uri, :avatar_uri, :public_api_token, :quota_plan_id,
 				:public_api_quota, :created_at, :updated_at)
 			RETURNING id`
-	result, err := d.db.NamedQuery(insert, organization)
+	tx, err := d.db.Begin()
 	if err != nil {
-		return 0, fmt.Errorf("error creating organization: %v", err)
+		return nil, fmt.Errorf("error creating organization: %v", err)
+	}
+	result, err := tx.Query(insert, organization)
+	if err != nil {
+		return nil, fmt.Errorf("error creating organization: %v", err)
 	}
 	if !result.Next() {
-		return 0, fmt.Errorf("error creating organization: there is no next result row")
+		return nil, fmt.Errorf("error creating organization: there is no next result row")
 	}
-	var id int
-	err = result.Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("error creating organization: %v", err)
-	}
-	return id, nil
+	// var id int
+	// result.Scan(&id)
+	return tx, nil
 }
 
 func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error) {
@@ -99,9 +102,10 @@ func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error
 	return nil
 }
 
-func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error) {
+func (d *Database) UpdateOrganizationTx(integratorAPIKey, ethAddress []byte,
+	headerUri, avatarUri string) (*sql.Tx, error) {
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
-		return 0, fmt.Errorf("invalid arguments")
+		return nil, fmt.Errorf("invalid arguments")
 	}
 	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, HeaderURI: headerUri, AvatarURI: avatarUri}
 	update := `UPDATE organizations SET
@@ -113,17 +117,19 @@ func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, heade
 					:public_api_quota IS DISTINCT FROM public_api_quota OR
 					:header_uri IS DISTINCT FROM header_uri OR
 					:avatar_uri IS DISTINCT FROM avatar_uri)`
-	result, err := d.db.NamedExec(update, organization)
+
+	tx, err := d.db.Begin()
+	result, err := tx.Exec(update, organization)
 	if err != nil {
-		return 0, fmt.Errorf("error updating organization: %v", err)
+		return nil, fmt.Errorf("error updating organization: %v", err)
 	}
 	var rows int64
 	if rows, err = result.RowsAffected(); err != nil {
-		return 0, fmt.Errorf("cannot get affected rows: %v", err)
+		return nil, fmt.Errorf("cannot get affected rows: %v", err)
 	} else if rows != 1 && rows != 0 { /* Nothing to update? */
-		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
+		return nil, fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
 	}
-	return int(rows), nil
+	return tx, nil
 }
 
 func (d *Database) UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int) (int, error) {

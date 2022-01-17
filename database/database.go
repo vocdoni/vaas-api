@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,17 +27,29 @@ type Database interface {
 	UpdatePlan(id uuid.UUID, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error)
 	GetPlansList() ([]types.QuotaPlan, error)
 	// Organization
-	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error)
-	UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error)
-	UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte, planID uuid.NullUUID, apiQuota int) (int, error)
-	UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress, newEthPrivKeyCipher []byte) (int, error)
-	UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte, newPublicApiToken string) (int, error)
+	// Generate a tx to create an organization
+	CreateOrganizationTx(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte,
+		planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri,
+		avatarUri string) (*sql.Tx, error)
+	// Generate a tx to update an organization
+	UpdateOrganizationTx(integratorAPIKey, ethAddress []byte, headerUri,
+		avatarUri string) (*sql.Tx, error)
+	UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte,
+		planID uuid.NullUUID, apiQuota int) (int, error)
+	UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress,
+		newEthPrivKeyCipher []byte) (int, error)
+	UpdateOrganizationPublicAPIToken(integratorAPIKey, ethAddress []byte,
+		newPublicApiToken string) (int, error)
 	GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error)
 	DeleteOrganization(integratorAPIKey, ethAddress []byte) error
 	ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error)
 	CountOrganizations(integratorAPIKey []byte) (int, error)
 	// Election
-	CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error)
+	// Generate a tx to create an election
+	CreateElectionTx(integratorAPIKey, orgEthAddress, processID,
+		encryptedMetadataKey []byte, title string, startDate, endDate time.Time,
+		censusID uuid.NullUUID, startBlock, endBlock int, confidential,
+		hiddenResults bool) (*sql.Tx, error)
 	GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error)
 	GetElectionPublic(organizationEthAddress, processID []byte) (*types.Election, error)
 	GetElectionPrivate(organizationEthAddress, processID []byte) (*types.Election, error)

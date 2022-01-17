@@ -1,6 +1,7 @@
 package pgsql
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -10,7 +11,10 @@ import (
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
+func (d *Database) CreateElectionTx(integratorAPIKey, orgEthAddress, processID,
+	encryptedMetadataKey []byte, title string, startDate, endDate time.Time,
+	censusID uuid.NullUUID, startBlock, endBlock int, confidential,
+	hiddenResults bool) (*sql.Tx, error) {
 
 	election := &types.Election{
 		OrgEthAddress:    orgEthAddress,
@@ -37,19 +41,20 @@ func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, en
 			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :metadata_priv_key, :title, :census_id,
 				:start_date, :end_date, :start_block, :end_block, :confidential, :hidden_results, :created_at, :updated_at)
 			RETURNING id`
-	result, err := d.db.NamedQuery(insert, election)
+	tx, err := d.db.Begin()
 	if err != nil {
-		return 0, fmt.Errorf("error creating election: %v", err)
+		return nil, fmt.Errorf("error creating election: %v", err)
+	}
+	result, err := tx.Query(insert, election)
+	if err != nil {
+		return nil, fmt.Errorf("error creating election: %v", err)
 	}
 	if !result.Next() {
-		return 0, fmt.Errorf("error creating election: there is no next result row")
+		return nil, fmt.Errorf("error creating election: there is no next result row")
 	}
-	var id int
-	err = result.Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("error creating election: %v", err)
-	}
-	return id, nil
+	// var id int
+	// result.Scan(&id)
+	return tx, nil
 }
 
 func (d *Database) GetElectionPublic(organizationEthAddress, processID []byte) (*types.Election, error) {

@@ -1,48 +1,15 @@
 package urlapi
 
 import (
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 )
-
-type createOrganizationQuery struct {
-	integratorPrivKey []byte
-	ethAddress        []byte
-	ethPrivKeyCipher  []byte
-	planID            uuid.NullUUID
-	publicApiQuota    int
-	publicApiToken    string
-	headerUri         string
-	avatarUri         string
-}
-
-type updateOrganizationQuery struct {
-	integratorPrivKey []byte
-	ethAddress        []byte
-	headerUri         string
-	avatarUri         string
-}
-
-type createElectionQuery struct {
-	integratorPrivKey []byte
-	ethAddress        []byte
-	electionID        []byte
-	encryptedMetaKey  []byte
-	title             string
-	startDate         time.Time
-	endDate           time.Time
-	censusID          uuid.NullUUID
-	startBlock        int
-	endBlock          int
-	confidential      bool
-	hiddenResults     bool
-}
 
 type APIMined struct {
 	Mined *bool `json:"mined,omitempty"`
@@ -73,25 +40,15 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if !ok {
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
+
+	// Make the db request
 	switch queryTx := tx.(type) {
-	// Make the db request depending on query type
-	case createOrganizationQuery:
-		if _, err = u.db.CreateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
-			queryTx.ethPrivKeyCipher, queryTx.planID, queryTx.publicApiQuota,
-			queryTx.publicApiToken, queryTx.headerUri, queryTx.avatarUri); err != nil {
-			return fmt.Errorf("could not create organization: %w", err)
+	case *sql.Tx:
+		if err = queryTx.Commit(); err != nil {
+			return fmt.Errorf("could not execute database transaction: %w", err)
 		}
-	case updateOrganizationQuery:
-		if _, err = u.db.UpdateOrganization(queryTx.integratorPrivKey, queryTx.ethAddress,
-			queryTx.headerUri, queryTx.avatarUri); err != nil {
-			return fmt.Errorf("could not update organization: %w", err)
-		}
-	case createElectionQuery:
-		if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress, queryTx.electionID, queryTx.encryptedMetaKey,
-			queryTx.title, queryTx.startDate, queryTx.endDate, queryTx.censusID, queryTx.startBlock, queryTx.endBlock,
-			queryTx.confidential, queryTx.hiddenResults); err != nil {
-			return fmt.Errorf("could not create election: %w", err)
-		}
+	default:
+		return fmt.Errorf("could not execute database transaction: wrong query type")
 	}
 	return sendResponse(APIMined{Mined: &mined}, ctx)
 }
