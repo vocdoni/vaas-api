@@ -1,18 +1,25 @@
 package urlapi
 
 import (
-	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
+	"go.vocdoni.io/dvote/log"
 )
 
 type APIMined struct {
 	Mined *bool `json:"mined,omitempty"`
+	Id    int   `json:"id,omitempty"`
+}
+
+type queryTx struct {
+	tx *sqlx.Tx
+	id int
 }
 
 // GET https://server/v1/priv/transactions/<transactionHash>
@@ -41,14 +48,20 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
 
+	var id int
 	// Make the db request
 	switch queryTx := tx.(type) {
-	case *sql.Tx:
-		if err = queryTx.Commit(); err != nil {
+	case *queryTx:
+		if err = queryTx.tx.Commit(); err != nil {
+			err2 := queryTx.tx.Rollback()
+			if err2 != nil {
+				log.Warnf(err2.Error())
+			}
+			id = queryTx.id
 			return fmt.Errorf("could not execute database transaction: %w", err)
 		}
 	default:
 		return fmt.Errorf("could not execute database transaction: wrong query type")
 	}
-	return sendResponse(APIMined{Mined: &mined}, ctx)
+	return sendResponse(APIMined{Mined: &mined, Id: id}, ctx)
 }

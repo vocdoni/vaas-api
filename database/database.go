@@ -1,10 +1,10 @@
 package database
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	migrate "github.com/rubenv/sql-migrate"
 	"go.vocdoni.io/api/types"
 )
@@ -27,13 +27,8 @@ type Database interface {
 	UpdatePlan(id uuid.UUID, newMaxCensusSize, neWMaxProcessCount int, newName string) (int, error)
 	GetPlansList() ([]types.QuotaPlan, error)
 	// Organization
-	// Generate a tx to create an organization
-	CreateOrganizationTx(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte,
-		planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri,
-		avatarUri string) (*sql.Tx, error)
-	// Generate a tx to update an organization
-	UpdateOrganizationTx(integratorAPIKey, ethAddress []byte, headerUri,
-		avatarUri string) (*sql.Tx, error)
+	CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error)
+	UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error)
 	UpdateOrganizationPlan(integratorAPIKey, ethAddress []byte,
 		planID uuid.NullUUID, apiQuota int) (int, error)
 	UpdateOrganizationEthPrivKeyCipher(integratorAPIKey, ethAddress,
@@ -45,11 +40,7 @@ type Database interface {
 	ListOrganizations(integratorAPIKey []byte, filter *types.ListOptions) ([]types.Organization, error)
 	CountOrganizations(integratorAPIKey []byte) (int, error)
 	// Election
-	// Generate a tx to create an election
-	CreateElectionTx(integratorAPIKey, orgEthAddress, processID,
-		encryptedMetadataKey []byte, title string, startDate, endDate time.Time,
-		censusID uuid.NullUUID, startBlock, endBlock int, confidential,
-		hiddenResults bool) (*sql.Tx, error)
+	CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error)
 	GetElection(integratorAPIKey, orgEthAddress, processID []byte) (*types.Election, error)
 	GetElectionPublic(organizationEthAddress, processID []byte) (*types.Election, error)
 	GetElectionPrivate(organizationEthAddress, processID []byte) (*types.Election, error)
@@ -61,4 +52,18 @@ type Database interface {
 	Migrate(dir migrate.MigrationDirection) (int, error)
 	MigrateStatus() (int, int, string, error)
 	MigrationUpSync() (int, error)
+
+	// TX Generation functions
+	// Generate a tx to create an organization
+	CreateOrganizationTx(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte,
+		planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri,
+		avatarUri string) (*sqlx.Tx, int, error)
+	// Generate a tx to update an organization
+	UpdateOrganizationTx(integratorAPIKey, ethAddress []byte, headerUri,
+		avatarUri string) (*sqlx.Tx, error)
+	// Generate a tx to create an election
+	CreateElectionTx(integratorAPIKey, orgEthAddress, processID,
+		encryptedMetadataKey []byte, title string, startDate, endDate time.Time,
+		censusID uuid.NullUUID, startBlock, endBlock int, confidential,
+		hiddenResults bool) (*sqlx.Tx, int, error)
 }

@@ -21,9 +21,11 @@ func TestOrganization(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 
 	organizations := testcommon.CreateDbOrganizations(1)
-	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
+	tx, id, err := API.DB.CreateOrganizationTx(integrators[0].SecretApiKey, organizations[0].EthAddress,
 		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
+	c.Assert(err, qt.IsNil)
+	err = tx.Commit()
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
 	organizations[0].ID = id
@@ -39,11 +41,12 @@ func TestOrganization(t *testing.T) {
 	c.Assert(organization.HeaderURI, qt.Equals, organizations[0].HeaderURI)
 	c.Assert(organization.AvatarURI, qt.Equals, organizations[0].AvatarURI)
 
-	count, err := API.DB.UpdateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress, "header", "avatar")
+	tx, err = API.DB.UpdateOrganizationTx(integrators[0].SecretApiKey, organizations[0].EthAddress, "header", "avatar")
 	c.Assert(err, qt.IsNil)
-	c.Assert(count, qt.Equals, 1)
+	err = tx.Commit()
+	c.Assert(err, qt.IsNil)
 
-	count, err = API.DB.CountOrganizations(integrators[0].SecretApiKey)
+	count, err := API.DB.CountOrganizations(integrators[0].SecretApiKey)
 	c.Assert(err, qt.IsNil)
 	c.Assert(count, qt.Equals, 1)
 
@@ -70,16 +73,19 @@ func TestOrganizationUpdate(t *testing.T) {
 	c.Assert(err, qt.IsNil)
 
 	organizations := testcommon.CreateDbOrganizations(1)
-	id, err := API.DB.CreateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress,
+	tx, id, err := API.DB.CreateOrganizationTx(integrators[0].SecretApiKey, organizations[0].EthAddress,
 		organizations[0].EthPrivKeyCipher, organizations[0].QuotaPlanID, organizations[0].PublicAPIQuota,
 		organizations[0].PublicAPIToken, organizations[0].HeaderURI, organizations[0].AvatarURI)
+	c.Assert(err, qt.IsNil)
+	err = tx.Commit()
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
 	organizations[0].ID = id
 
-	count, err := API.DB.UpdateOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress, "header", "avatar")
+	tx, err = API.DB.UpdateOrganizationTx(integrators[0].SecretApiKey, organizations[0].EthAddress, "header", "avatar")
 	c.Assert(err, qt.IsNil)
-	c.Assert(count, qt.Equals, 1)
+	err = tx.Commit()
+	c.Assert(err, qt.IsNil)
 	organization, err := API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
 	c.Assert(fmt.Sprintf("%x", organization.EthAddress), qt.Equals, fmt.Sprintf("%x", organizations[0].EthAddress))
@@ -92,7 +98,7 @@ func TestOrganizationUpdate(t *testing.T) {
 
 	ethPrivKeyCipher, err := hex.DecodeString("bb")
 	c.Assert(err, qt.IsNil)
-	count, err = API.DB.UpdateOrganizationEthPrivKeyCipher(integrators[0].SecretApiKey, organizations[0].EthAddress, ethPrivKeyCipher)
+	count, err := API.DB.UpdateOrganizationEthPrivKeyCipher(integrators[0].SecretApiKey, organizations[0].EthAddress, ethPrivKeyCipher)
 	c.Assert(err, qt.IsNil)
 	c.Assert(count, qt.Equals, 1)
 	organization, err = API.DB.GetOrganization(integrators[0].SecretApiKey, organizations[0].EthAddress)

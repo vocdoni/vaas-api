@@ -234,12 +234,12 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now())
-	queryTx, err := u.db.CreateOrganizationTx(integratorPrivKey, ethSignKeys.Address().Bytes(),
+	tx, id, err := u.db.CreateOrganizationTx(integratorPrivKey, ethSignKeys.Address().Bytes(),
 		encryptedPrivKey, uuid.NullUUID{}, 0, orgApiToken, req.Header, req.Avatar)
 	if err != nil {
 		return fmt.Errorf("could not create organization: %w", err)
 	}
-	u.dbTransactions.Store(txHash, queryTx)
+	u.dbTransactions.Store(txHash, &queryTx{tx: tx, id: id})
 
 	resp := types.APIResponse{
 		APIToken:       orgApiToken,
@@ -359,12 +359,12 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now())
-	queryTx, err := u.db.UpdateOrganizationTx(orgInfo.organization.IntegratorApiKey,
+	tx, err := u.db.UpdateOrganizationTx(orgInfo.organization.IntegratorApiKey,
 		orgInfo.organization.EthAddress, req.Header, req.Avatar)
 	if err != nil {
 		return fmt.Errorf("could not update organization: %w", err)
 	}
-	u.dbTransactions.Store(txHash, queryTx)
+	u.dbTransactions.Store(txHash, &queryTx{tx: tx})
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
@@ -551,7 +551,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		startBlock = currentBlockHeight + IMMEDIATE_PROCESS_CREATION_OFFSET
 	}
 
-	electionTx, err := u.db.CreateElectionTx(orgInfo.integratorPrivKey, orgInfo.entityID,
+	tx, id, err := u.db.CreateElectionTx(orgInfo.integratorPrivKey, orgInfo.entityID,
 		processID, metaPrivKeyBytes, req.Title, startDate, endDate, uuid.NullUUID{},
 		int(startBlock), int(endBlock), req.Confidential, req.HiddenResults)
 	if err != nil {
@@ -560,7 +560,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
-	u.dbTransactions.Store(txHash, electionTx)
+	u.dbTransactions.Store(txHash, &queryTx{tx: tx, id: id})
 
 	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: txHash}, ctx)
 }

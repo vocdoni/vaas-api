@@ -1,20 +1,17 @@
 package pgsql
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/stdlib"
+	"github.com/jmoiron/sqlx"
 
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateElectionTx(integratorAPIKey, orgEthAddress, processID,
-	encryptedMetadataKey []byte, title string, startDate, endDate time.Time,
-	censusID uuid.NullUUID, startBlock, endBlock int, confidential,
-	hiddenResults bool) (*sql.Tx, error) {
+func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
 
 	election := &types.Election{
 		OrgEthAddress:    orgEthAddress,
@@ -41,20 +38,68 @@ func (d *Database) CreateElectionTx(integratorAPIKey, orgEthAddress, processID,
 			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :metadata_priv_key, :title, :census_id,
 				:start_date, :end_date, :start_block, :end_block, :confidential, :hidden_results, :created_at, :updated_at)
 			RETURNING id`
-	tx, err := d.db.Begin()
+	result, err := d.db.NamedQuery(insert, election)
 	if err != nil {
-		return nil, fmt.Errorf("error creating election: %v", err)
-	}
-	result, err := tx.Query(insert, election)
-	if err != nil {
-		return nil, fmt.Errorf("error creating election: %v", err)
+		return 0, fmt.Errorf("error creating election: %v", err)
 	}
 	if !result.Next() {
-		return nil, fmt.Errorf("error creating election: there is no next result row")
+		return 0, fmt.Errorf("error creating election: there is no next result row")
 	}
-	// var id int
-	// result.Scan(&id)
-	return tx, nil
+	var id int
+	err = result.Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("error creating election: %v", err)
+	}
+	return id, nil
+}
+
+func (d *Database) CreateElectionTx(integratorAPIKey, orgEthAddress, processID,
+	encryptedMetadataKey []byte, title string, startDate, endDate time.Time,
+	censusID uuid.NullUUID, startBlock, endBlock int, confidential,
+	hiddenResults bool) (*sqlx.Tx, int, error) {
+
+	election := &types.Election{
+		OrgEthAddress:    orgEthAddress,
+		IntegratorApiKey: integratorAPIKey,
+		ProcessID:        processID,
+		Title:            title,
+		CensusID:         censusID,
+		StartDate:        startDate,
+		EndDate:          endDate,
+		StartBlock:       startBlock,
+		EndBlock:         endBlock,
+		Confidential:     confidential,
+		HiddenResults:    hiddenResults,
+		MetadataPrivKey:  encryptedMetadataKey,
+		CreatedUpdated: types.CreatedUpdated{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+	// TODO: Calculate EntityID (consult go-dvote)
+	insert := `INSERT INTO elections
+			( organization_eth_address, integrator_api_key, process_id, metadata_priv_key, title, census_id,
+				start_date, end_date, start_block, end_block, confidential, hidden_results, created_at, updated_at)
+			VALUES ( :organization_eth_address, :integrator_api_key, :process_id, :metadata_priv_key, :title, :census_id,
+				:start_date, :end_date, :start_block, :end_block, :confidential, :hidden_results, :created_at, :updated_at)
+			RETURNING id`
+	tx, err := d.db.Beginx()
+	if err != nil {
+		return nil, 0, fmt.Errorf("error creating election: %v", err)
+	}
+	result, err := tx.NamedQuery(insert, election)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error creating election: %v", err)
+	}
+	var id int
+	if !result.Next() {
+		return nil, 0, fmt.Errorf("error creating election: there is no next result row")
+	}
+	err = result.Scan(&id)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error creating organization: %v", err)
+	}
+	return tx, id, nil
 }
 
 func (d *Database) GetElectionPublic(organizationEthAddress, processID []byte) (*types.Election, error) {

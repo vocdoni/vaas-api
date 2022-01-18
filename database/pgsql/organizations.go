@@ -9,21 +9,20 @@ import (
 
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/stdlib"
+	"github.com/jmoiron/sqlx"
 
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/dvote/log"
 )
 
-func (d *Database) CreateOrganizationTx(integratorAPIKey, ethAddress,
-	ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken,
-	headerUri, avatarUri string) (*sql.Tx, error) {
+func (d *Database) CreateOrganization(integratorAPIKey, ethAddress, ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken, headerUri, avatarUri string) (int, error) {
 	integrator, err := d.GetIntegratorByKey(integratorAPIKey)
 	if err != nil {
 		if err != sql.ErrNoRows {
 			log.Errorf("tried to createOrganization by uknown API Key %x", integratorAPIKey)
-			return nil, fmt.Errorf("unkown API key: %x", integratorAPIKey)
+			return 0, fmt.Errorf("unkown API key: %x", integratorAPIKey)
 		} else {
-			return nil, fmt.Errorf("createOrganization DB error: %v", err)
+			return 0, fmt.Errorf("createOrganization DB error: %v", err)
 		}
 	}
 
@@ -51,20 +50,75 @@ func (d *Database) CreateOrganizationTx(integratorAPIKey, ethAddress,
 				:header_uri, :avatar_uri, :public_api_token, :quota_plan_id,
 				:public_api_quota, :created_at, :updated_at)
 			RETURNING id`
-	tx, err := d.db.Begin()
+	result, err := d.db.NamedQuery(insert, organization)
 	if err != nil {
-		return nil, fmt.Errorf("error creating organization: %v", err)
-	}
-	result, err := tx.Query(insert, organization)
-	if err != nil {
-		return nil, fmt.Errorf("error creating organization: %v", err)
+		return 0, fmt.Errorf("error creating organization: %v", err)
 	}
 	if !result.Next() {
-		return nil, fmt.Errorf("error creating organization: there is no next result row")
+		return 0, fmt.Errorf("error creating organization: there is no next result row")
 	}
-	// var id int
-	// result.Scan(&id)
-	return tx, nil
+	var id int
+	err = result.Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("error creating organization: %v", err)
+	}
+	return id, nil
+}
+
+func (d *Database) CreateOrganizationTx(integratorAPIKey, ethAddress,
+	ethPrivKeyCipher []byte, planID uuid.NullUUID, publiApiQuota int, publicApiToken,
+	headerUri, avatarUri string) (*sqlx.Tx, int, error) {
+	integrator, err := d.GetIntegratorByKey(integratorAPIKey)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Errorf("tried to createOrganization by uknown API Key %x", integratorAPIKey)
+			return nil, 0, fmt.Errorf("unkown API key: %x", integratorAPIKey)
+		} else {
+			return nil, 0, fmt.Errorf("createOrganization DB error: %v", err)
+		}
+	}
+
+	organization := &types.Organization{
+		EthAddress:       ethAddress,
+		IntegratorID:     integrator.ID,
+		EthPrivKeyCipher: ethPrivKeyCipher,
+		IntegratorApiKey: integrator.SecretApiKey,
+		HeaderURI:        headerUri,
+		AvatarURI:        avatarUri,
+		PublicAPIToken:   publicApiToken,
+		QuotaPlanID:      planID,
+		PublicAPIQuota:   publiApiQuota,
+		CreatedUpdated: types.CreatedUpdated{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+	// TODO: Calculate EntityID (consult go-dvote)
+	insert := `INSERT INTO organizations
+			( integrator_id, integrator_api_key, eth_address, eth_priv_key_cipher, 
+				header_uri, avatar_uri, public_api_token, quota_plan_id,
+				public_api_quota, created_at, updated_at)
+			VALUES ( :integrator_id, :integrator_api_key, :eth_address, :eth_priv_key_cipher, 
+				:header_uri, :avatar_uri, :public_api_token, :quota_plan_id,
+				:public_api_quota, :created_at, :updated_at)
+			RETURNING id`
+	tx, err := d.db.Beginx()
+	if err != nil {
+		return nil, 0, fmt.Errorf("error creating organization: %v", err)
+	}
+	result, err := tx.NamedQuery(insert, organization)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error creating organization: %v", err)
+	}
+	var id int
+	if !result.Next() {
+		return nil, 0, fmt.Errorf("error creating election: there is no next result row")
+	}
+	err = result.Scan(&id)
+	if err != nil {
+		return nil, 0, fmt.Errorf("error creating organization: %v", err)
+	}
+	return tx, id, nil
 }
 
 func (d *Database) GetOrganization(integratorAPIKey, ethAddress []byte) (*types.Organization, error) {
@@ -102,8 +156,35 @@ func (d *Database) DeleteOrganization(integratorAPIKey, ethAddress []byte) error
 	return nil
 }
 
+func (d *Database) UpdateOrganization(integratorAPIKey, ethAddress []byte, headerUri, avatarUri string) (int, error) {
+	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
+		return 0, fmt.Errorf("invalid arguments")
+	}
+	organization := &types.Organization{IntegratorApiKey: integratorAPIKey, EthAddress: ethAddress, HeaderURI: headerUri, AvatarURI: avatarUri}
+	update := `UPDATE organizations SET
+				header_uri = COALESCE(NULLIF(:header_uri, ''), header_uri),
+				avatar_uri = COALESCE(NULLIF(:avatar_uri, ''), avatar_uri),
+				updated_at = now()
+				WHERE (integrator_api_key=:integrator_api_key AND eth_address=:eth_address)
+				AND  (:quota_plan_id IS DISTINCT FROM quota_plan_id OR
+					:public_api_quota IS DISTINCT FROM public_api_quota OR
+					:header_uri IS DISTINCT FROM header_uri OR
+					:avatar_uri IS DISTINCT FROM avatar_uri)`
+	result, err := d.db.NamedExec(update, organization)
+	if err != nil {
+		return 0, fmt.Errorf("error updating organization: %v", err)
+	}
+	var rows int64
+	if rows, err = result.RowsAffected(); err != nil {
+		return 0, fmt.Errorf("cannot get affected rows: %v", err)
+	} else if rows != 1 && rows != 0 { /* Nothing to update? */
+		return int(rows), fmt.Errorf("expected to update 0 or 1 rows, but updated %d rows", rows)
+	}
+	return int(rows), nil
+}
+
 func (d *Database) UpdateOrganizationTx(integratorAPIKey, ethAddress []byte,
-	headerUri, avatarUri string) (*sql.Tx, error) {
+	headerUri, avatarUri string) (*sqlx.Tx, error) {
 	if len(integratorAPIKey) == 0 || len(ethAddress) == 0 {
 		return nil, fmt.Errorf("invalid arguments")
 	}
@@ -118,8 +199,11 @@ func (d *Database) UpdateOrganizationTx(integratorAPIKey, ethAddress []byte,
 					:header_uri IS DISTINCT FROM header_uri OR
 					:avatar_uri IS DISTINCT FROM avatar_uri)`
 
-	tx, err := d.db.Begin()
-	result, err := tx.Exec(update, organization)
+	tx, err := d.db.Beginx()
+	if err != nil {
+		return nil, fmt.Errorf("error updating organization: %v", err)
+	}
+	result, err := tx.NamedExec(update, organization)
 	if err != nil {
 		return nil, fmt.Errorf("error updating organization: %v", err)
 	}
