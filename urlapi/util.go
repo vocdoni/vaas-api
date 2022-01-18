@@ -220,18 +220,9 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 	filter = strings.ToUpper(filter)
 	switch filter {
 	case "PAUSED", "CANCELED", "ENDED", "":
-		var fullProcessList []string
-		// loop to fetch all processes
-		for {
-			tempProcessList, err := u.vocClient.GetProcessList(entityId,
-				filter, "", "", 0, false, len(fullProcessList), 64)
-			if err != nil {
-				return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
-			}
-			fullProcessList = append(fullProcessList, tempProcessList...)
-			if len(tempProcessList) < 64 {
-				break
-			}
+		fullProcessList, err := u.fetchProcessList(entityId, filter)
+		if err != nil {
+			return nil, err
 		}
 		// loop to fetch processes from db
 		for _, processID := range fullProcessList {
@@ -257,20 +248,12 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			appendProcess(&electionList, newProcess, private, filter)
 		}
 	case "ACTIVE", "UPCOMING":
-		var fullProcessList []string
 		currentHeight, _, _ := u.vocClient.GetBlockTimes()
-		// loop to fetch all READY processes
-		for {
-			tempProcessList, err := u.vocClient.GetProcessList(entityId,
-				"READY", "", "", 0, false, len(fullProcessList), 64)
-			if err != nil {
-				return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
-			}
-			fullProcessList = append(fullProcessList, tempProcessList...)
-			if len(tempProcessList) < 64 {
-				break
-			}
+		fullProcessList, err := u.fetchProcessList(entityId, "READY")
+		if err != nil {
+			return nil, err
 		}
+
 		// loop to fetch processes from db, filter by date
 		for _, processID := range fullProcessList {
 			processIDBytes, err := hex.DecodeString(processID)
@@ -306,18 +289,10 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			}
 		}
 	case "BLIND", "SIGNED":
-		var fullProcessList []string
 		// loop to fetch all processes
-		for {
-			tempProcessList, err := u.vocClient.GetProcessList(entityId,
-				"", "", "", 0, false, len(fullProcessList), 64)
-			if err != nil {
-				return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
-			}
-			fullProcessList = append(fullProcessList, tempProcessList...)
-			if len(tempProcessList) < 64 {
-				break
-			}
+		fullProcessList, err := u.fetchProcessList(entityId, "")
+		if err != nil {
+			return nil, err
 		}
 		// loop to fetch processes from db
 		for _, processID := range fullProcessList {
@@ -358,6 +333,22 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 
 	}
 	return electionList, nil
+}
+
+func (u *URLAPI) fetchProcessList(entityId []byte, status string) ([]string, error) {
+	var fullProcessList []string
+	for {
+		tempProcessList, err := u.vocClient.GetProcessList(entityId,
+			status, "", "", 0, false, len(fullProcessList), 64)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get process list from vochain: %w", err)
+		}
+		fullProcessList = append(fullProcessList, tempProcessList...)
+		if len(tempProcessList) < 64 {
+			break
+		}
+	}
+	return fullProcessList, nil
 }
 
 func aggregateResults(meta *types.ProcessMetadata,
