@@ -50,7 +50,7 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 }
 
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
-	results *types.VochainResults, meta *types.ProcessMetadata, proofType string) (types.APIElectionInfo, error) {
+	results *types.VochainResults, meta *types.ProcessMetadata, proofType types.ProofType) (types.APIElectionInfo, error) {
 	process := types.APIElectionInfo{
 		Description:        meta.Description["default"],
 		OrganizationID:     vc.EntityID,

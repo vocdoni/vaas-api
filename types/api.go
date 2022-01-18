@@ -9,9 +9,11 @@ import (
 )
 
 const (
-	PROOF_TYPE_ECDSA = "ecdsa"
-	PROOF_TYPE_BLIND = "blind"
+	PROOF_TYPE_ECDSA ProofType = "ecdsa"
+	PROOF_TYPE_BLIND ProofType = "blind"
 )
+
+type ProofType string
 
 // APIRequest contains all of the possible request fields.
 // Fields must be in alphabetical order
@@ -78,7 +80,7 @@ type APIElectionInfo struct {
 	Status    string    `json:"status,omitempty"`
 	StreamURI string    `json:"streamUri,omitempty"`
 	Title     string    `json:"title,omitempty"`
-	ProofType string    `json:"proofType,omitempty"`
+	ProofType ProofType `json:"proofType,omitempty"`
 	Type      string    `json:"type,omitempty"`
 	VoteCount uint32    `json:"voteCount,omitempty"`
 }
@@ -95,7 +97,7 @@ type APIElectionSummary struct {
 	StartDate       time.Time      `json:"startDate,omitempty"`
 	Status          string         `json:"status,omitempty"`
 	Title           string         `json:"title,omitempty"`
-	ProofType       string         `json:"proofType,omitempty"`
+	ProofType       ProofType      `json:"proofType,omitempty"`
 }
 
 // ProcessMetadata contains the process metadata fields as stored on ipfs

@@ -387,7 +387,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	electionType := ctx.URLParam("type")
+	electionType := types.ProofType(ctx.URLParam("type"))
 	switch electionType {
 	case types.PROOF_TYPE_BLIND, types.PROOF_TYPE_ECDSA:
 	default:

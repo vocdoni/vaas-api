@@ -45,7 +45,7 @@ type TestElection struct {
 	Status             string
 	StreamURI          string
 	Title              string
-	ProofType          string
+	ProofType          types.ProofType
 	VoteCount          uint32
 }
 
@@ -82,7 +82,7 @@ func CreateOrganizations(size int) []*TestOrganization {
 }
 
 // Create a given number of random Elections
-func CreateElections(size int, confidential, encrypted bool, proofType string) []*TestElection {
+func CreateElections(size int, confidential, encrypted bool, proofType types.ProofType) []*TestElection {
 	mp := make([]*TestElection, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)

@@ -55,7 +55,7 @@ type Election struct {
 	EndDate          time.Time     `json:"endDate,omitempty" db:"end_date"`
 	StartBlock       int           `json:"startBlock,omitempty" db:"start_block"`
 	EndBlock         int           `json:"endBlock,omitempty" db:"end_block"`
-	ProofType        string        `json:"proofType,omitempty" db:"proof_type"`
+	ProofType        ProofType     `json:"proofType,omitempty" db:"proof_type"`
 	Confidential     bool          `json:"confidential,omitempty" db:"confidential"`
 	HiddenResults    bool          `json:"hiddenResults,omitempty" db:"hidden_results"`
 	MetadataPrivKey  []byte        `json:"metadataPrivKey,omitempty" db:"metadata_priv_key"`

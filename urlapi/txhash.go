@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
@@ -38,7 +39,7 @@ type createElectionQuery struct {
 	startDate         time.Time
 	endDate           time.Time
 	censusID          uuid.NullUUID
-	proofType         string
+	proofType         types.ProofType
 	startBlock        int
 	endBlock          int
 	confidential      bool
