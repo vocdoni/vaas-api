@@ -10,7 +10,7 @@ import (
 	"go.vocdoni.io/api/types"
 )
 
-func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title string, proofType types.ProofType, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
+func (d *Database) CreateElection(integratorAPIKey, orgEthAddress, processID, encryptedMetadataKey []byte, title, proofType string, startDate, endDate time.Time, censusID uuid.NullUUID, startBlock, endBlock int, confidential, hiddenResults bool) (int, error) {
 
 	election := &types.Election{
 		OrgEthAddress:    orgEthAddress,

@@ -414,7 +414,7 @@ func reflectElectionPrivate(election types.Election) types.APIElectionSummary {
 		Confidential:    &election.Confidential,
 		HiddenResults:   &election.HiddenResults,
 		MetadataPrivKey: election.MetadataPrivKey,
-		ProofType:       election.ProofType,
+		ProofType:       types.ProofType(election.ProofType),
 	}
 	// uuid.Nil returns a full zero-value uuid string. if there is no census uuid,
 	// set the censusID string to empty so it is left out of the json response.
@@ -434,7 +434,7 @@ func reflectElectionPublic(election types.Election) types.APIElectionSummary {
 		EndDate:       election.EndDate,
 		Confidential:  &election.Confidential,
 		HiddenResults: &election.HiddenResults,
-		ProofType:     election.ProofType,
+		ProofType:     types.ProofType(election.ProofType),
 	}
 	// uuid.Nil returns a full zero-value uuid string. if there is no census uuid,
 	// set the censusID string to empty so it is left out of the json response.

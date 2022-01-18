@@ -145,7 +145,7 @@ func CreateDbElections(t *testing.T, size int) []*types.Election {
 			Confidential:    true,
 			HiddenResults:   true,
 			MetadataPrivKey: nil,
-			ProofType:       types.PROOF_TYPE_BLIND,
+			ProofType:       string(types.PROOF_TYPE_BLIND),
 		}
 	}
 	return mp

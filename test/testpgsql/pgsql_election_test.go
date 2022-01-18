@@ -29,7 +29,7 @@ func TestElection(t *testing.T) {
 
 	elections := testcommon.CreateDbElections(t, 2)
 	id, err := API.DB.CreateElection(integrators[0].SecretApiKey, organizations[0].EthAddress, elections[0].ProcessID,
-		elections[0].MetadataPrivKey, elections[0].Title, types.PROOF_TYPE_BLIND, elections[0].StartDate,
+		elections[0].MetadataPrivKey, elections[0].Title, string(types.PROOF_TYPE_BLIND), elections[0].StartDate,
 		elections[0].EndDate, uuid.NullUUID{}, 0, 0, true, true)
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)

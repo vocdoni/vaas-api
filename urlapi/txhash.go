@@ -90,7 +90,7 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		}
 	case createElectionQuery:
 		if _, err = u.db.CreateElection(queryTx.integratorPrivKey, queryTx.ethAddress, queryTx.electionID, queryTx.encryptedMetaKey,
-			queryTx.title, queryTx.proofType, queryTx.startDate, queryTx.endDate, queryTx.censusID, queryTx.startBlock, queryTx.endBlock,
+			queryTx.title, string(queryTx.proofType), queryTx.startDate, queryTx.endDate, queryTx.censusID, queryTx.startBlock, queryTx.endBlock,
 			queryTx.confidential, queryTx.hiddenResults); err != nil {
 			return fmt.Errorf("could not create election: %w", err)
 		}

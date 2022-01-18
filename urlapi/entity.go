@@ -650,7 +650,7 @@ func (u *URLAPI) getProcessHandler(
 		return err
 	}
 	// Parse all the information
-	resp, err := u.parseProcessInfo(vochainProcess, results, processMetadata, dbElection.ProofType)
+	resp, err := u.parseProcessInfo(vochainProcess, results, processMetadata, types.ProofType(dbElection.ProofType))
 	if err != nil {
 		return fmt.Errorf("could not parse information for process %x: %w", processId, err)
 	}
