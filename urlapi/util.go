@@ -317,15 +317,11 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 			newProcess.ProcessID = processIDBytes
 
 			// filter processes by date
-			switch filter {
-			case "BLIND":
-				if newProcess.ProofType == "blind" {
-					appendProcess(&electionList, newProcess, private, "")
-				}
-			case "SIGNED":
-				if newProcess.ProofType == "ecdsa" {
-					appendProcess(&electionList, newProcess, private, "")
-				}
+			if filter == "BLIND" && newProcess.ProofType == "blind" {
+				appendProcess(&electionList, newProcess, private, "")
+			}
+			if filter == "SIGNED" && newProcess.ProofType == "ecdsa" {
+				appendProcess(&electionList, newProcess, private, "")
 			}
 		}
 	default:
