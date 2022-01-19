@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.vocdoni.io/api/database/transactions"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/api/vocclient"
@@ -234,16 +235,17 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now())
-	u.dbTransactions.Store(txHash, createOrganizationQuery{
-		integratorPrivKey: integratorPrivKey,
-		ethAddress:        ethSignKeys.Address().Bytes(),
-		ethPrivKeyCipher:  encryptedPrivKey,
-		planID:            uuid.NullUUID{},
-		publicApiQuota:    0,
-		publicApiToken:    orgApiToken,
-		headerUri:         req.Header,
-		avatarUri:         req.Avatar,
-	})
+	u.dbTransactions.Store(txHash,
+		transactions.SerializableTx(transactions.CreateOrganizationTx{
+			IntegratorPrivKey: integratorPrivKey,
+			EthAddress:        ethSignKeys.Address().Bytes(),
+			EthPrivKeyCipher:  encryptedPrivKey,
+			PlanID:            uuid.NullUUID{},
+			PublicApiQuota:    0,
+			PublicApiToken:    orgApiToken,
+			HeaderUri:         req.Header,
+			AvatarUri:         req.Avatar,
+		}))
 
 	resp := types.APIResponse{APIToken: orgApiToken,
 		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
@@ -361,12 +363,12 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now())
 	u.dbTransactions.Store(txHash,
-		updateOrganizationQuery{
-			integratorPrivKey: orgInfo.organization.IntegratorApiKey,
-			ethAddress:        orgInfo.organization.EthAddress,
-			headerUri:         req.Header,
-			avatarUri:         req.Avatar,
-		})
+		transactions.SerializableTx(transactions.UpdateOrganizationTx{
+			IntegratorPrivKey: orgInfo.organization.IntegratorApiKey,
+			EthAddress:        orgInfo.organization.EthAddress,
+			HeaderUri:         req.Header,
+			AvatarUri:         req.Avatar,
+		}))
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
@@ -556,20 +558,21 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomHex(32)
 	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
-	u.dbTransactions.Store(txHash, createElectionQuery{
-		integratorPrivKey: orgInfo.integratorPrivKey,
-		ethAddress:        orgInfo.entityID,
-		encryptedMetaKey:  metaPrivKeyBytes,
-		electionID:        processID,
-		title:             req.Title,
-		startDate:         startDate,
-		endDate:           endDate,
-		censusID:          uuid.NullUUID{},
-		startBlock:        int(startBlock),
-		endBlock:          int(startBlock + blockCount),
-		confidential:      req.Confidential,
-		hiddenResults:     req.HiddenResults,
-	})
+	u.dbTransactions.Store(txHash,
+		transactions.SerializableTx(transactions.CreateElectionTx{
+			IntegratorPrivKey: orgInfo.integratorPrivKey,
+			EthAddress:        orgInfo.entityID,
+			EncryptedMetaKey:  metaPrivKeyBytes,
+			ElectionID:        processID,
+			Title:             req.Title,
+			StartDate:         startDate,
+			EndDate:           endDate,
+			CensusID:          uuid.NullUUID{},
+			StartBlock:        int(startBlock),
+			EndBlock:          int(startBlock + blockCount),
+			Confidential:      req.Confidential,
+			HiddenResults:     req.HiddenResults,
+		}))
 
 	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: txHash}, ctx)
 }

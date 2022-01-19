@@ -110,6 +110,7 @@ func DoRequest(t *testing.T, url, authToken,
 			log.Fatal(err)
 		}
 	}
+	log.Info(string(respBody))
 	if resp.StatusCode != 200 {
 		return resp.StatusCode
 	}
