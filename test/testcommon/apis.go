@@ -2,6 +2,7 @@ package testcommon
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"go.vocdoni.io/api/config"
@@ -10,6 +11,8 @@ import (
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	dvotedb "go.vocdoni.io/dvote/db"
+	"go.vocdoni.io/dvote/db/metadb"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/log"
 	dvoteTypes "go.vocdoni.io/dvote/types"
@@ -90,9 +93,14 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 			log.Fatal(err)
 		}
 
+		kv, err := metadb.New(dvotedb.TypePebble, filepath.Join(t.StorageDir, "metadb"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// Vaas api
 		log.Infof("enabling VaaS API methods")
-		if err := urlApi.EnableVotingServiceHandlers(t.DB, client); err != nil {
+		if err := urlApi.EnableVotingServiceHandlers(t.DB, kv, client); err != nil {
 			log.Fatal(err)
 		}
 		go integratorTokenNotifier.FetchNewTokens(urlApi)

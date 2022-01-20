@@ -2,7 +2,6 @@ package urlapi
 
 import (
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -234,8 +233,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
+	txHash := dvoteutil.RandomBytes(32)
+	u.txWaitMap.Store(hex.EncodeToString(txHash), time.Now())
 	queryTx := transactions.SerializableTx{
 		Type: transactions.CreateOrganization,
 		Body: transactions.CreateOrganizationTx{
@@ -249,14 +248,12 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 			AvatarUri:         req.Avatar,
 		},
 	}
-	txBytes, err := json.Marshal(&queryTx)
-	if err != nil {
-		return fmt.Errorf("could not create account database transaction: %w", err)
+	if err = transactions.StoreTx(u.kv, txHash, queryTx); err != nil {
+		return err
 	}
-	u.dbTransactions.Store(txHash, txBytes)
 
 	resp := types.APIResponse{APIToken: orgApiToken,
-		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
+		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: hex.EncodeToString(txHash)}
 
 	return sendResponse(resp, ctx)
 }
@@ -368,8 +365,8 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
+	txHash := dvoteutil.RandomBytes(32)
+	u.txWaitMap.Store(hex.EncodeToString(txHash), time.Now())
 	queryTx := transactions.SerializableTx{
 		Type: transactions.UpdateOrganization,
 		Body: transactions.UpdateOrganizationTx{
@@ -379,15 +376,13 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 			AvatarUri:         req.Avatar,
 		},
 	}
-	txBytes, err := json.Marshal(&queryTx)
-	if err != nil {
-		return fmt.Errorf("could not create organization database transaction: %w", err)
+	if err = transactions.StoreTx(u.kv, []byte(txHash), queryTx); err != nil {
+		return err
 	}
-	u.dbTransactions.Store(txHash, txBytes)
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
-		TxHash:         txHash,
+		TxHash:         hex.EncodeToString(txHash),
 	}
 	return sendResponse(resp, ctx)
 }
@@ -571,8 +566,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
+	txHash := dvoteutil.RandomBytes(32)
+	u.txWaitMap.Store(hex.EncodeToString(txHash), time.Now().Add(time.Duration(2*int(avgTimes[0]))))
 	queryTx := transactions.SerializableTx{
 		Type: transactions.CreateElection,
 		Body: transactions.CreateElectionTx{
@@ -590,13 +585,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 			HiddenResults:     req.HiddenResults,
 		},
 	}
-	txBytes, err := json.Marshal(&queryTx)
-	if err != nil {
-		return fmt.Errorf("could not create organization database transaction: %w", err)
+	if err = transactions.StoreTx(u.kv, txHash, queryTx); err != nil {
+		return err
 	}
-	u.dbTransactions.Store(txHash, txBytes)
 
-	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: txHash}, ctx)
+	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: hex.EncodeToString(txHash)}, ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed

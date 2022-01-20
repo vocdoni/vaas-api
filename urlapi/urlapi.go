@@ -11,6 +11,7 @@ import (
 	"go.vocdoni.io/api/database"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/vocclient"
+	dvotedb "go.vocdoni.io/dvote/db"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
@@ -31,9 +32,8 @@ type URLAPI struct {
 	api                   *bearerstdapi.BearerStandardAPI
 	metricsagent          *metrics.Agent
 	db                    database.Database
+	kv                    dvotedb.Database
 	vocClient             *vocclient.Client
-	// Map of database queries pending transactions being mined
-	dbTransactions sync.Map
 	// TODO remove temporary tx time map
 	txWaitMap sync.Map
 }
@@ -53,12 +53,11 @@ func NewURLAPI(router *httprouter.HTTProuter,
 	}
 	baseRoute += "/" + API_VERSION
 	urlapi := URLAPI{
-		config:         cfg,
-		BaseRoute:      baseRoute,
-		router:         router,
-		metricsagent:   metricsAgent,
-		dbTransactions: sync.Map{},
-		txWaitMap:      sync.Map{},
+		config:       cfg,
+		BaseRoute:    baseRoute,
+		router:       router,
+		metricsagent: metricsAgent,
+		txWaitMap:    sync.Map{},
 	}
 	log.Infof("url api available with baseRoute %s", baseRoute)
 	if len(cfg.GlobalEntityKey) > 0 {
@@ -89,14 +88,18 @@ func NewURLAPI(router *httprouter.HTTProuter,
 }
 
 func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
-	client *vocclient.Client) error {
+	kv dvotedb.Database, client *vocclient.Client) error {
 	if db == nil {
+		return fmt.Errorf("database is nil")
+	}
+	if kv == nil {
 		return fmt.Errorf("database is nil")
 	}
 	if client == nil {
 		return fmt.Errorf("database is nil")
 	}
 	u.db = db
+	u.kv = kv
 	u.vocClient = client
 
 	// Register auth tokens from the DB

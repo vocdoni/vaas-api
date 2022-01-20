@@ -2,8 +2,6 @@ package urlapi
 
 import (
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"time"
 
 	"go.vocdoni.io/api/database/transactions"
@@ -28,32 +26,33 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	val, ok := u.txWaitMap.Load(hex.EncodeToString(txHash))
 	var txTime time.Time
 	if ok {
-		txTime, ok = val.(time.Time)
+		txTime, _ = val.(time.Time)
+	} else {
+		txTime = time.Now().Add(-15 * time.Second)
 	}
-	mined := ok && txTime.Add(15*time.Second).Before(time.Now())
+	mined := txTime.Add(15 * time.Second).Before(time.Now())
 	// TODO make vocclient api request to get tx status
 	// If tx has been mined, check dbTransactions map for pending db queries
 	if !mined {
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
-	tx, ok := u.dbTransactions.LoadAndDelete(hex.EncodeToString(txHash))
-	// If transaction not in map, it is a transaction
-	//  not associated with a db query (setProcessStatus)
-	if !ok {
+	queryTx, err := transactions.GetTx(u.kv, txHash)
+	if err != nil {
+		return err
+	}
+	// If no queryTx found, there's no db transaction to execute.
+	if queryTx == nil {
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
-	switch rawTx := tx.(type) {
-	case []byte:
-		var queryTx transactions.SerializableTx
-		err := json.Unmarshal(rawTx, &queryTx)
-		if err != nil {
-			return fmt.Errorf("could not decode database transaction: %w", err)
-		}
-		id, err := queryTx.Commit(&u.db)
-		if err != nil {
-			return err
-		}
-		return sendResponse(APIMined{Mined: &mined, ID: id}, ctx)
+
+	// Else, commit the queryTx to the database
+	id, err := queryTx.Commit(&u.db)
+	if err != nil {
+		return err
 	}
-	return sendResponse(APIMined{Mined: &mined}, ctx)
+	// If query has been committed, delete from kv
+	if err = transactions.DeleteTx(u.kv, txHash); err != nil {
+		return err
+	}
+	return sendResponse(APIMined{Mined: &mined, ID: id}, ctx)
 }

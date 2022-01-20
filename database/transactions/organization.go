@@ -8,6 +8,7 @@ import (
 )
 
 type CreateOrganizationTx struct {
+	TxBody
 	IntegratorPrivKey []byte
 	EthAddress        []byte
 	EthPrivKeyCipher  []byte
@@ -29,6 +30,7 @@ func (tx CreateOrganizationTx) commit(db *database.Database) (int, error) {
 }
 
 type UpdateOrganizationTx struct {
+	TxBody
 	IntegratorPrivKey []byte
 	EthAddress        []byte
 	HeaderUri         string

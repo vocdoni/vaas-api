@@ -9,6 +9,7 @@ import (
 )
 
 type CreateElectionTx struct {
+	TxBody
 	IntegratorPrivKey []byte
 	EthAddress        []byte
 	ElectionID        []byte

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -16,6 +17,8 @@ import (
 	"go.vocdoni.io/api/urlapi"
 	"go.vocdoni.io/api/vocclient"
 	"go.vocdoni.io/dvote/crypto/ethereum"
+	dvotedb "go.vocdoni.io/dvote/db"
+	"go.vocdoni.io/dvote/db/metadb"
 	"go.vocdoni.io/dvote/httprouter"
 	log "go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/metrics"
@@ -242,6 +245,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	kv, err := metadb.New(dvotedb.TypePebble, filepath.Join(cfg.DataDir, "metadb"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Router
 	var httpRouter httprouter.HTTProuter
 	httpRouter.TLSdomain = cfg.API.Ssl.Domain
@@ -265,7 +273,7 @@ func main() {
 
 	// Vaas api
 	log.Infof("enabling VaaS API methods")
-	if err := urlApi.EnableVotingServiceHandlers(db, client); err != nil {
+	if err := urlApi.EnableVotingServiceHandlers(db, kv, client); err != nil {
 		log.Fatal(err)
 	}
 

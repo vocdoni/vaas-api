@@ -3,6 +3,7 @@ package transactions
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"go.vocdoni.io/api/database"
 )
@@ -16,8 +17,9 @@ const (
 )
 
 type SerializableTx struct {
-	Type SerializableTxType `json:"type"`
-	Body TxBody             `json:"body"`
+	Type         SerializableTxType `json:"type"`
+	Body         TxBody             `json:"body"`
+	CreationTime time.Time          `json:"creationTime"`
 }
 
 func (tx *SerializableTx) Commit(db *database.Database) (int, error) {
