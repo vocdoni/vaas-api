@@ -23,7 +23,7 @@ type CreateElectionTx struct {
 	HiddenResults     bool
 }
 
-func (tx CreateElectionTx) Commit(db *database.Database) (int, error) {
+func (tx CreateElectionTx) commit(db *database.Database) (int, error) {
 	id, err := (*db).CreateElection(tx.IntegratorPrivKey,
 		tx.EthAddress, tx.ElectionID, tx.EncryptedMetaKey,
 		tx.Title, tx.StartDate, tx.EndDate, tx.CensusID, tx.StartBlock, tx.EndBlock,

@@ -18,7 +18,7 @@ type CreateOrganizationTx struct {
 	AvatarUri         string
 }
 
-func (tx CreateOrganizationTx) Commit(db *database.Database) (int, error) {
+func (tx CreateOrganizationTx) commit(db *database.Database) (int, error) {
 	id, err := (*db).CreateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
 		tx.EthPrivKeyCipher, tx.PlanID, tx.PublicApiQuota,
 		tx.PublicApiToken, tx.HeaderUri, tx.AvatarUri)
@@ -35,7 +35,7 @@ type UpdateOrganizationTx struct {
 	AvatarUri         string
 }
 
-func (tx UpdateOrganizationTx) Commit(db *database.Database) (int, error) {
+func (tx UpdateOrganizationTx) commit(db *database.Database) (int, error) {
 	_, err := (*db).UpdateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
 		tx.HeaderUri, tx.AvatarUri)
 	if err != nil {

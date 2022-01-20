@@ -2,6 +2,8 @@ package urlapi
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"go.vocdoni.io/api/database/transactions"
@@ -40,8 +42,13 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if !ok {
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
-	switch queryTx := tx.(type) {
-	case transactions.SerializableTx:
+	switch rawTx := tx.(type) {
+	case []byte:
+		var queryTx transactions.SerializableTx
+		err := json.Unmarshal(rawTx, &queryTx)
+		if err != nil {
+			return fmt.Errorf("could not decode database transaction: %w", err)
+		}
 		id, err := queryTx.Commit(&u.db)
 		if err != nil {
 			return err
