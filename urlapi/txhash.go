@@ -35,6 +35,11 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	if !mined {
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
+
+	// Lock KvMutex so we don't get a tx as it's deleted
+	transactions.KvMutex.Lock()
+	defer transactions.KvMutex.Unlock()
+
 	queryTx, err := transactions.GetTx(u.kv, txHash)
 	if err != nil {
 		return err

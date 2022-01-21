@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/database/transactions"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/vocclient"
 	dvotedb "go.vocdoni.io/dvote/db"
@@ -18,6 +20,8 @@ import (
 )
 
 const API_VERSION string = "v1"
+
+var txTimeout time.Duration = time.Minute
 
 type URLAPI struct {
 	PrivateCalls uint64
@@ -104,6 +108,8 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 		return fmt.Errorf("could not sync auth tokens with db: %v", err)
 	}
 
+	go u.monitorCachedTxs()
+
 	if err := u.enableSuperadminHandlers(u.config.AdminToken); err != nil {
 		return err
 	}
@@ -148,6 +154,51 @@ func (u *URLAPI) RegisterToken(token string, requests int64) {
 func (u *URLAPI) RevokeToken(token string) {
 	log.Infof("revoke auth token %s", token)
 	u.api.DelAuthToken(token)
+}
+
+func (u *URLAPI) monitorCachedTxs() {
+	callback := func(key, value []byte) bool {
+		// unmarshal value to serializableTx
+		var serializableTx transactions.SerializableTx
+		if err := json.Unmarshal(value, &serializableTx); err != nil {
+			log.Errorf("could not get query from tx cache: %v", err)
+			return true
+		}
+		// MOCK MINED LOGIC
+		// if tx not mined, check if it's old
+		if !serializableTx.CreationTime.Add(15 * time.Second).Before(time.Now()) {
+			if serializableTx.CreationTime.After(time.Now().Add(txTimeout)) {
+				if err := transactions.DeleteTx(u.kv, key); err != nil {
+					log.Errorf("could not delete timed-out tx: %v", err)
+				}
+			}
+			return true
+		}
+
+		log.Infof("%+v", serializableTx)
+
+		// commit that tx to the database if mined
+		if err := serializableTx.Commit(&u.db); err != nil {
+			log.Errorf("could not commit query tx: %v", err)
+			// return true
+		}
+		// If query has been committed, delete from kv
+		if err := transactions.DeleteTx(u.kv, key); err != nil {
+			log.Errorf("could not delete query tx: %v", err)
+			return true
+		}
+		return true
+	}
+	for {
+		// Lock KvMutex so entries aren't deleted while operating on them
+		transactions.KvMutex.Lock()
+		err := u.kv.Iterate([]byte(transactions.TxPrefix), callback)
+		if err != nil {
+			log.Error(err)
+		}
+		transactions.KvMutex.Unlock()
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func sendResponse(response interface{}, ctx *httprouter.HTTPContext) error {

@@ -236,7 +236,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	txHash := dvoteutil.RandomBytes(32)
 	transactions.StoreTxTime(u.kv, txHash, time.Now())
 	queryTx := transactions.SerializableTx{
-		Type: transactions.CreateOrganization,
+		Type:         transactions.CreateOrganization,
+		CreationTime: time.Now(),
 		Body: transactions.CreateOrganizationTx{
 			IntegratorPrivKey: integratorPrivKey,
 			EthAddress:        ethSignKeys.Address().Bytes(),
@@ -368,7 +369,8 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	txHash := dvoteutil.RandomBytes(32)
 	transactions.StoreTxTime(u.kv, txHash, time.Now())
 	queryTx := transactions.SerializableTx{
-		Type: transactions.UpdateOrganization,
+		Type:         transactions.UpdateOrganization,
+		CreationTime: time.Now(),
 		Body: transactions.UpdateOrganizationTx{
 			IntegratorPrivKey: orgInfo.organization.IntegratorApiKey,
 			EthAddress:        orgInfo.organization.EthAddress,
@@ -569,7 +571,8 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	txHash := dvoteutil.RandomBytes(32)
 	transactions.StoreTxTime(u.kv, txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
 	queryTx := transactions.SerializableTx{
-		Type: transactions.CreateElection,
+		Type:         transactions.CreateElection,
+		CreationTime: time.Now().Add(time.Duration(2 * int(avgTimes[0]))),
 		Body: transactions.CreateElectionTx{
 			IntegratorPrivKey: orgInfo.integratorPrivKey,
 			EthAddress:        orgInfo.entityID,

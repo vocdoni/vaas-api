@@ -3,18 +3,22 @@ package transactions
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	dvotedb "go.vocdoni.io/dvote/db"
 )
 
 const (
-	txPrefix        = "tx"
-	timestampPrefix = "tm"
+	TxPrefix        = "tx"
+	TimestampPrefix = "tm"
 )
 
+// KvMutex is a lock for multiple db transactions, i.e. read-delete
+var KvMutex *sync.Mutex = &sync.Mutex{}
+
 func StoreTx(kv dvotedb.Database, hash []byte, query SerializableTx) error {
-	hash = append([]byte(txPrefix), hash...)
+	hash = append([]byte(TxPrefix), hash...)
 	queryBytes, err := json.Marshal(&query)
 	if err != nil {
 		return fmt.Errorf("could not marshal account database transaction: %w", err)
@@ -30,7 +34,7 @@ func StoreTx(kv dvotedb.Database, hash []byte, query SerializableTx) error {
 }
 
 func GetTx(kv dvotedb.Database, hash []byte) (*SerializableTx, error) {
-	hash = append([]byte(txPrefix), hash...)
+	hash = append([]byte(TxPrefix), hash...)
 	tx := kv.ReadTx()
 	queryBytes, err := tx.Get(hash)
 	tx.Discard()
@@ -49,7 +53,7 @@ func GetTx(kv dvotedb.Database, hash []byte) (*SerializableTx, error) {
 }
 
 func DeleteTx(kv dvotedb.Database, hash []byte) error {
-	hash = append([]byte(txPrefix), hash...)
+	hash = append([]byte(TxPrefix), hash...)
 	// Delete the entry from the kv
 	tx := kv.WriteTx()
 	if err := tx.Delete(hash); err != nil {
@@ -59,7 +63,7 @@ func DeleteTx(kv dvotedb.Database, hash []byte) error {
 }
 
 func StoreTxTime(kv dvotedb.Database, hash []byte, timestamp time.Time) error {
-	hash = append([]byte(timestampPrefix), hash...)
+	hash = append([]byte(TimestampPrefix), hash...)
 	queryBytes, err := json.Marshal(timestamp)
 	if err != nil {
 		return fmt.Errorf("could not marshal transaction timestamp: %w", err)
@@ -75,7 +79,7 @@ func StoreTxTime(kv dvotedb.Database, hash []byte, timestamp time.Time) error {
 }
 
 func GetTxTime(kv dvotedb.Database, hash []byte) (*time.Time, error) {
-	hash = append([]byte(timestampPrefix), hash...)
+	hash = append([]byte(TimestampPrefix), hash...)
 	tx := kv.ReadTx()
 	queryBytes, err := tx.Get(hash)
 	tx.Discard()
