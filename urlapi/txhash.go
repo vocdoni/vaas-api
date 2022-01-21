@@ -1,7 +1,7 @@
 package urlapi
 
 import (
-	"encoding/hex"
+	"fmt"
 	"time"
 
 	"go.vocdoni.io/api/database/transactions"
@@ -12,7 +12,6 @@ import (
 
 type APIMined struct {
 	Mined *bool `json:"mined,omitempty"`
-	ID    int   `json:"id,omitempty"`
 }
 
 // GET https://server/v1/priv/transactions/<transactionHash>
@@ -23,12 +22,12 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		mined := false
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
-	val, ok := u.txWaitMap.Load(hex.EncodeToString(txHash))
-	var txTime time.Time
-	if ok {
-		txTime, _ = val.(time.Time)
-	} else {
-		txTime = time.Now().Add(-15 * time.Second)
+	txTime, err := transactions.GetTxTime(u.kv, txHash)
+	if err != nil {
+		return fmt.Errorf("transaction %x not found: %w", txHash, err)
+	}
+	if txTime == nil {
+		return fmt.Errorf("transaction %x has no record", txHash)
 	}
 	mined := txTime.Add(15 * time.Second).Before(time.Now())
 	// TODO make vocclient api request to get tx status
@@ -46,13 +45,12 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// Else, commit the queryTx to the database
-	id, err := queryTx.Commit(&u.db)
-	if err != nil {
+	if err = queryTx.Commit(&u.db); err != nil {
 		return err
 	}
 	// If query has been committed, delete from kv
 	if err = transactions.DeleteTx(u.kv, txHash); err != nil {
 		return err
 	}
-	return sendResponse(APIMined{Mined: &mined, ID: id}, ctx)
+	return sendResponse(APIMined{Mined: &mined}, ctx)
 }

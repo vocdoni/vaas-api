@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
@@ -34,8 +33,6 @@ type URLAPI struct {
 	db                    database.Database
 	kv                    dvotedb.Database
 	vocClient             *vocclient.Client
-	// TODO remove temporary tx time map
-	txWaitMap sync.Map
 }
 
 func NewURLAPI(router *httprouter.HTTProuter,
@@ -57,7 +54,6 @@ func NewURLAPI(router *httprouter.HTTProuter,
 		BaseRoute:    baseRoute,
 		router:       router,
 		metricsagent: metricsAgent,
-		txWaitMap:    sync.Map{},
 	}
 	log.Infof("url api available with baseRoute %s", baseRoute)
 	if len(cfg.GlobalEntityKey) > 0 {

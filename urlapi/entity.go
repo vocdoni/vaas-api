@@ -234,7 +234,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomBytes(32)
-	u.txWaitMap.Store(hex.EncodeToString(txHash), time.Now())
+	transactions.StoreTxTime(u.kv, txHash, time.Now())
 	queryTx := transactions.SerializableTx{
 		Type: transactions.CreateOrganization,
 		Body: transactions.CreateOrganizationTx{
@@ -366,7 +366,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomBytes(32)
-	u.txWaitMap.Store(hex.EncodeToString(txHash), time.Now())
+	transactions.StoreTxTime(u.kv, txHash, time.Now())
 	queryTx := transactions.SerializableTx{
 		Type: transactions.UpdateOrganization,
 		Body: transactions.UpdateOrganizationTx{
@@ -567,7 +567,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomBytes(32)
-	u.txWaitMap.Store(hex.EncodeToString(txHash), time.Now().Add(time.Duration(2*int(avgTimes[0]))))
+	transactions.StoreTxTime(u.kv, txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
 	queryTx := transactions.SerializableTx{
 		Type: transactions.CreateElection,
 		Body: transactions.CreateElectionTx{
@@ -771,10 +771,10 @@ func (u *URLAPI) setProcessStatusHandler(
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
+	txHash := dvoteutil.RandomBytes(32)
+	transactions.StoreTxTime(u.kv, []byte(txHash), time.Now())
 
-	return sendResponse(types.APIResponse{TxHash: txHash}, ctx)
+	return sendResponse(types.APIResponse{TxHash: hex.EncodeToString(txHash)}, ctx)
 }
 
 func decryptEntityKeys(privKeyCipher, globalOrganizationKey []byte) (*ethereum.SignKeys, error) {

@@ -19,14 +19,14 @@ type CreateOrganizationTx struct {
 	AvatarUri         string
 }
 
-func (tx CreateOrganizationTx) commit(db *database.Database) (int, error) {
-	id, err := (*db).CreateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
+func (tx CreateOrganizationTx) commit(db *database.Database) error {
+	_, err := (*db).CreateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
 		tx.EthPrivKeyCipher, tx.PlanID, tx.PublicApiQuota,
 		tx.PublicApiToken, tx.HeaderUri, tx.AvatarUri)
 	if err != nil {
-		return 0, fmt.Errorf("could not create organization: %w", err)
+		return fmt.Errorf("could not create organization: %w", err)
 	}
-	return id, nil
+	return nil
 }
 
 type UpdateOrganizationTx struct {
@@ -37,11 +37,11 @@ type UpdateOrganizationTx struct {
 	AvatarUri         string
 }
 
-func (tx UpdateOrganizationTx) commit(db *database.Database) (int, error) {
+func (tx UpdateOrganizationTx) commit(db *database.Database) error {
 	_, err := (*db).UpdateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
 		tx.HeaderUri, tx.AvatarUri)
 	if err != nil {
-		return 0, fmt.Errorf("could not update organization: %w", err)
+		return fmt.Errorf("could not update organization: %w", err)
 	}
-	return 0, nil
+	return nil
 }
