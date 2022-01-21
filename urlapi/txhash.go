@@ -22,6 +22,7 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		mined := false
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
+
 	txTime, err := transactions.GetTxTime(u.kv, txHash)
 	if err != nil {
 		return fmt.Errorf("transaction %x not found: %w", txHash, err)
@@ -30,6 +31,7 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return fmt.Errorf("transaction %x has no record", txHash)
 	}
 	mined := txTime.Add(15 * time.Second).Before(time.Now())
+
 	// TODO make vocclient api request to get tx status
 	// If tx has been mined, check dbTransactions map for pending db queries
 	if !mined {
@@ -37,25 +39,18 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// Lock KvMutex so we don't get a tx as it's deleted
-	transactions.KvMutex.Lock()
-	defer transactions.KvMutex.Unlock()
+	transactions.KvMutex.RLock()
+	defer transactions.KvMutex.RUnlock()
 
+	// ONLY if the tx has been mined, try to get the "queryTx" from the map/kv
 	queryTx, err := transactions.GetTx(u.kv, txHash)
 	if err != nil {
 		return err
 	}
-	// If no queryTx found, there's no db transaction to execute.
-	if queryTx == nil {
-		return sendResponse(APIMined{Mined: &mined}, ctx)
-	}
 
-	// Else, commit the queryTx to the database
-	if err = queryTx.Commit(&u.db); err != nil {
-		return err
-	}
-	// If query has been committed, delete from kv
-	if err = transactions.DeleteTx(u.kv, txHash); err != nil {
-		return err
+	// If queryTx exists on the kv, return false. The query still needs to be committed to the db
+	if queryTx != nil {
+		mined = false
 	}
 	return sendResponse(APIMined{Mined: &mined}, ctx)
 }

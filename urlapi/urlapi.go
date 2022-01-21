@@ -166,6 +166,9 @@ func (u *URLAPI) monitorCachedTxs() {
 		}
 		// MOCK MINED LOGIC
 		// if tx not mined, check if it's old
+		// Lock KvMutex so entries aren't deleted while operating on them
+		transactions.KvMutex.Lock()
+		defer transactions.KvMutex.Unlock()
 		if !serializableTx.CreationTime.Add(15 * time.Second).Before(time.Now()) {
 			if serializableTx.CreationTime.After(time.Now().Add(txTimeout)) {
 				if err := transactions.DeleteTx(u.kv, key); err != nil {
@@ -190,13 +193,10 @@ func (u *URLAPI) monitorCachedTxs() {
 		return true
 	}
 	for {
-		// Lock KvMutex so entries aren't deleted while operating on them
-		transactions.KvMutex.Lock()
 		err := u.kv.Iterate([]byte(transactions.TxPrefix), callback)
 		if err != nil {
 			log.Error(err)
 		}
-		transactions.KvMutex.Unlock()
 		time.Sleep(5 * time.Second)
 	}
 }

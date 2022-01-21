@@ -15,7 +15,7 @@ const (
 )
 
 // KvMutex is a lock for multiple db transactions, i.e. read-delete
-var KvMutex *sync.Mutex = &sync.Mutex{}
+var KvMutex *sync.RWMutex = &sync.RWMutex{}
 
 func StoreTx(kv dvotedb.Database, hash []byte, query SerializableTx) error {
 	hash = append([]byte(TxPrefix), hash...)
