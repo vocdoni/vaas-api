@@ -63,8 +63,9 @@ func TestMain(m *testing.M) {
 	setupTestIntegrators()
 	setupTestOrganizations()
 	setupTestElections()
-	os.RemoveAll("/tmp/.vaas-test")
-	os.Exit(m.Run())
+	code := m.Run()
+	os.RemoveAll(storage)
+	os.Exit(code)
 }
 
 func DoRequest(t *testing.T, url, authToken,

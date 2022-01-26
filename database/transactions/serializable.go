@@ -3,6 +3,7 @@ package transactions
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"go.vocdoni.io/api/database"
@@ -36,6 +37,9 @@ func (tx *SerializableTx) UnmarshalJSON(b []byte) error {
 	err = json.Unmarshal(*objMap["type"], &tx.Type)
 	if err != nil {
 		return err
+	}
+	if objMap["body"] == nil {
+		return fmt.Errorf("cannot unmarshal serializableTx: body is empty")
 	}
 
 	switch tx.Type {
