@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.vocdoni.io/api/database/transactions"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
@@ -23,7 +22,7 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return sendResponse(APIMined{Mined: &mined}, ctx)
 	}
 
-	txTime, err := transactions.GetTxTime(u.kv, txHash)
+	txTime, err := u.kv.GetTxTime(txHash)
 	if err != nil {
 		return fmt.Errorf("transaction %x not found: %w", txHash, err)
 	}
@@ -39,11 +38,11 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// Lock KvMutex so we don't get a tx as it's deleted
-	transactions.KvMutex.RLock()
-	defer transactions.KvMutex.RUnlock()
+	u.kv.Mtx.RLock()
+	defer u.kv.Mtx.RUnlock()
 
 	// ONLY if the tx has been mined, try to get the "queryTx" from the map/kv
-	queryTx, err := transactions.GetTx(u.kv, txHash)
+	queryTx, err := u.kv.GetTx(txHash)
 	if err != nil {
 		return err
 	}

@@ -14,16 +14,22 @@ const (
 	TimestampPrefix = "tm"
 )
 
-// KvMutex is a lock for multiple db transactions, i.e. read-delete
-var KvMutex *sync.RWMutex = &sync.RWMutex{}
+type TxCacheDb struct {
+	Db  dvotedb.Database
+	Mtx *sync.RWMutex
+}
 
-func StoreTx(kv dvotedb.Database, hash []byte, query SerializableTx) error {
+func NewTxKv(db dvotedb.Database, mutex *sync.RWMutex) TxCacheDb {
+	return TxCacheDb{Db: db, Mtx: mutex}
+}
+
+func (kv *TxCacheDb) StoreTx(hash []byte, query SerializableTx) error {
 	hash = append([]byte(TxPrefix), hash...)
 	queryBytes, err := json.Marshal(&query)
 	if err != nil {
 		return fmt.Errorf("could not marshal account database transaction: %w", err)
 	}
-	tx := kv.WriteTx()
+	tx := kv.Db.WriteTx()
 	if err = tx.Set(hash, queryBytes); err != nil {
 		return fmt.Errorf("could not cache transaction to database: %w", err)
 	}
@@ -33,9 +39,9 @@ func StoreTx(kv dvotedb.Database, hash []byte, query SerializableTx) error {
 	return nil
 }
 
-func GetTx(kv dvotedb.Database, hash []byte) (*SerializableTx, error) {
+func (kv *TxCacheDb) GetTx(hash []byte) (*SerializableTx, error) {
 	hash = append([]byte(TxPrefix), hash...)
-	tx := kv.ReadTx()
+	tx := kv.Db.ReadTx()
 	queryBytes, err := tx.Get(hash)
 	tx.Discard()
 	// If key not found, don't return an error
@@ -52,23 +58,23 @@ func GetTx(kv dvotedb.Database, hash []byte) (*SerializableTx, error) {
 	return &serializableTx, nil
 }
 
-func DeleteTx(kv dvotedb.Database, hash []byte) error {
+func (kv *TxCacheDb) DeleteTx(hash []byte) error {
 	hash = append([]byte(TxPrefix), hash...)
 	// Delete the entry from the kv
-	tx := kv.WriteTx()
+	tx := kv.Db.WriteTx()
 	if err := tx.Delete(hash); err != nil {
 		return fmt.Errorf("could not remove database tx: %w", err)
 	}
 	return tx.Commit()
 }
 
-func StoreTxTime(kv dvotedb.Database, hash []byte, timestamp time.Time) error {
+func (kv *TxCacheDb) StoreTxTime(hash []byte, timestamp time.Time) error {
 	hash = append([]byte(TimestampPrefix), hash...)
 	queryBytes, err := json.Marshal(timestamp)
 	if err != nil {
 		return fmt.Errorf("could not marshal transaction timestamp: %w", err)
 	}
-	tx := kv.WriteTx()
+	tx := kv.Db.WriteTx()
 	if err = tx.Set(hash, queryBytes); err != nil {
 		return fmt.Errorf("could not cache timestamp to database: %w", err)
 	}
@@ -78,9 +84,9 @@ func StoreTxTime(kv dvotedb.Database, hash []byte, timestamp time.Time) error {
 	return nil
 }
 
-func GetTxTime(kv dvotedb.Database, hash []byte) (*time.Time, error) {
+func (kv *TxCacheDb) GetTxTime(hash []byte) (*time.Time, error) {
 	hash = append([]byte(TimestampPrefix), hash...)
-	tx := kv.ReadTx()
+	tx := kv.Db.ReadTx()
 	queryBytes, err := tx.Get(hash)
 	tx.Discard()
 	// If key not found, don't return an error

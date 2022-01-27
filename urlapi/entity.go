@@ -234,7 +234,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomBytes(32)
-	transactions.StoreTxTime(u.kv, txHash, time.Now())
+	u.kv.StoreTxTime(txHash, time.Now())
 	queryTx := transactions.SerializableTx{
 		Type:         transactions.CreateOrganization,
 		CreationTime: time.Now(),
@@ -249,7 +249,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 			AvatarUri:         req.Avatar,
 		},
 	}
-	if err = transactions.StoreTx(u.kv, txHash, queryTx); err != nil {
+	if err = u.kv.StoreTx(txHash, queryTx); err != nil {
 		return err
 	}
 
@@ -367,7 +367,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomBytes(32)
-	transactions.StoreTxTime(u.kv, txHash, time.Now())
+	u.kv.StoreTxTime(txHash, time.Now())
 	queryTx := transactions.SerializableTx{
 		Type:         transactions.UpdateOrganization,
 		CreationTime: time.Now(),
@@ -378,7 +378,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 			AvatarUri:         req.Avatar,
 		},
 	}
-	if err = transactions.StoreTx(u.kv, []byte(txHash), queryTx); err != nil {
+	if err = u.kv.StoreTx([]byte(txHash), queryTx); err != nil {
 		return err
 	}
 	resp := types.APIResponse{
@@ -569,7 +569,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomBytes(32)
-	transactions.StoreTxTime(u.kv, txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
+	u.kv.StoreTxTime(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
 	queryTx := transactions.SerializableTx{
 		Type:         transactions.CreateElection,
 		CreationTime: time.Now().Add(time.Duration(2 * int(avgTimes[0]))),
@@ -588,11 +588,12 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 			HiddenResults:     req.HiddenResults,
 		},
 	}
-	if err = transactions.StoreTx(u.kv, txHash, queryTx); err != nil {
+	if err = u.kv.StoreTx(txHash, queryTx); err != nil {
 		return err
 	}
 
-	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: hex.EncodeToString(txHash)}, ctx)
+	return sendResponse(types.APIResponse{
+		ElectionID: processID, TxHash: hex.EncodeToString(txHash)}, ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
@@ -775,7 +776,9 @@ func (u *URLAPI) setProcessStatusHandler(
 
 	// TODO fetch actual transaction hash
 	txHash := dvoteutil.RandomBytes(32)
-	transactions.StoreTxTime(u.kv, []byte(txHash), time.Now())
+	if err = u.kv.StoreTxTime([]byte(txHash), time.Now()); err != nil {
+		return err
+	}
 
 	return sendResponse(types.APIResponse{TxHash: hex.EncodeToString(txHash)}, ctx)
 }

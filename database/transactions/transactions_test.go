@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,16 +16,18 @@ import (
 	"go.vocdoni.io/dvote/util"
 )
 
-var kv dvotedb.Database
+var kv TxCacheDb
 
 func TestMain(m *testing.M) {
 	storage, err := ioutil.TempDir("/tmp", ".transactions-test")
 	if err != nil {
 		log.Fatal(err)
 	}
-	if kv, err = metadb.New(dvotedb.TypePebble, filepath.Join(storage, "metadb")); err != nil {
+	db, err := metadb.New(dvotedb.TypePebble, filepath.Join(storage, "metadb"))
+	if err != nil {
 		log.Fatal(err)
 	}
+	kv = NewTxKv(db, &sync.RWMutex{})
 	code := m.Run()
 	if err = os.RemoveAll(storage); err != nil {
 		log.Fatal(err)
@@ -68,11 +71,11 @@ func TestStoreTx(t *testing.T) {
 		}
 		hash := util.RandomBytes(32)
 		hashes = append(hashes, hash)
-		qt.Assert(t, StoreTx(kv, hash, query), qt.IsNil)
+		qt.Assert(t, kv.StoreTx(hash, query), qt.IsNil)
 	}
 
 	for i, hash := range hashes {
-		tx, err := GetTx(kv, hash)
+		tx, err := kv.GetTx(hash)
 		qt.Assert(t, err, qt.IsNil)
 		if i%3 == 0 {
 			testGetElection(t, tx.Type, CreateElection, tx.Body)

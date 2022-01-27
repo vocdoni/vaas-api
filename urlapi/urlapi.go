@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"go.vocdoni.io/api/config"
@@ -35,7 +36,7 @@ type URLAPI struct {
 	api                   *bearerstdapi.BearerStandardAPI
 	metricsagent          *metrics.Agent
 	db                    database.Database
-	kv                    dvotedb.Database
+	kv                    transactions.TxCacheDb
 	vocClient             *vocclient.Client
 }
 
@@ -99,7 +100,7 @@ func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
 		return fmt.Errorf("database is nil")
 	}
 	u.db = db
-	u.kv = kv
+	u.kv = transactions.NewTxKv(kv, &sync.RWMutex{})
 	u.vocClient = client
 
 	// Register auth tokens from the DB
@@ -167,11 +168,11 @@ func (u *URLAPI) monitorCachedTxs() {
 		// MOCK MINED LOGIC
 		// if tx not mined, check if it's old
 		// Lock KvMutex so entries aren't deleted while operating on them
-		transactions.KvMutex.Lock()
-		defer transactions.KvMutex.Unlock()
+		u.kv.Mtx.Lock()
+		defer u.kv.Mtx.Unlock()
 		if !serializableTx.CreationTime.Add(15 * time.Second).Before(time.Now()) {
 			if serializableTx.CreationTime.After(time.Now().Add(txTimeout)) {
-				if err := transactions.DeleteTx(u.kv, key); err != nil {
+				if err := u.kv.DeleteTx(key); err != nil {
 					log.Errorf("could not delete timed-out tx: %v", err)
 				}
 			}
@@ -186,14 +187,14 @@ func (u *URLAPI) monitorCachedTxs() {
 			// return true
 		}
 		// If query has been committed, delete from kv
-		if err := transactions.DeleteTx(u.kv, key); err != nil {
+		if err := u.kv.DeleteTx(key); err != nil {
 			log.Errorf("could not delete query tx: %v", err)
 			return true
 		}
 		return true
 	}
 	for {
-		err := u.kv.Iterate([]byte(transactions.TxPrefix), callback)
+		err := u.kv.Db.Iterate([]byte(transactions.TxPrefix), callback)
 		if err != nil {
 			log.Error(err)
 		}

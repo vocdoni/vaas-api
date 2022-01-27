@@ -245,7 +245,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	kv, err := metadb.New(dvotedb.TypePebble, filepath.Join(cfg.DataDir, "metadb"))
+	kv, err := metadb.New(dvotedb.TypePebble, filepath.Join(cfg.DataDir, "tx-cache-kv"))
 	if err != nil {
 		log.Fatal(err)
 	}
