@@ -179,12 +179,9 @@ func (u *URLAPI) monitorCachedTxs() {
 			return true
 		}
 
-		log.Infof("%+v", serializableTx)
-
 		// commit that tx to the database if mined
 		if err := serializableTx.Commit(&u.db); err != nil {
 			log.Errorf("could not commit query tx: %v", err)
-			// return true
 		}
 		// If query has been committed, delete from kv
 		if err := u.kv.DeleteTx(key); err != nil {
