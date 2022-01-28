@@ -8,6 +8,8 @@ import (
 	"go.vocdoni.io/api/database"
 )
 
+// CreateElectionTx is the serializable transaction for creating an election
+//  commit commits the tx to the sql database
 type CreateElectionTx struct {
 	TxBody
 	IntegratorPrivKey []byte

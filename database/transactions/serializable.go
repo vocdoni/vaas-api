@@ -9,20 +9,26 @@ import (
 	"go.vocdoni.io/api/database"
 )
 
+// SerializableTxType describes the type of transaction to serialize
 type SerializableTxType string
 
 const (
-	CreateElection     SerializableTxType = "createElection"
+	// Transaction type to create an election in the database
+	CreateElection SerializableTxType = "createElection"
+	// Transaction type to create an organization in the database
 	CreateOrganization SerializableTxType = "createOrganization"
+	// Transaction type to update an organization in the database
 	UpdateOrganization SerializableTxType = "updateOrganization"
 )
 
+// SerializableTx is a database transaction that can be serialized and stored for use later.
 type SerializableTx struct {
 	Type         SerializableTxType `json:"type"`
 	Body         TxBody             `json:"body"`
 	CreationTime time.Time          `json:"creationTime"`
 }
 
+// Commit commits the serializableTx to the database, using the txBody implementer's commit method
 func (tx *SerializableTx) Commit(db *database.Database) error {
 	return tx.Body.commit(db)
 }

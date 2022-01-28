@@ -7,6 +7,7 @@ import (
 	"go.vocdoni.io/api/database"
 )
 
+// CreateOrganizationTx is the serializable transaction for creating an organization
 type CreateOrganizationTx struct {
 	TxBody
 	IntegratorPrivKey []byte
@@ -29,6 +30,8 @@ func (tx CreateOrganizationTx) commit(db *database.Database) error {
 	return nil
 }
 
+// UpdateOrganizationTx is the serializable transaction for updating an organization
+//  commit commits the tx to the sql database
 type UpdateOrganizationTx struct {
 	TxBody
 	IntegratorPrivKey []byte
