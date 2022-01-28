@@ -85,6 +85,13 @@ func TestStoreTx(t *testing.T) {
 			testGetElection(t, tx.Type, UpdateOrganization, tx.Body)
 		}
 	}
+
+	for _, hash := range hashes {
+		qt.Assert(t, kv.DeleteTx(hash), qt.IsNil)
+		tx, err := kv.GetTx(hash)
+		qt.Assert(t, err, qt.IsNil)
+		qt.Assert(t, tx, qt.IsNil)
+	}
 }
 
 func TestStoreTxTime(t *testing.T) {
