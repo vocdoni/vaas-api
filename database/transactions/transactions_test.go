@@ -87,6 +87,25 @@ func TestStoreTx(t *testing.T) {
 	}
 }
 
+func TestStoreTxTime(t *testing.T) {
+	t.Parallel()
+	var hashes [][]byte
+	var times []time.Time
+	for i := 0; i < 10; i++ {
+		hash := util.RandomBytes(32)
+		time := time.Now()
+		hashes = append(hashes, hash)
+		times = append(times, time)
+		qt.Assert(t, kv.StoreTxTime(hash, time), qt.IsNil)
+	}
+
+	for i, hash := range hashes {
+		time, err := kv.GetTxTime(hash)
+		qt.Assert(t, err, qt.IsNil)
+		qt.Assert(t, time.Equal(times[i]), qt.IsTrue)
+	}
+}
+
 func testGetElection(t *testing.T, Type SerializableTxType,
 	expected SerializableTxType, tx TxBody) {
 	qt.Assert(t, Type, qt.Equals, expected)
