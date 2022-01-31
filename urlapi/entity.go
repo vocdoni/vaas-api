@@ -254,7 +254,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	resp := types.APIResponse{APIToken: orgApiToken,
-		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: hex.EncodeToString(txHash)}
+		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
 
 	return sendResponse(resp, ctx)
 }
@@ -384,7 +384,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
-		TxHash:         hex.EncodeToString(txHash),
+		TxHash:         txHash,
 	}
 	return sendResponse(resp, ctx)
 }
@@ -593,7 +593,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	return sendResponse(types.APIResponse{
-		ElectionID: processID, TxHash: hex.EncodeToString(txHash)}, ctx)
+		ElectionID: processID, TxHash: txHash}, ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
@@ -780,7 +780,7 @@ func (u *URLAPI) setProcessStatusHandler(
 		return err
 	}
 
-	return sendResponse(types.APIResponse{TxHash: hex.EncodeToString(txHash)}, ctx)
+	return sendResponse(types.APIResponse{TxHash: txHash}, ctx)
 }
 
 func decryptEntityKeys(privKeyCipher, globalOrganizationKey []byte) (*ethereum.SignKeys, error) {

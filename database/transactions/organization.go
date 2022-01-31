@@ -14,16 +14,16 @@ type CreateOrganizationTx struct {
 	EthAddress        []byte
 	EthPrivKeyCipher  []byte
 	PlanID            uuid.NullUUID
-	PublicApiQuota    int32
-	PublicApiToken    string
-	HeaderUri         string
-	AvatarUri         string
+	PublicAPIQuota    int32
+	PublicAPIToken    string
+	HeaderURI         string
+	AvatarURI         string
 }
 
 func (tx CreateOrganizationTx) commit(db database.Database) error {
 	_, err := db.CreateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
-		tx.EthPrivKeyCipher, tx.PlanID, int(tx.PublicApiQuota),
-		tx.PublicApiToken, tx.HeaderUri, tx.AvatarUri)
+		tx.EthPrivKeyCipher, tx.PlanID, int(tx.PublicAPIQuota),
+		tx.PublicAPIToken, tx.HeaderURI, tx.AvatarURI)
 	if err != nil {
 		return fmt.Errorf("could not create organization: %w", err)
 	}

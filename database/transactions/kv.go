@@ -2,6 +2,7 @@ package transactions
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -22,8 +23,8 @@ type TxCacheDB struct {
 }
 
 // NewTxKv creates a new TxCacheDB type to store database transactions
-func NewTxKv(db dvotedb.Database, mutex *sync.RWMutex) TxCacheDB {
-	return TxCacheDB{DB: db}
+func NewTxKv(db dvotedb.Database) *TxCacheDB {
+	return &TxCacheDB{DB: db}
 }
 
 // StoreTx marshals & stores a SerializableTx with the given hash
@@ -49,7 +50,7 @@ func (kv *TxCacheDB) GetTx(hash []byte) (*SerializableTx, error) {
 	queryBytes, err := kvTransaction.Get(append([]byte(TxPrefix), hash...))
 	kvTransaction.Discard()
 	// If key not found, don't return an error
-	if err == dvotedb.ErrKeyNotFound {
+	if errors.Is(err, dvotedb.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"go.vocdoni.io/api/config"
@@ -20,9 +19,10 @@ import (
 	"go.vocdoni.io/dvote/metrics"
 )
 
-const apiVersion = "v1"
-
-const txTimeout = time.Minute
+const (
+	apiVersion = "v1"
+	txTimeout  = time.Minute
+)
 
 type URLAPI struct {
 	PrivateCalls uint64
@@ -36,7 +36,7 @@ type URLAPI struct {
 	api                   *bearerstdapi.BearerStandardAPI
 	metricsagent          *metrics.Agent
 	db                    database.Database
-	kv                    transactions.TxCacheDB
+	kv                    *transactions.TxCacheDB
 	vocClient             *vocclient.Client
 }
 
@@ -89,19 +89,19 @@ func NewURLAPI(router *httprouter.HTTProuter,
 }
 
 func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
-	kv dvotedb.Database, client *vocclient.Client) error {
+	client *vocclient.Client, kv dvotedb.Database) error {
 	if db == nil {
 		return fmt.Errorf("database is nil")
 	}
-	if kv == nil {
-		return fmt.Errorf("database is nil")
-	}
 	if client == nil {
-		return fmt.Errorf("database is nil")
+		return fmt.Errorf("client is nil")
+	}
+	if kv == nil {
+		return fmt.Errorf("key-value database is nil")
 	}
 	u.db = db
-	u.kv = transactions.NewTxKv(kv, &sync.RWMutex{})
 	u.vocClient = client
+	u.kv = transactions.NewTxKv(kv)
 
 	// Register auth tokens from the DB
 	err := u.syncAuthTokens()

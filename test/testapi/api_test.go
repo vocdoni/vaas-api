@@ -107,11 +107,11 @@ func DoRequest(t *testing.T, url, authToken,
 		t.Log(string(respBody))
 		qt.Assert(t, err, qt.IsNil)
 	} else {
+		log.Info(string(respBody))
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	log.Info(string(respBody))
 	if resp.StatusCode != 200 {
 		return resp.StatusCode
 	}
@@ -184,7 +184,7 @@ func setupTestOrganizations() {
 			}
 			req = types.APIRequest{}
 			statusCode = DoRequest(nil,
-				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, organization.CreationTxHash),
+				fmt.Sprintf("%s/v1/priv/transactions/%x", API.URL, organization.CreationTxHash),
 				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			if statusCode != 200 {
 				log.Fatalf("could not create testing organization")
@@ -250,7 +250,7 @@ func checkElectionsMined(elections []*testcommon.TestElection) {
 			}
 			req := types.APIRequest{}
 			statusCode := DoRequest(nil,
-				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
+				fmt.Sprintf("%s/v1/priv/transactions/%x", API.URL, election.CreationTxHash),
 				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			if statusCode != 200 {
 				log.Fatalf("could not create testing organization")

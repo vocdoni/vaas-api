@@ -43,7 +43,7 @@ func TestOrganization(t *testing.T) {
 		}
 		req = types.APIRequest{}
 		statusCode = DoRequest(t,
-			fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, organization.CreationTxHash),
+			fmt.Sprintf("%s/v1/priv/transactions/%x", API.URL, organization.CreationTxHash),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		// if mined, break loop

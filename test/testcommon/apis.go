@@ -100,7 +100,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 
 		// Vaas api
 		log.Infof("enabling VaaS API methods")
-		if err := urlApi.EnableVotingServiceHandlers(t.DB, kv, client); err != nil {
+		if err := urlApi.EnableVotingServiceHandlers(t.DB, client, kv); err != nil {
 			log.Fatal(err)
 		}
 		go integratorTokenNotifier.FetchNewTokens(urlApi)
