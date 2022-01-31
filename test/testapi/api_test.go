@@ -106,11 +106,11 @@ func DoRequest(t *testing.T, url, authToken,
 		t.Log(string(respBody))
 		qt.Assert(t, err, qt.IsNil)
 	} else {
+		log.Infof(string(respBody))
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-	log.Infof(string(respBody))
 	if resp.StatusCode != 200 {
 		return resp.StatusCode
 	}

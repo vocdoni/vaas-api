@@ -14,14 +14,7 @@ RUN apt update && apt install -y ca-certificates
 # Build all the binaries at once, so that the final targets don't require having
 # Go installed to build each of them.
 COPY . .
-RUN go build -o=. -ldflags='-w -s' ./cmd/vaasapi ./cmd/vaastest
-
-FROM debian:10.8-slim as vaastest
-
-WORKDIR /app
-COPY --from=builder /src/vaastest ./
-
-ENTRYPOINT ["/app/vaastest"]
+RUN go build -o=. -ldflags='-w -s' ./cmd/vaasapi 
 
 FROM debian:10.8-slim
 
