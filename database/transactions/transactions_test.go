@@ -18,7 +18,7 @@ import (
 var kv *TxCacheDB
 
 func TestMain(m *testing.M) {
-	storage, err := ioutil.TempDir("/tmp", ".transactions-test")
+	storage, err := ioutil.TempDir("", ".transactions-test")
 	if err != nil {
 		log.Fatal(err)
 	}
