@@ -243,10 +243,10 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 			EthAddress:        ethSignKeys.Address().Bytes(),
 			EthPrivKeyCipher:  encryptedPrivKey,
 			PlanID:            uuid.NullUUID{},
-			PublicApiQuota:    0,
-			PublicApiToken:    orgApiToken,
-			HeaderUri:         req.Header,
-			AvatarUri:         req.Avatar,
+			PublicAPIQuota:    0,
+			PublicAPIToken:    orgApiToken,
+			HeaderURI:         req.Header,
+			AvatarURI:         req.Avatar,
 		},
 	}
 	if err = u.kv.StoreTx(txHash, queryTx); err != nil {

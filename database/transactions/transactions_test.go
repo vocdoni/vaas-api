@@ -56,9 +56,9 @@ func TestStoreTx(t *testing.T) {
 			query.Type = CreateOrganization
 			query.Body = CreateOrganizationTx{
 				IntegratorPrivKey: integratorPrivKey,
-				PublicApiToken:    "token",
-				HeaderUri:         "header",
-				AvatarUri:         "avatar",
+				PublicAPIToken:    "token",
+				HeaderURI:         "header",
+				AvatarURI:         "avatar",
 			}
 		} else {
 			query.Type = UpdateOrganization
@@ -126,9 +126,9 @@ func testGetElection(t *testing.T, Type SerializableTxType,
 		query, ok := tx.(CreateOrganizationTx)
 		qt.Assert(t, ok, qt.IsTrue)
 		qt.Assert(t, bytes.Compare(query.IntegratorPrivKey, integratorPrivKey), qt.Equals, 0)
-		qt.Assert(t, query.PublicApiToken, qt.Equals, "token")
-		qt.Assert(t, query.HeaderUri, qt.Equals, "header")
-		qt.Assert(t, query.AvatarUri, qt.Equals, "avatar")
+		qt.Assert(t, query.PublicAPIToken, qt.Equals, "token")
+		qt.Assert(t, query.HeaderURI, qt.Equals, "header")
+		qt.Assert(t, query.AvatarURI, qt.Equals, "avatar")
 	case UpdateOrganization:
 		query, ok := tx.(UpdateOrganizationTx)
 		qt.Assert(t, ok, qt.IsTrue)
