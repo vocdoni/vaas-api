@@ -22,7 +22,7 @@ import (
 
 const apiVersion = "v1"
 
-var txTimeout time.Duration = time.Minute
+const txTimeout = time.Minute
 
 type URLAPI struct {
 	PrivateCalls uint64
