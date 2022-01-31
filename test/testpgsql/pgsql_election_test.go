@@ -38,7 +38,7 @@ func TestElection(t *testing.T) {
 	election, err := API.DB.GetElectionPublic(organizations[0].EthAddress, elections[0].ProcessID)
 	c.Assert(err, qt.IsNil)
 	c.Assert(election.ID, qt.Not(qt.Equals), elections[0].ID)
-	c.Assert(election.ProofType, qt.Equals, types.PROOF_TYPE_BLIND)
+	c.Assert(election.ProofType, qt.Equals, string(types.PROOF_TYPE_BLIND))
 
 	list, err := API.DB.ListElections(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)
