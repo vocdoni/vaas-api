@@ -22,14 +22,14 @@ type TestOrganization struct {
 	Description    string
 	HeaderURI      string
 	AvatarURI      string
-	CreationTxHash string
+	CreationTxHash dvotetypes.HexBytes
 	ID             int
 	EthAddress     dvotetypes.HexBytes
 }
 
 type TestElection struct {
 	Confidential       bool
-	CreationTxHash     string
+	CreationTxHash     dvotetypes.HexBytes
 	Description        string
 	ElectionID         dvotetypes.HexBytes
 	EncryptionPubKeys  []api.Key

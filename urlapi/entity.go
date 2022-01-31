@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.vocdoni.io/api/database/transactions"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/util"
 	"go.vocdoni.io/api/vocclient"
@@ -232,18 +233,25 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
-	u.dbTransactions.Store(txHash, createOrganizationQuery{
-		integratorPrivKey: integratorPrivKey,
-		ethAddress:        ethSignKeys.Address().Bytes(),
-		ethPrivKeyCipher:  encryptedPrivKey,
-		planID:            uuid.NullUUID{},
-		publicApiQuota:    0,
-		publicApiToken:    orgApiToken,
-		headerUri:         req.Header,
-		avatarUri:         req.Avatar,
-	})
+	txHash := dvoteutil.RandomBytes(32)
+	u.kv.StoreTxTime(txHash, time.Now())
+	queryTx := transactions.SerializableTx{
+		Type:         transactions.CreateOrganization,
+		CreationTime: time.Now(),
+		Body: transactions.CreateOrganizationTx{
+			IntegratorPrivKey: integratorPrivKey,
+			EthAddress:        ethSignKeys.Address().Bytes(),
+			EthPrivKeyCipher:  encryptedPrivKey,
+			PlanID:            uuid.NullUUID{},
+			PublicAPIQuota:    0,
+			PublicAPIToken:    orgApiToken,
+			HeaderURI:         req.Header,
+			AvatarURI:         req.Avatar,
+		},
+	}
+	if err = u.kv.StoreTx(txHash, queryTx); err != nil {
+		return err
+	}
 
 	resp := types.APIResponse{APIToken: orgApiToken,
 		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
@@ -358,15 +366,21 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
-	u.dbTransactions.Store(txHash,
-		updateOrganizationQuery{
-			integratorPrivKey: orgInfo.organization.IntegratorApiKey,
-			ethAddress:        orgInfo.organization.EthAddress,
-			headerUri:         req.Header,
-			avatarUri:         req.Avatar,
-		})
+	txHash := dvoteutil.RandomBytes(32)
+	u.kv.StoreTxTime(txHash, time.Now())
+	queryTx := transactions.SerializableTx{
+		Type:         transactions.UpdateOrganization,
+		CreationTime: time.Now(),
+		Body: transactions.UpdateOrganizationTx{
+			IntegratorPrivKey: orgInfo.organization.IntegratorApiKey,
+			EthAddress:        orgInfo.organization.EthAddress,
+			HeaderUri:         req.Header,
+			AvatarUri:         req.Avatar,
+		},
+	}
+	if err = u.kv.StoreTx([]byte(txHash), queryTx); err != nil {
+		return err
+	}
 	resp := types.APIResponse{
 		OrganizationID: orgInfo.entityID,
 		ContentURI:     metaURI,
@@ -560,25 +574,32 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
-	u.dbTransactions.Store(txHash, createElectionQuery{
-		integratorPrivKey: orgInfo.integratorPrivKey,
-		ethAddress:        orgInfo.entityID,
-		encryptedMetaKey:  metaPrivKeyBytes,
-		electionID:        processID,
-		title:             req.Title,
-		proofType:         electionType,
-		startDate:         startDate,
-		endDate:           endDate,
-		censusID:          uuid.NullUUID{},
-		startBlock:        int(startBlock),
-		endBlock:          int(startBlock + blockCount),
-		confidential:      req.Confidential,
-		hiddenResults:     req.HiddenResults,
-	})
+	txHash := dvoteutil.RandomBytes(32)
+	u.kv.StoreTxTime(txHash, time.Now().Add(time.Duration(2*int(avgTimes[0]))))
+	queryTx := transactions.SerializableTx{
+		Type:         transactions.CreateElection,
+		CreationTime: time.Now().Add(time.Duration(2 * int(avgTimes[0]))),
+		Body: transactions.CreateElectionTx{
+			IntegratorPrivKey: orgInfo.integratorPrivKey,
+			EthAddress:        orgInfo.entityID,
+			EncryptedMetaKey:  metaPrivKeyBytes,
+			ElectionID:        processID,
+			Title:             req.Title,
+			StartDate:         startDate,
+			EndDate:           endDate,
+			CensusID:          uuid.NullUUID{},
+			StartBlock:        startBlock,
+			EndBlock:          startBlock + blockCount,
+			Confidential:      req.Confidential,
+			HiddenResults:     req.HiddenResults,
+		},
+	}
+	if err = u.kv.StoreTx(txHash, queryTx); err != nil {
+		return err
+	}
 
-	return sendResponse(types.APIResponse{ElectionID: processID, TxHash: txHash}, ctx)
+	return sendResponse(types.APIResponse{
+		ElectionID: processID, TxHash: txHash}, ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
@@ -760,8 +781,10 @@ func (u *URLAPI) setProcessStatusHandler(
 	}
 
 	// TODO fetch actual transaction hash
-	txHash := dvoteutil.RandomHex(32)
-	u.txWaitMap.Store(txHash, time.Now())
+	txHash := dvoteutil.RandomBytes(32)
+	if err = u.kv.StoreTxTime([]byte(txHash), time.Now()); err != nil {
+		return err
+	}
 
 	return sendResponse(types.APIResponse{TxHash: txHash}, ctx)
 }

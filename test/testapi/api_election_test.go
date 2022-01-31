@@ -52,7 +52,7 @@ func TestElection(t *testing.T) {
 			}
 			req := types.APIRequest{}
 			statusCode := DoRequest(t,
-				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
+				fmt.Sprintf("%s/v1/priv/transactions/%x", API.URL, election.CreationTxHash),
 				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			qt.Assert(t, statusCode, qt.Equals, 200)
 			// if mined, break loop
@@ -118,7 +118,7 @@ func TestElectionStatus(t *testing.T) {
 			}
 			req := types.APIRequest{}
 			statusCode := DoRequest(t,
-				fmt.Sprintf("%s/v1/priv/transactions/%s", API.URL, election.CreationTxHash),
+				fmt.Sprintf("%s/v1/priv/transactions/%x", API.URL, election.CreationTxHash),
 				hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", req, &respMined)
 			qt.Assert(t, statusCode, qt.Equals, 200)
 			// if mined, break loop
