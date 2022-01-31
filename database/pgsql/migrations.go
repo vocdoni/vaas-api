@@ -16,6 +16,11 @@ var Migrations = migrate.MemoryMigrationSource{
 			Up:   []string{migration1up},
 			Down: []string{migration1down},
 		},
+		{
+			Id:   "2",
+			Up:   []string{migration2up},
+			Down: []string{migration2down},
+		},
 	},
 }
 
@@ -151,7 +156,6 @@ CREATE TABLE elections (
     integrator_api_key BYTEA NOT NULL,
     process_id BYTEA NOT NULL,
     title TEXT NOT NULL,
-    proof_type TEXT NOT NULL,
     census_id uuid,
     start_date timestamp without time zone,
     end_date timestamp without time zone,
@@ -211,13 +215,32 @@ LISTEN trigger_integrator_tokens_update;
 `
 
 const migration1down = `
-DROP TABLE integrators;
-DROP TABLE organizations;
 DROP TABLE elections;
-DROP TABLE censuses;
 DROP TABLE census_members;
+DROP TABLE censuses;
+DROP TABLE organizations;
 DROP TABLE quota_plans;
+DROP TABLE integrators;
 DROP EXTENSION IF EXISTS pgcrypto;
+`
+
+const migration2up = `
+ALTER TABLE ONLY elections
+    ADD COLUMN proof_type TEXT NOT NULL;
+
+ALTER TABLE ONLY organizations
+    DROP CONSTRAINT organizations_integrator_api_key_fkey,
+    ADD CONSTRAINT organizations_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE ON DELETE CASCADE;
+
+`
+
+const migration2down = `
+ALTER TABLE ONLY elections
+    DROP COLUMN proof_type;
+
+ALTER TABLE ONLY organizations
+    DROP CONSTRAINT organizations_integrator_api_key_fkey,
+    ADD CONSTRAINT organizations_integrator_api_key_fkey FOREIGN KEY (integrator_api_key) REFERENCES integrators(secret_api_key) ON UPDATE CASCADE;
 `
 
 func Migrator(action string, db database.Database) error {
