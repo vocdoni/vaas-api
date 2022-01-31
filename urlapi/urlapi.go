@@ -5,19 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
+	"time"
 
 	"go.vocdoni.io/api/config"
 	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/database/transactions"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/vocclient"
+	dvotedb "go.vocdoni.io/dvote/db"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
 	"go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/metrics"
 )
 
-const API_VERSION string = "v1"
+const (
+	apiVersion = "v1"
+	txTimeout  = time.Minute
+)
 
 type URLAPI struct {
 	PrivateCalls uint64
@@ -31,11 +36,8 @@ type URLAPI struct {
 	api                   *bearerstdapi.BearerStandardAPI
 	metricsagent          *metrics.Agent
 	db                    database.Database
+	kv                    *transactions.TxCacheDB
 	vocClient             *vocclient.Client
-	// Map of database queries pending transactions being mined
-	dbTransactions sync.Map
-	// TODO remove temporary tx time map
-	txWaitMap sync.Map
 }
 
 func NewURLAPI(router *httprouter.HTTProuter,
@@ -51,14 +53,12 @@ func NewURLAPI(router *httprouter.HTTProuter,
 	if len(baseRoute) > 0 {
 		baseRoute = strings.TrimSuffix(baseRoute, "/")
 	}
-	baseRoute += "/" + API_VERSION
+	baseRoute += "/" + apiVersion
 	urlapi := URLAPI{
-		config:         cfg,
-		BaseRoute:      baseRoute,
-		router:         router,
-		metricsagent:   metricsAgent,
-		dbTransactions: sync.Map{},
-		txWaitMap:      sync.Map{},
+		config:       cfg,
+		BaseRoute:    baseRoute,
+		router:       router,
+		metricsagent: metricsAgent,
 	}
 	log.Infof("url api available with baseRoute %s", baseRoute)
 	if len(cfg.GlobalEntityKey) > 0 {
@@ -89,21 +89,27 @@ func NewURLAPI(router *httprouter.HTTProuter,
 }
 
 func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,
-	client *vocclient.Client) error {
+	client *vocclient.Client, kv dvotedb.Database) error {
 	if db == nil {
 		return fmt.Errorf("database is nil")
 	}
 	if client == nil {
-		return fmt.Errorf("database is nil")
+		return fmt.Errorf("client is nil")
+	}
+	if kv == nil {
+		return fmt.Errorf("key-value database is nil")
 	}
 	u.db = db
 	u.vocClient = client
+	u.kv = transactions.NewTxKv(kv)
 
 	// Register auth tokens from the DB
 	err := u.syncAuthTokens()
 	if err != nil {
 		return fmt.Errorf("could not sync auth tokens with db: %v", err)
 	}
+
+	go u.monitorCachedTxs()
 
 	if err := u.enableSuperadminHandlers(u.config.AdminToken); err != nil {
 		return err
@@ -149,6 +155,48 @@ func (u *URLAPI) RegisterToken(token string, requests int64) {
 func (u *URLAPI) RevokeToken(token string) {
 	log.Infof("revoke auth token %s", token)
 	u.api.DelAuthToken(token)
+}
+
+func (u *URLAPI) monitorCachedTxs() {
+	callback := func(key, value []byte) bool {
+		// unmarshal value to serializableTx
+		var serializableTx transactions.SerializableTx
+		if err := json.Unmarshal(value, &serializableTx); err != nil {
+			log.Errorf("could not get query from tx cache: %v", err)
+			return true
+		}
+		// MOCK MINED LOGIC
+		// if tx not mined, check if it's old
+		// Lock KvMutex so entries aren't deleted while operating on them
+		u.kv.Lock()
+		defer u.kv.Unlock()
+		if !serializableTx.CreationTime.Add(15 * time.Second).Before(time.Now()) {
+			if serializableTx.CreationTime.After(time.Now().Add(txTimeout)) {
+				if err := u.kv.DeleteTx(key); err != nil {
+					log.Errorf("could not delete timed-out tx: %v", err)
+				}
+			}
+			return true
+		}
+
+		// commit that tx to the database if mined
+		if err := serializableTx.Commit(u.db); err != nil {
+			log.Errorf("could not commit query tx: %v", err)
+		}
+		// If query has been committed, delete from kv
+		if err := u.kv.DeleteTx(key); err != nil {
+			log.Errorf("could not delete query tx: %v", err)
+			return true
+		}
+		return true
+	}
+	for {
+		err := u.kv.DB.Iterate([]byte(transactions.TxPrefix), callback)
+		if err != nil {
+			log.Error(err)
+		}
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func sendResponse(response interface{}, ctx *httprouter.HTTPContext) error {

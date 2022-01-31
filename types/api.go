@@ -52,7 +52,7 @@ type APIResponse struct {
 	Nullifier      string         `json:"nullifier,omitempty"`
 	OrganizationID types.HexBytes `json:"organizationId,omitempty"`
 	Registered     *bool          `json:"registered,omitempty"`
-	TxHash         string         `json:"txHash,omitempty"`
+	TxHash         types.HexBytes `json:"txHash,omitempty"`
 }
 
 // APIElectionInfo is the response struct for a getElection request
