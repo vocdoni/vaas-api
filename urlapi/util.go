@@ -18,7 +18,17 @@ import (
 	"go.vocdoni.io/proto/build/go/models"
 )
 
-const EXPLORER_NULLIFIER_URL = "https://vaas.explorer.vote/envelope/"
+const (
+	filterUnknown  = "UNKNOWN"
+	filterPaused   = "PAUSED"
+	filterCanceled = "CANCELED"
+	filterUpcoming = "UPCOMING"
+	filterActive   = "ACTIVE"
+	filterEnded    = "ENDED"
+	filterReady    = "READY"
+	filterBlind    = "BLIND"
+	filterSigned   = "SIGNED"
+)
 
 type orgPermissionsInfo struct {
 	integratorPrivKey []byte
@@ -50,7 +60,8 @@ func (u *URLAPI) authEntityPermissions(msg *bearerstdapi.BearerStandardAPIdata,
 }
 
 func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
-	results *types.VochainResults, meta *types.ProcessMetadata, proofType types.ProofType) (types.APIElectionInfo, error) {
+	results *types.VochainResults, meta *types.ProcessMetadata,
+	proofType types.ProofType) (types.APIElectionInfo, error) {
 	process := types.APIElectionInfo{
 		Description:        meta.Description["default"],
 		OrganizationID:     vc.EntityID,
@@ -70,13 +81,11 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 			process.EncryptionPubKeys = keys
 		}
 	}
-
-	// TODO update when blind is added to election
-	// if db.Blind {
-	process.Type = "blind-"
-	// 	} else {
-	// 	resp.Type = "signed-"
-	// }
+	if proofType == types.PROOF_TYPE_BLIND {
+		process.Type = "blind-"
+	} else if proofType == types.PROOF_TYPE_ECDSA {
+		process.Type = "signed-"
+	}
 	if vc.Mode.EncryptedMetaData {
 		process.Type += "confidential-"
 	} else {
@@ -102,19 +111,19 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	// Digest status to something more usable by the client
 	switch vc.Status {
 	case int32(models.ProcessStatus_PROCESS_UNKNOWN):
-		process.Status = "UNKNOWN"
+		process.Status = filterUnknown
 	case int32(models.ProcessStatus_PAUSED):
-		process.Status = "PAUSED"
+		process.Status = filterPaused
 	case int32(models.ProcessStatus_CANCELED):
-		process.Status = "CANCELED"
+		process.Status = filterCanceled
 	default:
 		blockHeight, _, _ := u.vocClient.GetBlockTimes()
 		if vc.StartBlock >= blockHeight {
-			process.Status = "UPCOMING"
+			process.Status = filterUpcoming
 		} else if vc.StartBlock < blockHeight && vc.EndBlock > blockHeight {
-			process.Status = "ACTIVE"
+			process.Status = filterActive
 		} else {
-			process.Status = "ENDED"
+			process.Status = filterEnded
 		}
 	}
 
@@ -218,115 +227,71 @@ func (u *URLAPI) getProcessList(filter string, integratorPrivKey, entityId []byt
 	private bool) ([]types.APIElectionSummary, error) {
 	var electionList []types.APIElectionSummary
 	filter = strings.ToUpper(filter)
-	switch filter {
-	case "PAUSED", "CANCELED", "ENDED", "":
-		fullProcessList, err := u.fetchProcessList(entityId, filter)
+
+	// translation of API filter to vochain/gateway filter
+	gwFilter := filter
+	if gwFilter == filterActive || gwFilter == filterUpcoming {
+		gwFilter = filterReady
+	} else if gwFilter == filterBlind || gwFilter == filterSigned {
+		gwFilter = ""
+	}
+
+	fullProcessList, err := u.fetchProcessList(entityId, gwFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	currentHeight, _, _ := u.vocClient.GetBlockTimes()
+
+	// fetch all processes from db
+	for _, processID := range fullProcessList {
+		processIDBytes, err := hex.DecodeString(processID)
 		if err != nil {
-			return nil, err
+			log.Errorf("cannot decode process id %s: %v", processID, err)
+			continue
 		}
-		// loop to fetch processes from db
-		for _, processID := range fullProcessList {
-			processIDBytes, err := hex.DecodeString(processID)
-			if err != nil {
-				log.Errorf("cannot decode process id %s: %v", processID, err)
-				continue
-			}
-			var newProcess *types.Election
-			if private {
-				newProcess, err = u.db.GetElection(integratorPrivKey,
-					entityId, processIDBytes)
-			} else {
-				newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
-			}
-			if err != nil {
-				log.Warnf("could not get election,"+
-					" process %x may no be in db: %v", processIDBytes, err)
-				continue
-			}
-			newProcess.OrgEthAddress = entityId
-			newProcess.ProcessID = processIDBytes
+		var newProcess *types.Election
+		if private {
+			newProcess, err = u.db.GetElection(integratorPrivKey,
+				entityId, processIDBytes)
+		} else {
+			newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
+		}
+		if err != nil {
+			log.Warnf("could not get election,"+
+				" process %x may no be in db: %v", processIDBytes, err)
+			continue
+		}
+		newProcess.OrgEthAddress = entityId
+		newProcess.ProcessID = processIDBytes
+
+		switch filter {
+		case filterPaused, filterCanceled, filterEnded, "":
+			// if filtering already handled, append all processes
 			appendProcess(&electionList, newProcess, private, filter)
-		}
-	case "ACTIVE", "UPCOMING":
-		currentHeight, _, _ := u.vocClient.GetBlockTimes()
-		fullProcessList, err := u.fetchProcessList(entityId, "READY")
-		if err != nil {
-			return nil, err
-		}
-
-		// loop to fetch processes from db, filter by date
-		for _, processID := range fullProcessList {
-			processIDBytes, err := hex.DecodeString(processID)
-			if err != nil {
-				log.Errorf("cannot decode process id %s: %v", processID, err)
-				continue
-			}
-			var newProcess *types.Election
-			if private {
-				newProcess, err = u.db.GetElection(integratorPrivKey,
-					entityId, processIDBytes)
-			} else {
-				newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
-			}
-			if err != nil {
-				log.Warnf("could not get election,"+
-					" process %x may no be in db: %v", processIDBytes, err)
-				continue
-			}
-			newProcess.OrgEthAddress = entityId
-			newProcess.ProcessID = processIDBytes
-
+		case filterActive:
 			// filter processes by date
-			switch filter {
-			case "ACTIVE":
-				if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
-					appendProcess(&electionList, newProcess, private, filter)
-				}
-			case "UPCOMING":
-				if newProcess.StartBlock > int(currentHeight) {
-					appendProcess(&electionList, newProcess, private, filter)
-				}
+			if newProcess.StartBlock < int(currentHeight) && newProcess.EndBlock > int(currentHeight) {
+				appendProcess(&electionList, newProcess, private, filter)
 			}
-		}
-	case "BLIND", "SIGNED":
-		// loop to fetch all processes
-		fullProcessList, err := u.fetchProcessList(entityId, "")
-		if err != nil {
-			return nil, err
-		}
-		// loop to fetch processes from db
-		for _, processID := range fullProcessList {
-			processIDBytes, err := hex.DecodeString(processID)
-			if err != nil {
-				log.Errorf("cannot decode process id %s: %v", processID, err)
-				continue
-			}
-			var newProcess *types.Election
-			if private {
-				newProcess, err = u.db.GetElection(integratorPrivKey,
-					entityId, processIDBytes)
-			} else {
-				newProcess, err = u.db.GetElectionPublic(entityId, processIDBytes)
-			}
-			if err != nil {
-				log.Warnf("could not get election,"+
-					" process %x may no be in db: %v", processIDBytes, err)
-				continue
-			}
-			newProcess.OrgEthAddress = entityId
-			newProcess.ProcessID = processIDBytes
-
+		case filterUpcoming:
 			// filter processes by date
-			if filter == "BLIND" && newProcess.ProofType == "blind" {
+			if newProcess.StartBlock > int(currentHeight) {
+				appendProcess(&electionList, newProcess, private, filter)
+			}
+		case filterBlind:
+			// filter processes by proof type
+			if newProcess.ProofType == "blind" {
 				appendProcess(&electionList, newProcess, private, "")
 			}
-			if filter == "SIGNED" && newProcess.ProofType == "ecdsa" {
+		case filterSigned:
+			// filter processes by proof type
+			if newProcess.ProofType == "ecdsa" {
 				appendProcess(&electionList, newProcess, private, "")
 			}
+		default:
+			return nil, fmt.Errorf("%s not a valid filter", filter)
 		}
-	default:
-		return nil, fmt.Errorf("%s not a valid filter", filter)
-
 	}
 	return electionList, nil
 }
