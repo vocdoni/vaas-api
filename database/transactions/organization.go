@@ -14,15 +14,15 @@ type CreateOrganizationTx struct {
 	EthAddress        []byte
 	EthPrivKeyCipher  []byte
 	PlanID            uuid.NullUUID
-	PublicApiQuota    int
+	PublicApiQuota    int32
 	PublicApiToken    string
 	HeaderUri         string
 	AvatarUri         string
 }
 
-func (tx CreateOrganizationTx) commit(db *database.Database) error {
-	_, err := (*db).CreateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
-		tx.EthPrivKeyCipher, tx.PlanID, tx.PublicApiQuota,
+func (tx CreateOrganizationTx) commit(db database.Database) error {
+	_, err := db.CreateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
+		tx.EthPrivKeyCipher, tx.PlanID, int(tx.PublicApiQuota),
 		tx.PublicApiToken, tx.HeaderUri, tx.AvatarUri)
 	if err != nil {
 		return fmt.Errorf("could not create organization: %w", err)
@@ -40,8 +40,8 @@ type UpdateOrganizationTx struct {
 	AvatarUri         string
 }
 
-func (tx UpdateOrganizationTx) commit(db *database.Database) error {
-	_, err := (*db).UpdateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
+func (tx UpdateOrganizationTx) commit(db database.Database) error {
+	_, err := db.UpdateOrganization(tx.IntegratorPrivKey, tx.EthAddress,
 		tx.HeaderUri, tx.AvatarUri)
 	if err != nil {
 		return fmt.Errorf("could not update organization: %w", err)

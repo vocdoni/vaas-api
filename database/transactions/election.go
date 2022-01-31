@@ -20,16 +20,16 @@ type CreateElectionTx struct {
 	StartDate         time.Time
 	EndDate           time.Time
 	CensusID          uuid.NullUUID
-	StartBlock        int
-	EndBlock          int
+	StartBlock        uint32
+	EndBlock          uint32
 	Confidential      bool
 	HiddenResults     bool
 }
 
-func (tx CreateElectionTx) commit(db *database.Database) error {
-	_, err := (*db).CreateElection(tx.IntegratorPrivKey,
+func (tx CreateElectionTx) commit(db database.Database) error {
+	_, err := db.CreateElection(tx.IntegratorPrivKey,
 		tx.EthAddress, tx.ElectionID, tx.EncryptedMetaKey,
-		tx.Title, tx.StartDate, tx.EndDate, tx.CensusID, tx.StartBlock, tx.EndBlock,
+		tx.Title, tx.StartDate, tx.EndDate, tx.CensusID, int(tx.StartBlock), int(tx.EndBlock),
 		tx.Confidential, tx.HiddenResults)
 	if err != nil {
 		return fmt.Errorf("could not create election: %w", err)

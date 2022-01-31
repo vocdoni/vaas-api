@@ -20,7 +20,7 @@ import (
 	"go.vocdoni.io/dvote/metrics"
 )
 
-const API_VERSION string = "v1"
+const apiVersion = "v1"
 
 var txTimeout time.Duration = time.Minute
 
@@ -36,7 +36,7 @@ type URLAPI struct {
 	api                   *bearerstdapi.BearerStandardAPI
 	metricsagent          *metrics.Agent
 	db                    database.Database
-	kv                    transactions.TxCacheDb
+	kv                    transactions.TxCacheDB
 	vocClient             *vocclient.Client
 }
 
@@ -53,7 +53,7 @@ func NewURLAPI(router *httprouter.HTTProuter,
 	if len(baseRoute) > 0 {
 		baseRoute = strings.TrimSuffix(baseRoute, "/")
 	}
-	baseRoute += "/" + API_VERSION
+	baseRoute += "/" + apiVersion
 	urlapi := URLAPI{
 		config:       cfg,
 		BaseRoute:    baseRoute,
@@ -168,8 +168,8 @@ func (u *URLAPI) monitorCachedTxs() {
 		// MOCK MINED LOGIC
 		// if tx not mined, check if it's old
 		// Lock KvMutex so entries aren't deleted while operating on them
-		u.kv.Mtx.Lock()
-		defer u.kv.Mtx.Unlock()
+		u.kv.Lock()
+		defer u.kv.Unlock()
 		if !serializableTx.CreationTime.Add(15 * time.Second).Before(time.Now()) {
 			if serializableTx.CreationTime.After(time.Now().Add(txTimeout)) {
 				if err := u.kv.DeleteTx(key); err != nil {
@@ -180,7 +180,7 @@ func (u *URLAPI) monitorCachedTxs() {
 		}
 
 		// commit that tx to the database if mined
-		if err := serializableTx.Commit(&u.db); err != nil {
+		if err := serializableTx.Commit(u.db); err != nil {
 			log.Errorf("could not commit query tx: %v", err)
 		}
 		// If query has been committed, delete from kv
@@ -191,7 +191,7 @@ func (u *URLAPI) monitorCachedTxs() {
 		return true
 	}
 	for {
-		err := u.kv.Db.Iterate([]byte(transactions.TxPrefix), callback)
+		err := u.kv.DB.Iterate([]byte(transactions.TxPrefix), callback)
 		if err != nil {
 			log.Error(err)
 		}

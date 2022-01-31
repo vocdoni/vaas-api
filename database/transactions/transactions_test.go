@@ -16,7 +16,7 @@ import (
 	"go.vocdoni.io/dvote/util"
 )
 
-var kv TxCacheDb
+var kv TxCacheDB
 
 func TestMain(m *testing.M) {
 	storage, err := ioutil.TempDir("/tmp", ".transactions-test")
@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 	}
 	kv = NewTxKv(db, &sync.RWMutex{})
 	code := m.Run()
-	if err = os.RemoveAll(storage); err != nil {
+	if err := os.RemoveAll(storage); err != nil {
 		log.Fatal(err)
 	}
 	os.Exit(code)

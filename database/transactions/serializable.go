@@ -29,7 +29,7 @@ type SerializableTx struct {
 }
 
 // Commit commits the serializableTx to the database, using the txBody implementer's commit method
-func (tx *SerializableTx) Commit(db *database.Database) error {
+func (tx *SerializableTx) Commit(db database.Database) error {
 	return tx.Body.commit(db)
 }
 
@@ -80,5 +80,5 @@ func (tx *SerializableTx) UnmarshalJSON(b []byte) error {
 // SerializableTx.Commit() attempts to commit this query to the database, and returns
 //  the id of the new database entry, if one exists.
 type TxBody interface {
-	commit(db *database.Database) error
+	commit(db database.Database) error
 }

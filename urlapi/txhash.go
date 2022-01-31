@@ -38,8 +38,8 @@ func (u *URLAPI) getTxStatusHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// Lock KvMutex so we don't get a tx as it's deleted
-	u.kv.Mtx.RLock()
-	defer u.kv.Mtx.RUnlock()
+	u.kv.RLock()
+	defer u.kv.RUnlock()
 
 	// ONLY if the tx has been mined, try to get the "queryTx" from the map/kv
 	queryTx, err := u.kv.GetTx(txHash)
