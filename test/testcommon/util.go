@@ -102,7 +102,8 @@ func CreateElections(size int, confidential, encrypted bool, proofType types.Pro
 				Description: fmt.Sprintf("Description%d", j),
 			})
 			for k := 0; k <= j; k++ {
-				mp[i].Questions[j].Choices = append(mp[i].Questions[j].Choices, fmt.Sprintf("Choice%d", k))
+				mp[i].Questions[j].Choices = append(mp[i].Questions[j].Choices,
+					types.Choice{Title: fmt.Sprintf("Choice%d", k), Value: uint32(k)})
 			}
 		}
 	}

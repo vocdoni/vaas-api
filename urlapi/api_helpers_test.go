@@ -51,7 +51,7 @@ func TestAggregateResults(t *testing.T) {
 			questionMeta := types.QuestionMeta{}
 			for j, choice := range question.choices {
 				result = append(result, choice.result)
-				questionMeta.Choices = append(questionMeta.Choices, types.Choice{
+				questionMeta.Choices = append(questionMeta.Choices, types.ChoiceMetadata{
 					Title: map[string]string{"default": choice.title},
 					Value: uint32(j),
 				})

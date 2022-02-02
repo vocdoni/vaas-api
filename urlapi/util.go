@@ -103,7 +103,8 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 			Description: question.Description["default"],
 		}
 		for _, choice := range question.Choices {
-			newQuestion.Choices = append(newQuestion.Choices, choice.Title["default"])
+			newQuestion.Choices = append(newQuestion.Choices,
+				types.Choice{Title: choice.Title["default"], Value: choice.Value})
 		}
 		process.Questions = append(process.Questions, newQuestion)
 	}

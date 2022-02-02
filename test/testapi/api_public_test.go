@@ -56,6 +56,10 @@ func TestGetElectionsPub(t *testing.T) {
 			qt.Assert(t, question.Title, qt.Equals, election.Questions[i].Title)
 			qt.Assert(t, question.Description, qt.Equals, election.Questions[i].Description)
 			qt.Assert(t, question.Choices, qt.HasLen, len(election.Questions[i].Choices))
+			for j, choice := range question.Choices {
+				qt.Assert(t, choice.Value, qt.Equals, uint32(j))
+				qt.Assert(t, choice.Title, qt.Equals, fmt.Sprintf("Choice%d", j))
+			}
 		}
 	}
 }
@@ -84,6 +88,10 @@ func TestGetElectionsPriv(t *testing.T) {
 			qt.Assert(t, question.Title, qt.Equals, election.Questions[i].Title)
 			qt.Assert(t, question.Description, qt.Equals, election.Questions[i].Description)
 			qt.Assert(t, question.Choices, qt.HasLen, len(election.Questions[i].Choices))
+			for j, choice := range question.Choices {
+				qt.Assert(t, choice.Value, qt.Equals, uint32(j))
+				qt.Assert(t, choice.Title, qt.Equals, fmt.Sprintf("Choice%d", j))
+			}
 		}
 	}
 }
