@@ -1,6 +1,7 @@
 package vocclient
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -580,9 +581,9 @@ func (c *Client) CreateProcess(process *models.Process,
 	req := api.APIrequest{Method: "submitRawTx"}
 	p := &models.NewProcessTx{
 		Txtype:  models.TxType_NEW_PROCESS,
-		Nonce:   util.RandomBytes(32),
 		Process: process,
 	}
+	binary.LittleEndian.PutUint32(p.Nonce, nonce)
 	var err error
 	stx := &models.SignedTx{}
 	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &models.Tx_NewProcess{NewProcess: p}})
@@ -614,8 +615,8 @@ func (c *Client) SetProcessStatus(pid []byte,
 		Txtype:    models.TxType_SET_PROCESS_STATUS,
 		ProcessId: pid,
 		Status:    status,
-		Nonce:     util.RandomBytes(32),
 	}
+	binary.LittleEndian.PutUint32(p.Nonce, nonce)
 	stx := &models.SignedTx{}
 	var err error
 	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &models.Tx_SetProcess{SetProcess: p}})
