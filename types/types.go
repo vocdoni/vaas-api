@@ -68,7 +68,12 @@ type Result struct {
 type Question struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
-	Choices     []string `json:"choices"`
+	Choices     []Choice `json:"choices"`
+}
+
+type Choice struct {
+	Title string `json:"title"`
+	Value uint32 `json:"value"`
 }
 
 type ListOptions struct {

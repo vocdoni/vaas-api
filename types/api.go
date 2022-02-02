@@ -120,13 +120,13 @@ type ProcessResultsDetails struct {
 
 // QuestionMeta contains metadata for one single question of a process
 type QuestionMeta struct {
-	Choices     []Choice       `json:"choices"`
-	Description LanguageString `json:"description"`
-	Title       LanguageString `json:"title"`
+	Choices     []ChoiceMetadata `json:"choices"`
+	Description LanguageString   `json:"description"`
+	Title       LanguageString   `json:"title"`
 }
 
-// Choice contains metadata for one choice of a question
-type Choice struct {
+// ChoiceMetadata contains metadata for one choice of a question
+type ChoiceMetadata struct {
 	Title LanguageString `json:"title,omitempty"`
 	Value uint32         `json:"value,omitempty"`
 }
