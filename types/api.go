@@ -102,6 +102,25 @@ type ProcessMetadata struct {
 	Version     string                `json:"version,omitempty"`
 }
 
+// Result is a single election result for the API response
+type Result struct {
+	Title []string `json:"title"`
+	Value []string `json:"value"`
+}
+
+// Question is a single election question for the API response
+type Question struct {
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Choices     []Choice `json:"choices"`
+}
+
+// Choice is a sigle question choice for the API response
+type Choice struct {
+	Title string `json:"title"`
+	Value uint32 `json:"value"`
+}
+
 // LanguageString is a wrapper for multi-language strings, specified in metadata.
 //  example {"default": "hello", "en": "hello", "es": "hola"}
 type LanguageString map[string]string

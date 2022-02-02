@@ -60,22 +60,6 @@ type Election struct {
 	MetadataPrivKey  []byte        `json:"metadataPrivKey,omitempty" db:"metadata_priv_key"`
 }
 
-type Result struct {
-	Title []string `json:"title"`
-	Value []string `json:"value"`
-}
-
-type Question struct {
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Choices     []Choice `json:"choices"`
-}
-
-type Choice struct {
-	Title string `json:"title"`
-	Value uint32 `json:"value"`
-}
-
 type ListOptions struct {
 	Count  int    `json:"count,omitempty"`
 	Order  string `json:"order,omitempty"`
