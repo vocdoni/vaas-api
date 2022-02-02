@@ -87,7 +87,7 @@ type ElectionDetail = {
   questions: {
     title: string,
     description: string,
-    choices: [string]
+    choices: Array<{ title: string, value: number }>
   }[],
   status: "UNKNOWN" | "PAUSED" | "CANCELED" | "UPCOMING" | "ACTIVE" | "ENDED",
   voteCount: number,

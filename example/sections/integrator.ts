@@ -140,7 +140,7 @@ export async function setOrganizationMetadata(id: string, apiKey: string) {
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { apiToken, name, description, header, avatar , txHash } = responseBody
+  const { apiToken, name, description, header, avatar, txHash } = responseBody
 
   while (!(await getTransactionStatus(txHash, apiKey))) {
     await wait(15)
@@ -168,12 +168,42 @@ export async function createSignedElection(organizationId: string, hiddenResults
       {
         title: "Question 1 goes here",
         description: "(optional)",
-        choices: ["Yes", "No", "Maybe"]
+        choices: [
+          {
+            "title": "Yes",
+            "value": 0,
+          },
+          {
+            "title": "No",
+            "value": 1,
+          },
+          {
+            "title": "Maybe",
+            "value": 2,
+          },
+        ],
       },
       {
         title: "Question 2 title goes here",
         description: "(optional)",
-        choices: ["Yes", "No", "Maybe", "Blank"]
+        choices: [
+          {
+            "title": "Yes",
+            "value": 0,
+          },
+          {
+            "title": "No",
+            "value": 1,
+          },
+          {
+            "title": "Maybe",
+            "value": 2,
+          },
+          {
+            "title": "Blank",
+            "value": 3,
+          },
+        ],
       },
     ],
     confidential: confidential,  // Metadata access restricted to only census members
@@ -228,12 +258,42 @@ export async function createAnonymousElection(organizationId: string, hiddenResu
       {
         title: "Question 1 goes here",
         description: "(optional)",
-        choices: ["Yes", "No", "Maybe"]
+        choices: [
+          {
+            "title": "Yes",
+            "value": 0,
+          },
+          {
+            "title": "No",
+            "value": 1,
+          },
+          {
+            "title": "Maybe",
+            "value": 2,
+          },
+        ],
       },
       {
         title: "Question 2 title goes here",
         description: "(optional)",
-        choices: ["Yes", "No", "Maybe", "Blank"]
+        choices: [
+          {
+            "title": "Yes",
+            "value": 0,
+          },
+          {
+            "title": "No",
+            "value": 1,
+          },
+          {
+            "title": "Maybe",
+            "value": 2,
+          },
+          {
+            "title": "Blank",
+            "value": 3,
+          },
+        ],
       },
     ],
     confidential: confidential,  // Metadata access restricted to only census members
@@ -261,7 +321,7 @@ export async function createAnonymousElection(organizationId: string, hiddenResu
   const { error } = responseBody
   if (error) throw new Error(error)
 
-  const { electionId , txHash } = responseBody
+  const { electionId, txHash } = responseBody
 
   while (!(await getTransactionStatus(txHash, apiKey))) {
     await wait(15)
@@ -317,7 +377,7 @@ type ElectionDetails = {
   questions: {
     title: string,
     description: string,
-    choices: string[]
+    choices: Array<{ title: string, value: number }>
   }[],
   confidential: boolean,
   hiddenResults: boolean,
