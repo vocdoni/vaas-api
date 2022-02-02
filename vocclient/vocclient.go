@@ -582,6 +582,7 @@ func (c *Client) CreateProcess(process *models.Process,
 	p := &models.NewProcessTx{
 		Txtype:  models.TxType_NEW_PROCESS,
 		Process: process,
+		Nonce:   make([]byte, 4),
 	}
 	binary.LittleEndian.PutUint32(p.Nonce, nonce)
 	var err error
@@ -615,6 +616,7 @@ func (c *Client) SetProcessStatus(pid []byte,
 		Txtype:    models.TxType_SET_PROCESS_STATUS,
 		ProcessId: pid,
 		Status:    status,
+		Nonce:     make([]byte, 4),
 	}
 	binary.LittleEndian.PutUint32(p.Nonce, nonce)
 	stx := &models.SignedTx{}
