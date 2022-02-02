@@ -228,7 +228,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// Create the new account on the Vochain
-	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI); err != nil {
+	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI, 0); err != nil {
 		return fmt.Errorf("could not create account on the vochain: %w", err)
 	}
 
@@ -361,7 +361,13 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	if err != nil {
 		return err
 	}
-	if err := u.vocClient.SetAccountInfo(entitySignKeys, metaURI); err != nil {
+
+	_, _, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
+	if err != nil {
+		return fmt.Errorf("could not get account info: %w", err)
+	}
+
+	if err := u.vocClient.SetAccountInfo(entitySignKeys, metaURI, nonce); err != nil {
 		return fmt.Errorf("could not update account metadata uri: %w", err)
 	}
 
@@ -544,6 +550,13 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		//  end block, minus the expected start block of the process
 		blockCount = blockCount - currentBlockHeight + 3
 	}
+
+	// Fetch account transaction nonce
+	_, _, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
+	if err != nil {
+		return fmt.Errorf("could not get account info: %w", err)
+	}
+
 	if err = u.vocClient.CreateProcess(&models.Process{
 		ProcessId:     processID,
 		EntityId:      orgInfo.entityID,
@@ -558,7 +571,7 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		CensusOrigin:  models.CensusOrigin_OFF_CHAIN_CA,
 		Metadata:      &metaUri,
 		MaxCensusSize: &u.config.MaxCensusSize,
-	}, entitySignKeys); err != nil {
+	}, entitySignKeys, nonce); err != nil {
 		return fmt.Errorf("could not create process on the vochain: %w", err)
 	}
 
@@ -770,7 +783,13 @@ func (u *URLAPI) setProcessStatusHandler(
 		status = models.ProcessStatus_CANCELED
 	}
 
-	if err = u.vocClient.SetProcessStatus(processID, &status, entitySignKeys); err != nil {
+	// Fetch account transaction nonce
+	_, _, nonce, err := u.vocClient.GetAccount(organization.EthAddress)
+	if err != nil {
+		return fmt.Errorf("could not get account info: %w", err)
+	}
+
+	if err = u.vocClient.SetProcessStatus(processID, &status, entitySignKeys, nonce); err != nil {
 		return fmt.Errorf("could not set process status %d: %w", status, err)
 	}
 

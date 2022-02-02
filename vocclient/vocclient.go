@@ -543,11 +543,11 @@ func (c *Client) GetRoot(censusID string) (dvoteTypes.HexBytes, error) {
 
 // SetAccountInfo submits a transaction to set an account with the given
 //  ethereum wallet address and metadata URI on the vochain
-func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
+func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string, nonce uint32) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 	tx := models.Tx_SetAccountInfo{SetAccountInfo: &models.SetAccountInfoTx{
 		Txtype:  models.TxType_SET_ACCOUNT_INFO,
-		Nonce:   uint32(util.RandomInt(0, 2<<32)),
+		Nonce:   nonce,
 		InfoURI: uri,
 	}}
 	var err error
@@ -576,7 +576,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 // CreateProcess submits a transaction to the vochain to
 //  create a process with the given configuration and returns its starting block height
 func (c *Client) CreateProcess(process *models.Process,
-	signingKey *ethereum.SignKeys) error {
+	signingKey *ethereum.SignKeys, nonce uint32) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 	p := &models.NewProcessTx{
 		Txtype:  models.TxType_NEW_PROCESS,
@@ -608,7 +608,7 @@ func (c *Client) CreateProcess(process *models.Process,
 // SetProcessStatus updates the process given by `pid` status to `status`
 //  using the organization's `signkeys`
 func (c *Client) SetProcessStatus(pid []byte,
-	status *models.ProcessStatus, signingKey *ethereum.SignKeys) error {
+	status *models.ProcessStatus, signingKey *ethereum.SignKeys, nonce uint32) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 	p := &models.SetProcessTx{
 		Txtype:    models.TxType_SET_PROCESS_STATUS,
