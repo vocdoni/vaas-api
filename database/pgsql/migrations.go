@@ -226,7 +226,7 @@ DROP EXTENSION IF EXISTS pgcrypto;
 
 const migration2up = `
 ALTER TABLE ONLY elections
-    ADD COLUMN proof_type TEXT NOT NULL;
+    ADD COLUMN proof_type TEXT DEFAULT 'blind' NOT NULL;
 
 ALTER TABLE ONLY organizations
     DROP CONSTRAINT organizations_integrator_api_key_fkey,
