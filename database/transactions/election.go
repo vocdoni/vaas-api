@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.vocdoni.io/api/database"
+	"go.vocdoni.io/api/types"
 )
 
 // CreateElectionTx is the serializable transaction for creating an election
@@ -17,6 +18,7 @@ type CreateElectionTx struct {
 	ElectionID        []byte
 	EncryptedMetaKey  []byte
 	Title             string
+	ProofType         types.ProofType
 	StartDate         time.Time
 	EndDate           time.Time
 	CensusID          uuid.NullUUID
@@ -29,8 +31,8 @@ type CreateElectionTx struct {
 func (tx CreateElectionTx) commit(db database.Database) error {
 	_, err := db.CreateElection(tx.IntegratorPrivKey,
 		tx.EthAddress, tx.ElectionID, tx.EncryptedMetaKey,
-		tx.Title, tx.StartDate, tx.EndDate, tx.CensusID, int(tx.StartBlock), int(tx.EndBlock),
-		tx.Confidential, tx.HiddenResults)
+		tx.Title, string(tx.ProofType), tx.StartDate, tx.EndDate, tx.CensusID, int(tx.StartBlock),
+		int(tx.EndBlock), tx.Confidential, tx.HiddenResults)
 	if err != nil {
 		return fmt.Errorf("could not create election: %w", err)
 	}

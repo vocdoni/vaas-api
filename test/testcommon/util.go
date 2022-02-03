@@ -45,7 +45,7 @@ type TestElection struct {
 	Status             string
 	StreamURI          string
 	Title              string
-	Type               string
+	ProofType          types.ProofType
 	VoteCount          uint32
 }
 
@@ -82,7 +82,7 @@ func CreateOrganizations(size int) []*TestOrganization {
 }
 
 // Create a given number of random Elections
-func CreateElections(size int, confidential, encrypted bool) []*TestElection {
+func CreateElections(size int, confidential, encrypted bool, proofType types.ProofType) []*TestElection {
 	mp := make([]*TestElection, size)
 	for i := 0; i < size; i++ {
 		randomID := rand.Intn(10000000)
@@ -94,6 +94,7 @@ func CreateElections(size int, confidential, encrypted bool) []*TestElection {
 			EndDate:       time.Now().Add(24 * time.Hour),
 			Confidential:  confidential,
 			HiddenResults: encrypted,
+			ProofType:     proofType,
 		}
 		for j := 0; j <= i; j++ {
 			mp[i].Questions = append(mp[i].Questions, types.Question{
@@ -145,6 +146,7 @@ func CreateDbElections(t *testing.T, size int) []*types.Election {
 			Confidential:    true,
 			HiddenResults:   true,
 			MetadataPrivKey: nil,
+			ProofType:       string(types.PROOF_TYPE_BLIND),
 		}
 	}
 	return mp

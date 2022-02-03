@@ -213,9 +213,9 @@ func setupTestElections() {
 }
 
 func createElections(organization *testcommon.TestOrganization) []*testcommon.TestElection {
-	elections := testcommon.CreateElections(1, false, false)
-	elections = append(elections, testcommon.CreateElections(1, true, false)...)
-	elections = append(elections, testcommon.CreateElections(1, true, true)...)
+	elections := testcommon.CreateElections(1, false, false, types.PROOF_TYPE_BLIND)
+	elections = append(elections, testcommon.CreateElections(1, true, false, types.PROOF_TYPE_ECDSA)...)
+	elections = append(elections, testcommon.CreateElections(1, true, true, types.PROOF_TYPE_ECDSA)...)
 	for _, election := range elections {
 		var resp types.APIResponse
 		req := types.APIRequest{
@@ -229,7 +229,7 @@ func createElections(organization *testcommon.TestOrganization) []*testcommon.Te
 			Questions:     election.Questions,
 		}
 		statusCode := DoRequest(nil,
-			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind", API.URL, organization.EthAddress),
+			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/%s", API.URL, organization.EthAddress, election.ProofType),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 		if statusCode != 200 {
 			log.Fatalf("could not create testing organization")

@@ -16,9 +16,10 @@ func TestElection(t *testing.T) {
 	t.Parallel()
 
 	// test create different kinds of elections
-	elections := testcommon.CreateElections(1, false, false)
-	elections = append(elections, testcommon.CreateElections(1, true, false)...)
-	elections = append(elections, testcommon.CreateElections(1, true, true)...)
+	elections := testcommon.CreateElections(1, false, false, types.PROOF_TYPE_BLIND)
+	elections = append(elections, testcommon.CreateElections(
+		1, true, false, types.PROOF_TYPE_ECDSA)...)
+	elections = append(elections, testcommon.CreateElections(1, true, true, types.PROOF_TYPE_ECDSA)...)
 
 	for _, election := range elections {
 		var resp *types.APIResponse
@@ -33,8 +34,8 @@ func TestElection(t *testing.T) {
 			Questions:     election.Questions,
 		}
 		statusCode := DoRequest(t,
-			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind",
-				API.URL, testOrganizations[0].EthAddress),
+			fmt.Sprintf("%s/v1/priv/organizations/%x/elections/%s",
+				API.URL, testOrganizations[0].EthAddress, election.ProofType),
 			hex.EncodeToString(testIntegrators[0].SecretApiKey), "POST", req, &resp)
 		qt.Assert(t, statusCode, qt.Equals, 200)
 		election.ElectionID = resp.ElectionID
@@ -80,6 +81,7 @@ func TestElection(t *testing.T) {
 			qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
 			qt.Assert(t, electionResp.StreamURI, qt.Equals, election.StreamURI)
 			qt.Assert(t, electionResp.Questions, qt.HasLen, len(election.Questions))
+			qt.Assert(t, electionResp.ProofType, qt.Equals, election.ProofType)
 			qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 				qt.Equals, hex.EncodeToString(election.OrganizationID))
 			qt.Assert(t, electionResp.ElectionID, qt.Not(qt.HasLen), 0)
@@ -133,14 +135,14 @@ func TestElectionStatus(t *testing.T) {
 	}
 
 	// get canceled election list
-	var activeElectionList []types.APIElectionSummary
+	var canceledElectionList []types.APIElectionSummary
 	statusCode := DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/canceled",
-			API.URL, testOrganizations[1].EthAddress),
+			API.URL, testOrganizations[0].EthAddress),
 		hex.EncodeToString(testIntegrators[0].SecretApiKey),
-		"GET", types.APIRequest{}, &activeElectionList)
-
+		"GET", types.APIRequest{}, &canceledElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
+	qt.Assert(t, canceledElectionList, qt.HasLen, len(testElections))
 
 	// test get election statuses
 	for _, election := range testElections {
@@ -170,7 +172,7 @@ func TestElectionList(t *testing.T) {
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &activeElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 
-	// get eleciton lists with empty filters
+	// get election lists with empty filters
 	var emptyElectionList []types.APIElectionSummary
 	statusCode = DoRequest(t,
 		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/upcoming",
@@ -199,6 +201,26 @@ func TestElectionList(t *testing.T) {
 		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &emptyElectionList)
 	qt.Assert(t, statusCode, qt.Equals, 200)
 	qt.Assert(t, emptyElectionList, qt.HasLen, 0)
+
+	// get blind election list
+	var blindElectionList []types.APIElectionSummary
+	statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/blind",
+			API.URL, testOrganizations[1].EthAddress),
+		hex.EncodeToString(testIntegrators[0].SecretApiKey),
+		"GET", types.APIRequest{}, &blindElectionList)
+	qt.Assert(t, statusCode, qt.Equals, 200)
+	qt.Assert(t, blindElectionList, qt.HasLen, 1)
+
+	// get signed election list
+	var signedElectionList []types.APIElectionSummary
+	statusCode = DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/organizations/%x/elections/signed",
+			API.URL, testOrganizations[1].EthAddress),
+		hex.EncodeToString(testIntegrators[0].SecretApiKey),
+		"GET", types.APIRequest{}, &signedElectionList)
+	qt.Assert(t, statusCode, qt.Equals, 200)
+	qt.Assert(t, signedElectionList, qt.HasLen, 2)
 
 	qt.Assert(t, electionList, qt.HasLen, len(testActiveElections))
 	qt.Assert(t, electionList, qt.HasLen, len(activeElectionList))

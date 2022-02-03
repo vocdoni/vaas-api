@@ -8,6 +8,7 @@ import (
 	qt "github.com/frankban/quicktest"
 	"github.com/google/uuid"
 	"go.vocdoni.io/api/test/testcommon"
+	"go.vocdoni.io/api/types"
 )
 
 func TestElection(t *testing.T) {
@@ -28,7 +29,7 @@ func TestElection(t *testing.T) {
 
 	elections := testcommon.CreateDbElections(t, 2)
 	id, err := API.DB.CreateElection(integrators[0].SecretApiKey, organizations[0].EthAddress, elections[0].ProcessID,
-		elections[0].MetadataPrivKey, elections[0].Title, elections[0].StartDate,
+		elections[0].MetadataPrivKey, elections[0].Title, string(types.PROOF_TYPE_BLIND), elections[0].StartDate,
 		elections[0].EndDate, uuid.NullUUID{}, 0, 0, true, true)
 	c.Assert(err, qt.IsNil)
 	c.Assert(int(id), qt.Not(qt.Equals), 0)
@@ -37,6 +38,7 @@ func TestElection(t *testing.T) {
 	election, err := API.DB.GetElectionPublic(organizations[0].EthAddress, elections[0].ProcessID)
 	c.Assert(err, qt.IsNil)
 	c.Assert(election.ID, qt.Not(qt.Equals), elections[0].ID)
+	c.Assert(election.ProofType, qt.Equals, string(types.PROOF_TYPE_BLIND))
 
 	list, err := API.DB.ListElections(integrators[0].SecretApiKey, organizations[0].EthAddress)
 	c.Assert(err, qt.IsNil)

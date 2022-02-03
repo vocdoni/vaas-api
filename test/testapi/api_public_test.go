@@ -47,6 +47,7 @@ func TestGetElectionsPub(t *testing.T) {
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 		qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
 		qt.Assert(t, electionResp.StreamURI, qt.Equals, election.StreamURI)
+		qt.Assert(t, electionResp.ProofType, qt.Equals, election.ProofType)
 		qt.Assert(t, electionResp.Questions, qt.HasLen, len(election.Questions))
 		qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 			qt.Equals, hex.EncodeToString(election.OrganizationID))
@@ -78,6 +79,7 @@ func TestGetElectionsPriv(t *testing.T) {
 		qt.Assert(t, electionResp.Title, qt.Equals, election.Title)
 		qt.Assert(t, electionResp.Header, qt.Equals, election.Header)
 		qt.Assert(t, electionResp.StreamURI, qt.Equals, election.StreamURI)
+		qt.Assert(t, electionResp.ProofType, qt.Equals, election.ProofType)
 		qt.Assert(t, electionResp.Questions, qt.HasLen, len(election.Questions))
 		qt.Assert(t, hex.EncodeToString(electionResp.OrganizationID),
 			qt.Equals, hex.EncodeToString(election.OrganizationID))
