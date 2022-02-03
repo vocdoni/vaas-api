@@ -402,6 +402,10 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	electionType := types.ProofType(ctx.URLParam("type"))
+	// Interpret signed as ECDSA. In the future we may want different non-blinded signature mechanisms
+	if electionType == "signed" {
+		electionType = types.PROOF_TYPE_ECDSA
+	}
 	switch electionType {
 	case types.PROOF_TYPE_BLIND, types.PROOF_TYPE_ECDSA:
 	default:
