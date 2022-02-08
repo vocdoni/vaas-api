@@ -236,7 +236,8 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// Create the new account on the Vochain
-	if err = u.vocClient.SetAccountInfo(ethSignKeys, u.faucet, metaURI, 0, u.faucetNonce.Inc()); err != nil {
+	if err = u.vocClient.SetAccountInfo(ethSignKeys,
+		u.faucet, metaURI, 0); err != nil {
 		return fmt.Errorf("could not create account on the vochain: %w", err)
 	}
 
@@ -261,8 +262,11 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return err
 	}
 
-	resp := types.APIResponse{APIToken: orgApiToken,
-		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
+	resp := types.APIResponse{
+		APIToken:       orgApiToken,
+		OrganizationID: ethSignKeys.Address().Bytes(),
+		TxHash:         txHash,
+	}
 
 	return sendResponse(resp, ctx)
 }
@@ -418,7 +422,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 	}
 
 	if err := u.vocClient.SetAccountInfo(entitySignKeys, u.faucet, metaURI,
-		nonce, u.faucetNonce.Inc()); err != nil {
+		nonce); err != nil {
 		return fmt.Errorf("could not update account metadata uri: %w", err)
 	}
 
@@ -667,8 +671,12 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	return sendResponse(types.APIResponse{
-		ElectionID: processID, TxHash: txHash}, ctx)
+	return sendResponse(
+		types.APIResponse{
+			ElectionID: processID,
+			TxHash:     txHash,
+		},
+		ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed

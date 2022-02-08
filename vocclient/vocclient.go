@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -27,7 +28,7 @@ const (
 	// VOCHAIN_BLOCK_MARGIN is the number of blocks a
 	//  process should be set in the future to ensure its creation
 	VOCHAIN_BLOCK_MARGIN = 5
-	defaultFaucetAmount  = 1000000
+	DefaultFaucetAmount  = 1000000
 )
 
 type vocBlockHeight struct {
@@ -566,7 +567,7 @@ func (c *Client) GetRoot(censusID string) (dvoteTypes.HexBytes, error) {
 // SetAccountInfo submits a transaction to set an account with the given
 //  ethereum wallet address and metadata URI on the vochain
 func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
-	faucet *ethereum.SignKeys, uri string, nonce uint32, faucetNonce uint64) error {
+	faucet *ethereum.SignKeys, uri string, nonce uint32) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 	tx := models.Tx_SetAccountInfo{SetAccountInfo: &models.SetAccountInfoTx{
 		Txtype:  models.TxType_SET_ACCOUNT_INFO,
@@ -579,9 +580,9 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
 	if faucet != nil {
 		tx.SetAccountInfo.FaucetPackage = &models.FaucetPackage{
 			Payload: &models.FaucetPayload{
-				Identifier: faucetNonce,
+				Identifier: rand.Uint64(),
 				To:         signer.Address().Bytes(),
-				Amount:     defaultFaucetAmount,
+				Amount:     DefaultFaucetAmount,
 			},
 		}
 		faucetPayloadBytes, err := proto.Marshal(tx.SetAccountInfo.FaucetPackage.Payload)
