@@ -246,7 +246,6 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	// get blind point from tokenR
 	blindPoint, err := blind.NewPointFromBytesUncompressed(hexTokenR)
 	if err != nil {

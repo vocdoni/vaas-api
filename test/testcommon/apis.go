@@ -19,14 +19,15 @@ import (
 )
 
 type TestAPI struct {
-	DB         database.Database
-	Port       int
-	Signer     *ethereum.SignKeys
-	URL        string
-	AuthToken  string
-	CSP        TestCSP
-	Gateway    string
-	StorageDir string
+	DB            database.Database
+	Port          int
+	Signer        *ethereum.SignKeys
+	FaucetAccount *ethereum.SignKeys
+	URL           string
+	AuthToken     string
+	CSP           TestCSP
+	Gateway       string
+	StorageDir    string
 }
 
 type TestCSP struct {
@@ -45,6 +46,11 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		// Signer
 		t.Signer = ethereum.NewSignKeys()
 		if err = t.Signer.Generate(); err != nil {
+			log.Fatal(err)
+		}
+		// Faucet
+		t.FaucetAccount = ethereum.NewSignKeys()
+		if err = t.FaucetAccount.Generate(); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -92,6 +98,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 		if err != nil {
 			log.Fatal(err)
 		}
+		urlApi.SetFaucet(t.FaucetAccount)
 
 		kv, err := metadb.New(dvotedb.TypePebble, filepath.Join(t.StorageDir, "metadb"))
 		if err != nil {

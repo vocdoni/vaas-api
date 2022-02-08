@@ -27,6 +27,7 @@ const (
 	// VOCHAIN_BLOCK_MARGIN is the number of blocks a
 	//  process should be set in the future to ensure its creation
 	VOCHAIN_BLOCK_MARGIN = 5
+	defaultFaucetAmount  = 1000000
 )
 
 type vocBlockHeight struct {
@@ -564,14 +565,36 @@ func (c *Client) GetRoot(censusID string) (dvoteTypes.HexBytes, error) {
 
 // SetAccountInfo submits a transaction to set an account with the given
 //  ethereum wallet address and metadata URI on the vochain
-func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string, nonce uint32) error {
+func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
+	faucet *ethereum.SignKeys, uri string, nonce uint32, faucetNonce uint64) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 	tx := models.Tx_SetAccountInfo{SetAccountInfo: &models.SetAccountInfoTx{
 		Txtype:  models.TxType_SET_ACCOUNT_INFO,
 		Nonce:   nonce,
 		InfoURI: uri,
 	}}
+
+	// If faucet is not nil, request VOC tokens with faucet package
 	var err error
+	if faucet != nil {
+		tx.SetAccountInfo.FaucetPackage = &models.FaucetPackage{
+			Payload: &models.FaucetPayload{
+				Identifier: faucetNonce,
+				To:         signer.Address().Bytes(),
+				Amount:     defaultFaucetAmount,
+			},
+		}
+		faucetPayloadBytes, err := proto.Marshal(tx.SetAccountInfo.FaucetPackage.Payload)
+		if err != nil {
+			return fmt.Errorf("could not marshal faucet payload: %w", err)
+		}
+		faucetPayloadSignature, err := faucet.SignEthereum(faucetPayloadBytes)
+		if err != nil {
+			return fmt.Errorf("could not sign faucet payload: %w", err)
+		}
+		tx.SetAccountInfo.FaucetPackage.Signature = faucetPayloadSignature
+	}
+
 	stx := new(models.SignedTx)
 	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &tx})
 	if err != nil {

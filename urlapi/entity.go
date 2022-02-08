@@ -236,7 +236,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 	}
 
 	// Create the new account on the Vochain
-	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI, 0); err != nil {
+	if err = u.vocClient.SetAccountInfo(ethSignKeys, u.faucet, metaURI, 0, u.faucetNonce.Inc()); err != nil {
 		return fmt.Errorf("could not create account on the vochain: %w", err)
 	}
 
@@ -417,7 +417,8 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 		return fmt.Errorf("could not get account info: %w", err)
 	}
 
-	if err := u.vocClient.SetAccountInfo(entitySignKeys, metaURI, nonce); err != nil {
+	if err := u.vocClient.SetAccountInfo(entitySignKeys, u.faucet, metaURI,
+		nonce, u.faucetNonce.Inc()); err != nil {
 		return fmt.Errorf("could not update account metadata uri: %w", err)
 	}
 

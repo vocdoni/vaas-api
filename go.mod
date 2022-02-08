@@ -19,8 +19,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/vocdoni/blind-csp v0.1.5-0.20220203192544-4a27b9f3aa66
+	go.uber.org/atomic v1.9.0
 	go.vocdoni.io/dvote v1.0.4-0.20220203192346-e482a1057a9c
-	go.vocdoni.io/proto v1.13.3-0.20220202173231-6bde933ac100
+	go.vocdoni.io/proto v1.13.3-0.20220203130255-cbdb9679ec7c
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
 	google.golang.org/protobuf v1.27.1
 )

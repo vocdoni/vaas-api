@@ -2313,8 +2313,8 @@ github.com/vocdoni/arbo v0.0.0-20210927131431-d7c756341372/go.mod h1:qJqeB/91mJf
 github.com/vocdoni/arbo v0.0.0-20211217085703-d56ab859f109 h1:jBbX7NQ5ism7BEfxHe0FzKgGU4sKaFgfi70YOx+68BQ=
 github.com/vocdoni/arbo v0.0.0-20211217085703-d56ab859f109/go.mod h1:6Z6HJMTIDGHnP4pGJpKMqUGPWShwKvBp2BwVV5b6PoQ=
 github.com/vocdoni/blind-ca v0.1.4/go.mod h1:4ouWDqlvXrrNS0Csf3hKA3cuDTmKh6nP7kSXF39nT4s=
-github.com/vocdoni/blind-csp v0.1.5-0.20220214165159-4620baa07fa4 h1:cXTw1cREtQHEvcUMwhtrfqiaoMb+c/f9/dgUzQKK82w=
-github.com/vocdoni/blind-csp v0.1.5-0.20220214165159-4620baa07fa4/go.mod h1:xo1LOBMpTm2xWvSbBhDmSz/RSTn1Cy9/kjJ7pPx9040=
+github.com/vocdoni/blind-csp v0.1.5-0.20220210194521-a3f74fc97b11 h1:iC8BPt0Qh9PqArYEyMwwbfgndRa3ctL8nn13nVDONVg=
+github.com/vocdoni/blind-csp v0.1.5-0.20220210194521-a3f74fc97b11/go.mod h1:xo1LOBMpTm2xWvSbBhDmSz/RSTn1Cy9/kjJ7pPx9040=
 github.com/vocdoni/eth-storage-proof v0.1.4-0.20201128112323-de7513ce5e25/go.mod h1:NLA1A55raZ1VNMmKulPUm+Lu9CVetCDVuDCYk5bSYrE=
 github.com/vocdoni/go-external-ip v0.0.0-20210705122950-fae6195a1d44/go.mod h1:o/kqzlz81Aq5/++p7zIRaaOiEUmCOiap7ulEAUeSQWI=
 github.com/vocdoni/go-snark v0.0.0-20210709152824-f6e4c27d7319 h1:W8N7yfnWsVD3l2Sh0pTtXCDd4+LNh58lE427D1U9SVY=
@@ -2466,6 +2466,10 @@ go.vocdoni.io/dvote v1.0.4-0.20210806163627-9494efbc5382/go.mod h1:kl66EQmAjR252
 go.vocdoni.io/dvote v1.0.4-0.20211025120558-83c64f440044/go.mod h1:t2O6ExMry8na9bqrYiGH4AZ5ukXYAolUnIFGntmS63c=
 go.vocdoni.io/dvote v1.0.4-0.20220210143454-e386915ab3d5 h1:CJ5CBHPPH+WrTabYwjF+6RG2t9fGUjSIj3mK1g3SRRY=
 go.vocdoni.io/dvote v1.0.4-0.20220210143454-e386915ab3d5/go.mod h1:V9ni6iQdsqGWqQzpUFKjXi1nYiJAiKPVffacoG8hYyc=
+go.vocdoni.io/dvote v1.0.4-0.20220216204025-8a11503233cf h1:muamiGC9A0DZweIHOA1ESnLGshTaGswU29KEcSRcRSo=
+go.vocdoni.io/dvote v1.0.4-0.20220216204025-8a11503233cf/go.mod h1:V9ni6iQdsqGWqQzpUFKjXi1nYiJAiKPVffacoG8hYyc=
+go.vocdoni.io/dvote v1.0.4-0.20220217122656-84781e12453d h1:q+0o4iD4qevd3C7YVxbvMIZZalt752Lc1aug6GpeEEQ=
+go.vocdoni.io/dvote v1.0.4-0.20220217122656-84781e12453d/go.mod h1:V9ni6iQdsqGWqQzpUFKjXi1nYiJAiKPVffacoG8hYyc=
 go.vocdoni.io/proto v0.1.7/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=
 go.vocdoni.io/proto v0.1.8/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=
 go.vocdoni.io/proto v0.1.9-0.20210304214308-6f7363b52750/go.mod h1:cyITrt7+sHmUJH06WLu69xB7LBY9c9FakFaBOe8gs/M=

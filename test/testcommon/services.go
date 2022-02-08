@@ -11,6 +11,7 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/vocone"
+	"go.vocdoni.io/proto/build/go/models"
 )
 
 const (
@@ -34,8 +35,25 @@ func (t *TestAPI) startTestGateway() {
 	}
 	vc.SetBlockTimeTarget(time.Second)
 	vc.SetBlockSize(500)
+	// Create faucet account, mint tokens to it
+	if err := vc.MintTokens(t.FaucetAccount.Address(), 100000000000); err != nil {
+		log.Fatal(err)
+	}
+	// Set transaction costs
+	if err := vc.SetTxCost(models.TxType_SET_ACCOUNT_INFO, 10); err != nil {
+		log.Fatal(err)
+	}
+	if err := vc.SetTxCost(models.TxType_NEW_PROCESS, 10); err != nil {
+		log.Fatal(err)
+	}
+	if err := vc.SetTxCost(models.TxType_SET_PROCESS_STATUS, 10); err != nil {
+		log.Fatal(err)
+	}
+	if err := vc.SetTxCost(models.TxType_COLLECT_FAUCET, 0); err != nil {
+		log.Fatal(err)
+	}
 	go vc.Start()
-	if err = vc.EnableAPI(TestHost, TestGWPort, TestGWPath); err != nil {
+	if err := vc.EnableAPI(TestHost, TestGWPort, TestGWPath); err != nil {
 		log.Fatal(err)
 	}
 	t.Gateway = "http://" + TestHost + ":" + strconv.Itoa(TestGWPort) + TestGWPath
