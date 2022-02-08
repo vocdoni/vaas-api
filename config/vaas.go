@@ -27,6 +27,8 @@ type API struct {
 	}
 	// AdminToken is the hexString bearer token for superadmin API methods
 	AdminToken string
+	// FaucetPrivKey is the hexString private key for the vochain faucet account to be used
+	FaucetPrivKey string
 	// GlobalEntityKey is the key used to encrypt entity private keys in the db
 	GlobalEntityKey string
 	// GlobalMetaKey is the key used to encrypt entity metadata keys in the db

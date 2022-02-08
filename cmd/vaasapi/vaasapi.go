@@ -47,6 +47,7 @@ func newConfig() (*config.Vaas, config.Error) {
 		"signing private Keys (if not specified, a new "+
 			"one will be created), the first one is the oracle public key")
 	cfg.API.AdminToken = *flag.String("adminToken", "", "hexString token for admin api calls")
+	cfg.API.FaucetPrivKey = *flag.String("faucetPrivKey", "", "hexString privKey for vochain faucet account")
 	cfg.API.ExplorerVoteUrl = *flag.String("explorerVoteUrl",
 		"https://vaas.explorer.vote/envelope/", "explorer url for vote envelope pages")
 	cfg.API.GlobalEntityKey = *flag.String("globalEntityKey", "",
@@ -98,6 +99,7 @@ func newConfig() (*config.Vaas, config.Error) {
 	viper.BindPFlag("logOutput", flag.Lookup("logOutput"))
 	viper.BindPFlag("signingKey", flag.Lookup("signingKey"))
 	viper.BindPFlag("api.adminToken", flag.Lookup("adminToken"))
+	viper.BindPFlag("api.faucetPrivKey", flag.Lookup("faucetPrivKey"))
 	viper.BindPFlag("api.maxCensusSize", flag.Lookup("maxCensusSize"))
 	viper.BindPFlag("api.explorerVoteUrl", flag.Lookup("explorerVoteUrl"))
 	viper.BindPFlag("api.globalEntityKey", flag.Lookup("globalEntityKey"))
@@ -270,6 +272,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	faucet := ethereum.NewSignKeys()
+	if err := faucet.AddHexKey(cfg.API.FaucetPrivKey); err != nil {
+		log.Fatalf("could not set faucet account: %w", err)
+	}
+	urlApi.SetFaucet(faucet)
 
 	// Vaas api
 	log.Infof("enabling VaaS API methods")
