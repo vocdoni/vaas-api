@@ -143,7 +143,7 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-	signedPID, err := voterWallet.Sign(processID)
+	signedPID, err := voterWallet.SignEthereum(processID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +203,7 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-	signedVoteTx.Signature, err = voterWallet.Sign(signedVoteTx.Tx)
+	signedVoteTx.Signature, err = voterWallet.SignVocdoniTx(signedVoteTx.Tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +229,7 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-	signedPID, err := voterWallet.Sign(processID)
+	signedPID, err := voterWallet.SignEthereum(processID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +248,7 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	}
 
 	// get blind point from tokenR
-	blindPoint, err := blind.NewPointFromBytes(hexTokenR)
+	blindPoint, err := blind.NewPointFromBytesUncompressed(hexTokenR)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -309,7 +309,7 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-	signedVoteTx.Signature, err = voterWallet.Sign(signedVoteTx.Tx)
+	signedVoteTx.Signature, err = voterWallet.SignVocdoniTx(signedVoteTx.Tx)
 	if err != nil {
 		t.Fatal(err)
 	}

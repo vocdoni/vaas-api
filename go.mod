@@ -11,17 +11,16 @@ require (
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jmoiron/sqlx v1.2.1-0.20200615141059-0794cb1f47ee
-	github.com/lib/pq v1.10.3
-	github.com/prometheus/client_golang v1.10.0
+	github.com/lib/pq v1.10.4
+	github.com/prometheus/client_golang v1.12.0
 	github.com/rubenv/sql-migrate v0.0.0-20200616145509-8d140a17f351
 	github.com/shopspring/decimal v0.0.0-20200227202807-02e2044944cc // indirect
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.8.1
-	github.com/vocdoni/blind-csp v0.1.5-0.20220110201709-d6424fc6c26a
-	go.vocdoni.io/dvote v1.0.4-0.20220118164616-1a9b1393bff5
-	go.vocdoni.io/proto v1.13.3-0.20211213155005-46b4177904ba
-	golang.org/x/crypto v0.0.0-20210920023735-84f357641f63
-	golang.org/x/tools v0.1.8 // indirect
+	github.com/spf13/viper v1.10.1
+	github.com/vocdoni/blind-csp v0.1.5-0.20220209203910-52b60a81fa7f
+	go.vocdoni.io/dvote v1.0.4-0.20220208144419-fb9d208c920b
+	go.vocdoni.io/proto v1.13.3-0.20220203130255-cbdb9679ec7c
+	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce
 	google.golang.org/protobuf v1.27.1
 )
 
