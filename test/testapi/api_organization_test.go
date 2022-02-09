@@ -3,6 +3,7 @@ package testapi
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -107,6 +108,20 @@ func TestCreateOrganizationFailure(t *testing.T) {
 	qt.Assert(t, statusCode, qt.Equals, 400)
 }
 
+func TestGetOrganizationList(t *testing.T) {
+	t.Parallel()
+	// fail get organization: bad id
+	var resp types.APIResponse
+	statusCode := DoRequest(t,
+		fmt.Sprintf("%s/v1/priv/account/organizations", API.URL),
+		hex.EncodeToString(testIntegrators[0].SecretApiKey), "GET", types.APIRequest{}, &resp)
+	qt.Assert(t, statusCode, qt.Equals, 200)
+	qt.Assert(t, resp.Organizations, qt.HasLen, len(testOrganizations))
+	for _, organization := range resp.Organizations {
+		qt.Assert(t, strings.HasPrefix(organization.Name, "Test"), qt.IsTrue)
+	}
+}
+
 func TestGetOrganizationFailure(t *testing.T) {
 	t.Parallel()
 	// fail get organization: bad id
@@ -121,7 +136,6 @@ func TestGetOrganizationFailure(t *testing.T) {
 		fmt.Sprintf("%s/v1/priv/account/organizations/%x", API.URL, testOrganizations[0].EthAddress),
 		hex.EncodeToString(testIntegrators[1].SecretApiKey), "GET", types.APIRequest{}, &resp)
 	qt.Assert(t, statusCode, qt.Equals, 400)
-
 }
 
 func TestResetAPIToken(t *testing.T) {
