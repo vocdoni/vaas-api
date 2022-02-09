@@ -556,7 +556,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 	if err != nil {
 		return fmt.Errorf("could not marshal set account info tx")
 	}
-	stx.Signature, err = signer.Sign(stx.Tx)
+	stx.Signature, err = signer.SignVocdoniTx(stx.Tx)
 	if err != nil {
 		return fmt.Errorf("could not sign account transaction: %v", err)
 	}
@@ -589,7 +589,7 @@ func (c *Client) CreateProcess(process *models.Process,
 	if err != nil {
 		return err
 	}
-	if stx.Signature, err = signingKey.Sign(stx.Tx); err != nil {
+	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx); err != nil {
 		return err
 	}
 	if req.Payload, err = proto.Marshal(stx); err != nil {
@@ -622,7 +622,7 @@ func (c *Client) SetProcessStatus(pid []byte,
 	if err != nil {
 		return err
 	}
-	if stx.Signature, err = signingKey.Sign(stx.Tx); err != nil {
+	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx); err != nil {
 		return err
 	}
 	if req.Payload, err = proto.Marshal(stx); err != nil {
