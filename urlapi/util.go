@@ -208,10 +208,12 @@ func (u *URLAPI) estimateBlockHeight(target time.Time) (uint32, error) {
 	case absDiff < 21600:
 		t = getMaxTimeFrom(3)
 	// if less than around 6 hours missing
-	case absDiff >= 21600:
+	default:
 		t = getMaxTimeFrom(4)
 	}
-	blockDiff := uint32(absDiff) / uint32((t / 1000))
+	// Multiply by 1000 because t is represented in seconds, not ms.
+	// Dividing t first can floor the integer, leading to divide-by-zero
+	blockDiff := (uint32(absDiff) / t) * 1000
 	if inPast {
 		if blockDiff > currentHeight {
 			return 0, fmt.Errorf("target time %v is before Vochain origin", target)
