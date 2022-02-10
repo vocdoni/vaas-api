@@ -11,7 +11,6 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/log"
 	"go.vocdoni.io/dvote/vocone"
-	"go.vocdoni.io/proto/build/go/models"
 )
 
 const (
@@ -35,21 +34,20 @@ func (t *TestAPI) startTestGateway() {
 	}
 	vc.SetBlockTimeTarget(time.Second)
 	vc.SetBlockSize(500)
+	// Set treasurer so we can mint tokens
+	treasurer := ethereum.NewSignKeys()
+	if err := treasurer.Generate(); err != nil {
+		log.Fatal(err)
+	}
+	if err := vc.SetTreasurer(treasurer.Address()); err != nil {
+		log.Fatal(err)
+	}
 	// Create faucet account, mint tokens to it
 	if err := vc.MintTokens(t.FaucetAccount.Address(), 100000000000); err != nil {
 		log.Fatal(err)
 	}
 	// Set transaction costs
-	if err := vc.SetTxCost(models.TxType_SET_ACCOUNT_INFO, 10); err != nil {
-		log.Fatal(err)
-	}
-	if err := vc.SetTxCost(models.TxType_NEW_PROCESS, 10); err != nil {
-		log.Fatal(err)
-	}
-	if err := vc.SetTxCost(models.TxType_SET_PROCESS_STATUS, 10); err != nil {
-		log.Fatal(err)
-	}
-	if err := vc.SetTxCost(models.TxType_COLLECT_FAUCET, 0); err != nil {
+	if err := vc.SetBulkTxCosts(10); err != nil {
 		log.Fatal(err)
 	}
 	go vc.Start()
