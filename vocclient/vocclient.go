@@ -36,8 +36,8 @@ type vocBlockHeight struct {
 }
 
 type Client struct {
+	ChainID     string
 	gw          *client.Client
-	chainID     string
 	signingKey  *ethereum.SignKeys
 	blockHeight *vocBlockHeight
 }
@@ -55,7 +55,7 @@ func New(gatewayUrl string, signingKey *ethereum.SignKeys) (*Client, error) {
 		signingKey:  signingKey,
 		blockHeight: &vocBlockHeight{},
 	}
-	c.chainID, err = c.GetChainID()
+	c.ChainID, err = c.GetChainID()
 	if err != nil {
 		return nil, err
 	}
@@ -577,7 +577,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys, uri string) error {
 		return fmt.Errorf("could not marshal set account info tx")
 	}
 	// Ensure the chainID is set to the gateway's vochain ID
-	signer.VocdoniChainID = c.chainID
+	signer.VocdoniChainID = c.ChainID
 	stx.Signature, err = signer.SignVocdoniTx(stx.Tx)
 	if err != nil {
 		return fmt.Errorf("could not sign account transaction: %v", err)
@@ -611,7 +611,7 @@ func (c *Client) CreateProcess(process *models.Process,
 	if err != nil {
 		return err
 	}
-	signingKey.VocdoniChainID = c.chainID
+	signingKey.VocdoniChainID = c.ChainID
 	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx); err != nil {
 		return err
 	}
@@ -645,7 +645,7 @@ func (c *Client) SetProcessStatus(pid []byte,
 	if err != nil {
 		return err
 	}
-	signingKey.VocdoniChainID = c.chainID
+	signingKey.VocdoniChainID = c.ChainID
 	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx); err != nil {
 		return err
 	}
