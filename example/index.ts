@@ -23,8 +23,8 @@ async function main() {
     await getOrganizationPriv(organizationId, integratorApiKey)
     await getOrganizationListPriv(integratorApiKey)
 
-    const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, confidential, integratorApiKey)
-    // const { electionId: electionId2 } = await createAnonymousElection(organizationId, encryptedResults, confidential, integratorApiKey)
+    // const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, confidential, integratorApiKey)
+    const { electionId: electionId1 } = await createAnonymousElection(organizationId, encryptedResults, confidential, integratorApiKey)
 
     const electionList = await listElectionsPriv(organizationId, integratorApiKey)
     const election1DetailsPriv = await getElectionPriv(electionId1, integratorApiKey)
@@ -65,7 +65,7 @@ async function main() {
     const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
     const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
     const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1DetailsPubAuth.encryptionPubKeys)
-    const { nullifier } = await submitBallot(electionId1, ballot, wallet, orgApiToken)
+    const { nullifier } = await submitBallot(electionId1, election1DetailsPubAuth.chainId, ballot, wallet, orgApiToken)
     let ballotDetails = await getBallot(nullifier, orgApiToken)
     // optionally wait for the ballot to be registered if not already
     // while (!ballotDetails.registered) {
