@@ -65,6 +65,7 @@ type APIResponse struct {
 // APIElectionInfo is the response struct for a getElection request
 //  including all election information
 type APIElectionInfo struct {
+	ChainID            string         `json:"chainId,omitempty"`
 	Description        string         `json:"description,omitempty"`
 	OrganizationID     types.HexBytes `json:"organizationId,omitempty"`
 	Header             string         `json:"header,omitempty"`

@@ -63,6 +63,7 @@ func (u *URLAPI) parseProcessInfo(vc *indexertypes.Process,
 	results *types.VochainResults, meta *types.ProcessMetadata,
 	proofType types.ProofType) (types.APIElectionInfo, error) {
 	process := types.APIElectionInfo{
+		ChainID:            u.vocClient.ChainID,
 		Description:        meta.Description["default"],
 		OrganizationID:     vc.EntityID,
 		Header:             meta.Media.Header,
