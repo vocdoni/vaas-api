@@ -83,6 +83,33 @@ export async function getOrganizationPriv(id: string, apiKey: string) {
   return { apiToken, name, description, header, avatar }
 }
 
+export async function getOrganizationListPriv(apiKey: string) {
+  const url = config.apiUrlPrefix + "/v1/priv/account/organizations"
+
+  const response = await fetch(url, {
+    headers: {
+      "Authorization": "Bearer " + apiKey,
+    },
+    // mode: 'cors', // no-cors, *cors, same-origin
+    // credentials: 'same-origin', // include, *same-origin, omit
+  })
+
+  if (response.status != 200) {
+    throw new Error(await response.text())
+  }
+
+  const responseBody = await response.json()
+  console.log("GET", url, responseBody)
+
+  const { error } = responseBody
+  if (error) throw new Error(error)
+
+  // const { apiToken, name, description, header, avatar } = responseBody
+
+  console.log("Read organizations list:", responseBody)
+  return { responseBody }
+}
+
 export async function deleteOrganization(id: string, apiKey: string) {
   const url = config.apiUrlPrefix + "/v1/priv/account/organizations/" + id
   console.log("DELETE", url)
