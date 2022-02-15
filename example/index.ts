@@ -1,4 +1,4 @@
-import { createAnonymousElection, createOrganization, createSignedElection, deleteOrganization, getElectionPriv, getOrganizationPriv, listElectionsPriv, setOrganizationMetadata } from "./sections/integrator"
+import { createAnonymousElection, createOrganization, createSignedElection, deleteOrganization, getElectionPriv, getOrganizationPriv, getOrganizationListPriv, listElectionsPriv, setOrganizationMetadata } from "./sections/integrator"
 import { createIntegrator, deleteIntegrator } from "./sections/superadmin"
 import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot } from "./sections/voter"
 import { Wallet } from "@ethersproject/wallet"
@@ -21,6 +21,7 @@ async function main() {
 
     await setOrganizationMetadata(organizationId, integratorApiKey)
     await getOrganizationPriv(organizationId, integratorApiKey)
+    await getOrganizationListPriv(integratorApiKey)
 
     const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, confidential, integratorApiKey)
     // const { electionId: electionId2 } = await createAnonymousElection(organizationId, encryptedResults, confidential, integratorApiKey)

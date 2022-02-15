@@ -33,6 +33,14 @@ func (u *URLAPI) enableEntityHandlers() error {
 		return err
 	}
 	if err := u.api.RegisterMethod(
+		"/priv/account/organizations",
+		"GET",
+		bearerstdapi.MethodAccessTypePrivate,
+		u.getOrganizationListHandler,
+	); err != nil {
+		return err
+	}
+	if err := u.api.RegisterMethod(
 		"/priv/account/organizations/{organizationId}",
 		"GET",
 		bearerstdapi.MethodAccessTypePrivate,
@@ -255,6 +263,45 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 
 	resp := types.APIResponse{APIToken: orgApiToken,
 		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
+
+	return sendResponse(resp, ctx)
+}
+
+// GET https://server/v1/priv/account/organizations
+// getOrganizationListHandler gets the list of organizations corresponding to the integrator API key
+func (u *URLAPI) getOrganizationListHandler(msg *bearerstdapi.BearerStandardAPIdata,
+	ctx *httprouter.HTTPContext) error {
+
+	integratorPrivKey, err := util.GetAuthToken(msg)
+	if err != nil {
+		return err
+	}
+	organizations, err := u.db.ListOrganizations(integratorPrivKey, &types.ListOptions{})
+	if err != nil {
+		return fmt.Errorf("could not get organization list: %w", err)
+	}
+
+	var resp types.APIResponse
+	for _, organization := range organizations {
+		// Fetch process from vochain
+		metaUri, _, _, err := u.vocClient.GetAccount(organization.EthAddress)
+		if err != nil {
+			return err
+		}
+
+		// Fetch metadata
+		organizationMetadata, err := u.vocClient.FetchOrganizationMetadata(metaUri)
+		if err != nil {
+			return fmt.Errorf("could not get organization metadata with URI\"%s\": %w", metaUri, err)
+		}
+		resp.Organizations = append(resp.Organizations, types.APIOrganizationInfo{
+			APIToken:    organization.PublicAPIToken,
+			Name:        organizationMetadata.Name["default"],
+			Description: organizationMetadata.Description["default"],
+			Avatar:      organizationMetadata.Media.Avatar,
+			Header:      organizationMetadata.Media.Header,
+		})
+	}
 
 	return sendResponse(resp, ctx)
 }
