@@ -65,11 +65,14 @@ type APIResponse struct {
 
 // APIOrganizationInfo is the organization summary for the getOrganizationList call
 type APIOrganizationInfo struct {
-	APIToken    string `json:"api_token,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Avatar      string `json:"avatar,omitempty"`
-	Header      string `json:"header,omitempty"`
+	CreatedAt   time.Time `json:"createdAt,omitempty"`
+	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
+	ID          string    `json:"id"`
+	APIToken    string    `json:"api_token,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Description string    `json:"description,omitempty"`
+	Avatar      string    `json:"avatar,omitempty"`
+	Header      string    `json:"header,omitempty"`
 }
 
 // APIElectionInfo is the response struct for a getElection request

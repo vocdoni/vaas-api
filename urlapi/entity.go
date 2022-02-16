@@ -295,6 +295,9 @@ func (u *URLAPI) getOrganizationListHandler(msg *bearerstdapi.BearerStandardAPId
 			return fmt.Errorf("could not get organization metadata with URI\"%s\": %w", metaUri, err)
 		}
 		resp.Organizations = append(resp.Organizations, types.APIOrganizationInfo{
+			CreatedAt:   organization.CreatedAt,
+			UpdatedAt:   organization.UpdatedAt,
+			ID:          fmt.Sprintf("%x", organization.EthAddress),
 			APIToken:    organization.PublicAPIToken,
 			Name:        organizationMetadata.Name["default"],
 			Description: organizationMetadata.Description["default"],
