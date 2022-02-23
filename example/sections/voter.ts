@@ -488,7 +488,8 @@ export async function submitBallot(electionId: string, chainId:string, ballot: V
 
   // const chainId = await gateway.getVocdoniChainId()
 
-  const hexSignature = await BytesSignature.signTransaction(txBytes,chainId, ephemeralWallet)
+
+  const hexSignature = await BytesSignature.sign(txBytes, ephemeralWallet)
   const signature = new Uint8Array(Buffer.from(strip0x(hexSignature), "hex"))
 
   const signedTx = SignedTx.encode({ tx: txBytes, signature })
