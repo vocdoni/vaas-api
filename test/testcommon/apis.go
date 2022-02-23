@@ -16,17 +16,20 @@ import (
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/log"
 	dvoteTypes "go.vocdoni.io/dvote/types"
+	"go.vocdoni.io/dvote/vocone"
 )
 
 type TestAPI struct {
 	DB            database.Database
 	Port          int
+	VC            *vocone.Vocone
 	Signer        *ethereum.SignKeys
 	FaucetAccount *ethereum.SignKeys
 	URL           string
 	AuthToken     string
 	CSP           TestCSP
 	Gateway       string
+	Vocclient     *vocclient.Client
 	StorageDir    string
 }
 
@@ -77,7 +80,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 
 		// start API
 		time.Sleep(time.Second * 5)
-		client, err := vocclient.New(t.Gateway, t.Signer)
+		t.Vocclient, err = vocclient.New(t.Gateway, t.Signer)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -107,7 +110,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 
 		// Vaas api
 		log.Infof("enabling VaaS API methods")
-		if err := urlApi.EnableVotingServiceHandlers(t.DB, client, kv); err != nil {
+		if err := urlApi.EnableVotingServiceHandlers(t.DB, t.Vocclient, kv); err != nil {
 			log.Fatal(err)
 		}
 		go integratorTokenNotifier.FetchNewTokens(urlApi)

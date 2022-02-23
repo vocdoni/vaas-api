@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"go.vocdoni.io/dvote/log"
 	dvoteTypes "go.vocdoni.io/dvote/types"
 	"go.vocdoni.io/dvote/util"
+	"go.vocdoni.io/dvote/vochain"
 	"go.vocdoni.io/dvote/vochain/scrutinizer/indexertypes"
 	"go.vocdoni.io/proto/build/go/models"
 	"google.golang.org/protobuf/proto"
@@ -578,12 +578,9 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
 	// If faucet is not nil, request VOC tokens with faucet package
 	var err error
 	if faucet != nil {
-		tx.SetAccountInfo.FaucetPackage = &models.FaucetPackage{
-			Payload: &models.FaucetPayload{
-				Identifier: rand.Uint64(),
-				To:         signer.Address().Bytes(),
-				Amount:     DefaultFaucetAmount,
-			},
+		if tx.SetAccountInfo.FaucetPackage, err = vochain.GenerateFaucetPackage(faucet,
+			signer.Address(), DefaultFaucetAmount); err != nil {
+			return fmt.Errorf("could not generate faucet package: %w", err)
 		}
 		faucetPayloadBytes, err := proto.Marshal(tx.SetAccountInfo.FaucetPackage.Payload)
 		if err != nil {

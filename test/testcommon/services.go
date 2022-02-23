@@ -28,30 +28,26 @@ func (t *TestAPI) startTestGateway() {
 		log.Fatal(err)
 	}
 
-	vc, err := vocone.NewVocone(storageDir, &oracle)
-	if err != nil {
+	var err error
+	if t.VC, err = vocone.NewVocone(storageDir, &oracle); err != nil {
 		log.Fatal(err)
 	}
-	vc.SetBlockTimeTarget(time.Second)
-	vc.SetBlockSize(500)
+	t.VC.SetBlockTimeTarget(time.Second)
+	t.VC.SetBlockSize(500)
 	// Set treasurer so we can mint tokens
 	treasurer := ethereum.NewSignKeys()
 	if err := treasurer.Generate(); err != nil {
 		log.Fatal(err)
 	}
-	if err := vc.SetTreasurer(treasurer.Address()); err != nil {
-		log.Fatal(err)
-	}
-	// Create faucet account, mint tokens to it
-	if err := vc.MintTokens(t.FaucetAccount.Address(), 100000000000); err != nil {
+	if err := t.VC.SetTreasurer(treasurer.Address()); err != nil {
 		log.Fatal(err)
 	}
 	// Set transaction costs
-	if err := vc.SetBulkTxCosts(10); err != nil {
+	if err := t.VC.SetBulkTxCosts(10); err != nil {
 		log.Fatal(err)
 	}
-	go vc.Start()
-	if err := vc.EnableAPI(TestHost, TestGWPort, TestGWPath); err != nil {
+	go t.VC.Start()
+	if err := t.VC.EnableAPI(TestHost, TestGWPort, TestGWPath); err != nil {
 		log.Fatal(err)
 	}
 	t.Gateway = "http://" + TestHost + ":" + strconv.Itoa(TestGWPort) + TestGWPath
