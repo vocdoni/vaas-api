@@ -235,6 +235,15 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return fmt.Errorf("could not set entity metadata: %w", err)
 	}
 
+	_, balance, _, err := u.vocClient.GetAccount(u.faucet.Address().Bytes())
+	if err != nil {
+		return fmt.Errorf("could not get faucet account: %w", err)
+	}
+
+	if balance < vocclient.DefaultFaucetAmount {
+		return fmt.Errorf("faucet does not have enough tokens. Balance is %d", balance)
+	}
+
 	// Create the new account on the Vochain
 	if err = u.vocClient.SetAccountInfo(ethSignKeys,
 		u.faucet, metaURI, 0); err != nil {
