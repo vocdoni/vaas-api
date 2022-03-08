@@ -537,17 +537,17 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	maxChoiceValue := 0
 	for _, question := range req.Questions {
 		if len(question.Choices) > maxChoiceValue {
-			maxChoiceValue = len(question.Choices)
+			maxChoiceValue = len(question.Choices) - 1
 		}
 		metaQuestion := types.QuestionMeta{
 			Choices:     []types.ChoiceMetadata{},
 			Description: map[string]string{"default": question.Description},
 			Title:       map[string]string{"default": question.Title},
 		}
-		for _, choice := range question.Choices {
+		for value, choice := range question.Choices {
 			metaQuestion.Choices = append(metaQuestion.Choices, types.ChoiceMetadata{
 				Title: map[string]string{"default": choice.Title},
-				Value: choice.Value,
+				Value: uint32(value),
 			})
 		}
 		metadata.Questions = append(metadata.Questions, metaQuestion)

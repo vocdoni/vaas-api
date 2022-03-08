@@ -198,15 +198,12 @@ export async function createSignedElection(organizationId: string, hiddenResults
         choices: [
           {
             "title": "Yes",
-            "value": 0,
           },
           {
             "title": "No",
-            "value": 1,
           },
           {
             "title": "Maybe",
-            "value": 2,
           },
         ],
       },
@@ -216,19 +213,15 @@ export async function createSignedElection(organizationId: string, hiddenResults
         choices: [
           {
             "title": "Yes",
-            "value": 0,
           },
           {
             "title": "No",
-            "value": 1,
           },
           {
             "title": "Maybe",
-            "value": 2,
           },
           {
             "title": "Blank",
-            "value": 3,
           },
         ],
       },
