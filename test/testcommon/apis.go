@@ -27,6 +27,7 @@ type TestAPI struct {
 	CSP        TestCSP
 	Gateway    string
 	StorageDir string
+	GwClient   *vocclient.Client
 }
 
 type TestCSP struct {
@@ -71,8 +72,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 
 		// start API
 		time.Sleep(time.Second * 5)
-		client, err := vocclient.New(t.Gateway, t.Signer)
-		if err != nil {
+		if t.GwClient, err = vocclient.New(t.Gateway, t.Signer); err != nil {
 			log.Fatal(err)
 		}
 
@@ -100,7 +100,7 @@ func (t *TestAPI) Start(dbc *config.DB, route, authToken, storageDir string, por
 
 		// Vaas api
 		log.Infof("enabling VaaS API methods")
-		if err := urlApi.EnableVotingServiceHandlers(t.DB, client, kv); err != nil {
+		if err := urlApi.EnableVotingServiceHandlers(t.DB, t.GwClient, kv); err != nil {
 			log.Fatal(err)
 		}
 		go integratorTokenNotifier.FetchNewTokens(urlApi)

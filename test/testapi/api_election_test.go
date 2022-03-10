@@ -97,6 +97,24 @@ func TestElection(t *testing.T) {
 			status = electionResp.Status
 			numTries--
 		}
+		// If not encrypted, check results struct
+		if !election.HiddenResults {
+			qt.Assert(t, electionResp.Results, qt.HasLen, len(election.Questions))
+			results, err := API.GwClient.GetResults(election.ElectionID)
+			qt.Assert(t, err, qt.IsNil)
+			// Gateway results have same length as API results
+			qt.Assert(t, results.Results, qt.HasLen, len(electionResp.Results))
+			resultsLen := 0
+			// Get the maximum length of a question's options.
+			for _, question := range election.Questions {
+				if resultsLen < len(question.Choices) {
+					resultsLen = len(question.Choices)
+				}
+			}
+			for _, questionResults := range results.Results {
+				qt.Assert(t, questionResults, qt.HasLen, resultsLen)
+			}
+		}
 		qt.Assert(t, electionResp.Status, qt.Equals, "ACTIVE")
 	}
 }

@@ -96,7 +96,7 @@ func CreateElections(size int, confidential, encrypted bool, proofType types.Pro
 			HiddenResults: encrypted,
 			ProofType:     proofType,
 		}
-		for j := 0; j <= i; j++ {
+		for j := 0; j <= rand.Intn(10); j++ {
 			mp[i].Questions = append(mp[i].Questions, types.Question{
 				Title:       fmt.Sprintf("Title%d", j),
 				Description: fmt.Sprintf("Description%d", j),
