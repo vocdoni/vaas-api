@@ -593,9 +593,11 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	currentBlockHeight, avgTimes, _ := u.vocClient.GetBlockTimes()
+
+	// If process starting within the vochain margin, just set it to start immediately.
+	// Otherwise there could be an error of startBlock > currentHeight
 	if startBlock > 1 && startBlock < currentBlockHeight+vocclient.VOCHAIN_BLOCK_MARGIN {
-		return fmt.Errorf("cannot create process: startDate needs to be at least %ds in the future",
-			vocclient.VOCHAIN_BLOCK_MARGIN*avgTimes[0]/1000)
+		startBlock = 0
 	}
 
 	blockCount := endBlock - startBlock
