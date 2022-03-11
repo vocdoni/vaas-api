@@ -1,6 +1,6 @@
 import { createAnonymousElection, createOrganization, createSignedElection, deleteOrganization, getElectionPriv, getOrganizationPriv, getOrganizationListPriv, listElectionsPriv, setOrganizationMetadata } from "./sections/integrator"
 import { createIntegrator, deleteIntegrator } from "./sections/superadmin"
-import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot } from "./sections/voter"
+import { getElectionSecretInfoPub, getElectionListPub, getElectionInfoPub, getOrganizationPub, getElectionSharedKey, getElectionSharedKeyCustom, getCspSigningTokenPlain, getCspSigningTokenBlind, getCspSigningTokenPlainCustom, getCspSigningTokenBlindCustom, getCspPlainSignature,getProofFromPlainSignature, getCspBlindSignature, getBlindedPayload, getProofFromBlindSignature, getBallotPayload, submitBallot, getBallot, getPlainPayload } from "./sections/voter"
 import { Wallet } from "@ethersproject/wallet"
 import { wait } from "./util/wait"
 import { fakeSign } from "./sections/fake-csp"
@@ -23,8 +23,8 @@ async function main() {
     await getOrganizationPriv(organizationId, integratorApiKey)
     await getOrganizationListPriv(integratorApiKey)
 
-    // const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, confidential, integratorApiKey)
-    const { electionId: electionId1 } = await createAnonymousElection(organizationId, encryptedResults, confidential, integratorApiKey)
+    const { electionId: electionId1 } = await createSignedElection(organizationId, encryptedResults, confidential, integratorApiKey)
+    // const { electionId: electionId1 } = await createAnonymousElection(organizationId, encryptedResults, confidential, integratorApiKey)
 
     const electionList = await listElectionsPriv(organizationId, integratorApiKey)
     const election1DetailsPriv = await getElectionPriv(electionId1, integratorApiKey)
@@ -52,18 +52,23 @@ async function main() {
     }
 
     // NON ANONYMOUS AUTH
-    // const tokenR = await getCspSigningTokenPlain(electionId1, signedElectionId, orgApiToken)
-    // const tokenR = await getCspSigningTokenPlainCustom(electionId1, { voterId, signature }, orgApiToken)
-    // const plainSignature = await getCspPlainSignature(electionId1, tokenR, payload, orgApiToken)
+    const tokenR = await getCspSigningTokenPlain(electionId1, signature, orgApiToken)
+    const payload = await getPlainPayload(electionId1, tokenR, wallet)
+    const plainSignature = await getCspPlainSignature(electionId1, tokenR, payload, orgApiToken)
+    const proof = getProofFromPlainSignature(plainSignature, wallet)
+
+    // const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1DetailsPubAuth.encryptionPubKeys)
 
     // ANONYMOUS AUTH
     // const tokenR = await getCspSigningTokenBlind(electionId1, signedElectionId, orgApiToken)
-    const tokenR = await getCspSigningTokenBlindCustom(electionId1, { voterId, signature }, orgApiToken)
+    // const tokenR = await getCspSigningTokenBlindCustom(electionId1, { voterId, signature }, orgApiToken)
 
-    const { hexBlinded: blindedPayload, userSecretData } = getBlindedPayload(electionId1, tokenR, wallet)
+    // const { hexBlinded: blindedPayload, userSecretData } = getBlindedPayload(electionId1, tokenR, wallet)
 
-    const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
-    const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
+    // const blindSignature = await getCspBlindSignature(electionId1, tokenR, blindedPayload, orgApiToken)
+    // const proof = getProofFromBlindSignature(blindSignature, userSecretData, wallet)
+
+
     const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1DetailsPubAuth.encryptionPubKeys)
     const { nullifier } = await submitBallot(electionId1, election1DetailsPubAuth.chainId, ballot, wallet, orgApiToken)
     let ballotDetails = await getBallot(nullifier, orgApiToken)
@@ -75,8 +80,8 @@ async function main() {
 
     // cleanup
 
-    await deleteOrganization(organizationId, integratorApiKey)
-    await deleteIntegrator(integratorId)
+    // await deleteOrganization(organizationId, integratorApiKey)
+    // await deleteIntegrator(integratorId)
 }
 
 main().catch(err => {
