@@ -55,7 +55,7 @@ require (
 	github.com/tendermint/tm-db v0.6.7 // indirect
 	github.com/timshannon/badgerhold/v3 v3.0.0 // indirect
 	github.com/vocdoni/arbo v0.0.0-20220204101222-688a2e814db0 // indirect
-	github.com/vocdoni/blind-csp v0.1.5-0.20220210182521-0b2d188aee8c
+	github.com/vocdoni/blind-csp v0.1.5-0.20220214165159-4620baa07fa4
 	github.com/whyrusleeping/cbor-gen v0.0.0-20220223114253-ebcc1e8ce85b // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.vocdoni.io/dvote v1.0.4-0.20220310171340-ae10a77cde5b

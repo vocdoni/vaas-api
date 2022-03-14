@@ -165,6 +165,28 @@ export function getBlindedPayload(electionId: string, hexTokenR: string, ephemer
   return { hexBlinded, userSecretData }
 }
 
+export function getPlainPayload(electionId: string, hexTokenR: string, ephemeralWallet: Wallet) {
+  const caBundle = CAbundle.fromPartial({
+    processId: new Uint8Array(hexStringToBuffer(electionId)),
+    address: new Uint8Array(hexStringToBuffer(ephemeralWallet.address)),
+  })
+
+  // hash(bundle)
+  const hexCaBundle = hexlify(CAbundle.encode(caBundle).finish())
+
+  return hexCaBundle 
+}
+
+export function getProofFromPlainSignature(hexSignature: string, wallet: Wallet) {
+  const proof: IProofCA = {
+    type: ProofCaSignatureTypes.ECDSA_PIDSALTED,
+    signature: hexSignature,
+    voterAddress: wallet.address
+  }
+
+  return proof
+}
+
 export function getProofFromBlindSignature(hexBlindSignature: string, userSecretData: UserSecretData, wallet: Wallet) {
   const unblindedSignature = CensusBlind.unblind(hexBlindSignature, userSecretData)
 
@@ -481,12 +503,10 @@ export async function getCspSigningTokenBlindCustom(electionId: string, proof: {
 // Vote delivery
 //////////////////////////////////////////////////////////////////////////
 
-export async function submitBallot(electionId: string, chainId:string, ballot: VoteEnvelope, ephemeralWallet: Wallet, orgApiToken: string) {
+export async function submitBallot(electionId: string, chainId: string, ballot: VoteEnvelope, ephemeralWallet: Wallet, orgApiToken: string) {
   // Prepare
   const tx = Tx.encode({ payload: { $case: "vote", vote: ballot } })
   const txBytes = tx.finish()
-
-  // const chainId = await gateway.getVocdoniChainId()
 
   const hexSignature = await BytesSignature.signTransaction(txBytes,chainId, ephemeralWallet)
   const signature = new Uint8Array(Buffer.from(strip0x(hexSignature), "hex"))
