@@ -50,14 +50,12 @@ async function main() {
         await wait(5)
         election1DetailsPubAuth = await getElectionSecretInfoPub(electionId1, cspSharedKey, orgApiToken)
     }
-
     // NON ANONYMOUS AUTH
     const tokenR = await getCspSigningTokenPlain(electionId1, signature, orgApiToken)
     const payload = await getPlainPayload(electionId1, tokenR, wallet)
     const plainSignature = await getCspPlainSignature(electionId1, tokenR, payload, orgApiToken)
     const proof = getProofFromPlainSignature(plainSignature, wallet)
 
-    // const ballot = getBallotPayload(electionId1, proof, encryptedResults, election1DetailsPubAuth.encryptionPubKeys)
 
     // ANONYMOUS AUTH
     // const tokenR = await getCspSigningTokenBlind(electionId1, signedElectionId, orgApiToken)

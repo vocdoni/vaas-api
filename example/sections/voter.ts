@@ -503,14 +503,12 @@ export async function getCspSigningTokenBlindCustom(electionId: string, proof: {
 // Vote delivery
 //////////////////////////////////////////////////////////////////////////
 
-export async function submitBallot(electionId: string, chainId:string, ballot: VoteEnvelope, ephemeralWallet: Wallet, orgApiToken: string) {
+export async function submitBallot(electionId: string, chainId: string, ballot: VoteEnvelope, ephemeralWallet: Wallet, orgApiToken: string) {
   // Prepare
   const tx = Tx.encode({ payload: { $case: "vote", vote: ballot } })
   const txBytes = tx.finish()
 
-  // const chainId = await gateway.getVocdoniChainId()
-
-  const hexSignature = await BytesSignature.sign(txBytes, ephemeralWallet)
+  const hexSignature = await BytesSignature.signTransaction(txBytes,chainId, ephemeralWallet)
   const signature = new Uint8Array(Buffer.from(strip0x(hexSignature), "hex"))
 
   const signedTx = SignedTx.encode({ tx: txBytes, signature })
