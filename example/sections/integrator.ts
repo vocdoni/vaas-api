@@ -265,7 +265,7 @@ export async function createSignedElection(organizationId: string, hiddenResults
   }
 
   console.log("Created election with ID", electionId)
-  return { electionId }
+  return electionId
 }
 
 export async function createAnonymousElection(organizationId: string, hiddenResults: boolean, confidential: boolean, apiKey: string) {
@@ -355,7 +355,7 @@ export async function createAnonymousElection(organizationId: string, hiddenResu
   }
 
   console.log("Created anonymous election", electionId)
-  return { electionId }
+  return electionId
 }
 
 type ElectionSummary = {
