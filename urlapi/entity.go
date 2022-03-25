@@ -425,9 +425,17 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 		return err
 	}
 
-	_, _, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
+	_, balance, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
 	if err != nil {
 		return fmt.Errorf("could not get account info: %w", err)
+	}
+
+	// If account balance is below threshold, allocate more tokens.
+	// This is for future uses, there should still be enough for this current process.
+	if balance < vocclient.BalanceRequestThreshold {
+		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
+			return err
+		}
 	}
 
 	if err := u.vocClient.SetAccountInfo(entitySignKeys, u.faucet, metaURI,
@@ -626,9 +634,19 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// Fetch account transaction nonce
-	_, _, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
+	_, balance, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
 	if err != nil {
 		return fmt.Errorf("could not get account info: %w", err)
+	}
+
+	// If account balance is below threshold, allocate more tokens.
+	// This is for future uses, there should still be enough for this current process.
+	if balance < vocclient.BalanceRequestThreshold {
+		log.Infof("account balance is %d, requesting %d more tokens",
+			balance, vocclient.DefaultFaucetAmount)
+		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
+			return err
+		}
 	}
 
 	if err = u.vocClient.CreateProcess(&models.Process{
@@ -863,9 +881,17 @@ func (u *URLAPI) setProcessStatusHandler(
 	}
 
 	// Fetch account transaction nonce
-	_, _, nonce, err := u.vocClient.GetAccount(organization.EthAddress)
+	_, balance, nonce, err := u.vocClient.GetAccount(organization.EthAddress)
 	if err != nil {
 		return fmt.Errorf("could not get account info: %w", err)
+	}
+
+	// If account balance is below threshold, allocate more tokens.
+	// This is for future uses, there should still be enough for this current process.
+	if balance < vocclient.BalanceRequestThreshold {
+		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
+			return err
+		}
 	}
 
 	if err = u.vocClient.SetProcessStatus(processID, &status, entitySignKeys, nonce); err != nil {

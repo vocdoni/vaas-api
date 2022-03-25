@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -28,8 +29,18 @@ const (
 	// VOCHAIN_BLOCK_MARGIN is the number of blocks a
 	//  process should be set in the future to ensure its creation
 	VOCHAIN_BLOCK_MARGIN = 5
-	DefaultFaucetAmount  = 1000000
+	// Number of transactions we should request funds for
+	DefaultFaucetMultiplier = 20
+	// Buffer of transactions an account should retain
+	// enough balance to execute
+	TxOperationsThreshold = 4
 )
+
+// Threshold at which an account should request more tokens
+var BalanceRequestThreshold uint64
+
+// Default number of tokens to request
+var DefaultFaucetAmount uint64
 
 type vocBlockHeight struct {
 	height    uint32
@@ -62,6 +73,20 @@ func New(gatewayUrl string, signingKey *ethereum.SignKeys) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	txCost, err := c.gw.GetTransactionCost(signingKey, models.TxType_SET_ACCOUNT_INFO)
+	if err != nil {
+		return nil, err
+	}
+	processCost, err := c.gw.GetTransactionCost(signingKey, models.TxType_NEW_PROCESS)
+	if err != nil {
+		return nil, err
+	}
+	if txCost < processCost {
+		txCost = processCost
+	}
+	BalanceRequestThreshold = txCost * TxOperationsThreshold
+	DefaultFaucetAmount = txCost * DefaultFaucetMultiplier
 
 	go func() {
 		for {
@@ -312,8 +337,9 @@ func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 		}
 	}
 	return c.AddFile(metaBytes, "ipfs",
-		fmt.Sprintf("%X process metadata", processId))
-
+		fmt.Sprintf("%X process metadata",
+			processId),
+	)
 }
 
 // SetProcessMetadataConfidential encrypts with metadataPrivKey and then pins
@@ -566,6 +592,8 @@ func (c *Client) GetRoot(censusID string) (dvoteTypes.HexBytes, error) {
 
 // SetAccountInfo submits a transaction to set an account with the given
 //  ethereum wallet address and metadata URI on the vochain
+// Caller is responsible for ensuring the accoung has sufficient token balance
+//  to complete this transaction
 func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
 	faucet *ethereum.SignKeys, uri string, nonce uint32) error {
 	req := api.APIrequest{Method: "submitRawTx"}
@@ -579,7 +607,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
 	var err error
 	if faucet != nil {
 		if tx.SetAccountInfo.FaucetPackage, err = vochain.GenerateFaucetPackage(faucet,
-			signer.Address(), DefaultFaucetAmount); err != nil {
+			signer.Address(), DefaultFaucetAmount, rand.Uint64()); err != nil {
 			return fmt.Errorf("could not generate faucet package: %w", err)
 		}
 		faucetPayloadBytes, err := proto.Marshal(tx.SetAccountInfo.FaucetPackage.Payload)
@@ -598,9 +626,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
 	if err != nil {
 		return fmt.Errorf("could not marshal set account info tx")
 	}
-	// Ensure the chainID is set to the gateway's vochain ID
-	signer.VocdoniChainID = c.ChainID
-	stx.Signature, err = signer.SignVocdoniTx(stx.Tx)
+	stx.Signature, err = signer.SignVocdoniTx(stx.Tx, c.ChainID)
 	if err != nil {
 		return fmt.Errorf("could not sign account transaction: %v", err)
 	}
@@ -619,6 +645,8 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
 
 // CreateProcess submits a transaction to the vochain to
 //  create a process with the given configuration and returns its starting block height
+// Caller is responsible for ensuring the accoung has sufficient token balance
+//  to complete this transaction
 func (c *Client) CreateProcess(process *models.Process,
 	signingKey *ethereum.SignKeys, nonce uint32) error {
 	req := api.APIrequest{Method: "submitRawTx"}
@@ -634,8 +662,7 @@ func (c *Client) CreateProcess(process *models.Process,
 	if err != nil {
 		return err
 	}
-	signingKey.VocdoniChainID = c.ChainID
-	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx); err != nil {
+	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx, c.ChainID); err != nil {
 		return err
 	}
 	if req.Payload, err = proto.Marshal(stx); err != nil {
@@ -653,6 +680,8 @@ func (c *Client) CreateProcess(process *models.Process,
 
 // SetProcessStatus updates the process given by `pid` status to `status`
 //  using the organization's `signkeys`
+// Caller is responsible for ensuring the accoung has sufficient token balance
+//  to complete this transaction
 func (c *Client) SetProcessStatus(pid []byte,
 	status *models.ProcessStatus, signingKey *ethereum.SignKeys, nonce uint32) error {
 	req := api.APIrequest{Method: "submitRawTx"}
@@ -669,8 +698,7 @@ func (c *Client) SetProcessStatus(pid []byte,
 	if err != nil {
 		return err
 	}
-	signingKey.VocdoniChainID = c.ChainID
-	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx); err != nil {
+	if stx.Signature, err = signingKey.SignVocdoniTx(stx.Tx, c.ChainID); err != nil {
 		return err
 	}
 	if req.Payload, err = proto.Marshal(stx); err != nil {
@@ -683,6 +711,66 @@ func (c *Client) SetProcessStatus(pid []byte,
 	}
 	if !resp.Ok {
 		return fmt.Errorf("%s failed: %s", req.Method, resp.Message)
+	}
+	return nil
+}
+
+// CollectFaucet submits a transaction to get tokens from the faucet
+//  allocated to the signer
+func (c *Client) CollectFaucet(signer *ethereum.SignKeys,
+	faucet *ethereum.SignKeys) error {
+	req := api.APIrequest{Method: "submitRawTx"}
+
+	log.Infof("requesting %d tokens from %x to %x", DefaultFaucetAmount, faucet.Address().Bytes(), signer.Address().Bytes())
+
+	// First check faucet balance and nonce
+	_, balance, nonce, err := c.GetAccount(faucet.Address().Bytes())
+	if err != nil {
+		return fmt.Errorf("collectFaucet: could not get faucet account: %v", err)
+	}
+	if balance < DefaultFaucetAmount {
+		return fmt.Errorf("collectFaucet: faucet balance is %d, expect at least %d",
+			balance, DefaultFaucetAmount)
+	}
+
+	tx := models.Tx_CollectFaucet{CollectFaucet: &models.CollectFaucetTx{
+		TxType:        models.TxType_COLLECT_FAUCET,
+		FaucetPackage: &models.FaucetPackage{},
+		Nonce:         nonce,
+	}}
+	// If faucet is not nil, request VOC tokens with faucet package
+	if tx.CollectFaucet.FaucetPackage, err = vochain.GenerateFaucetPackage(faucet,
+		signer.Address(), DefaultFaucetAmount, rand.Uint64()); err != nil {
+		return fmt.Errorf("could not generate faucet package: %w", err)
+	}
+	faucetPayloadBytes, err := proto.Marshal(tx.CollectFaucet.FaucetPackage.Payload)
+	if err != nil {
+		return fmt.Errorf("could not marshal faucet payload: %w", err)
+	}
+	faucetPayloadSignature, err := faucet.SignEthereum(faucetPayloadBytes)
+	if err != nil {
+		return fmt.Errorf("could not sign faucet payload: %w", err)
+	}
+	tx.CollectFaucet.FaucetPackage.Signature = faucetPayloadSignature
+
+	stx := new(models.SignedTx)
+	stx.Tx, err = proto.Marshal(&models.Tx{Payload: &tx})
+	if err != nil {
+		return fmt.Errorf("could not marshal set account info tx")
+	}
+	stx.Signature, err = signer.SignVocdoniTx(stx.Tx, c.ChainID)
+	if err != nil {
+		return fmt.Errorf("could not sign account transaction: %v", err)
+	}
+	if req.Payload, err = proto.Marshal(stx); err != nil {
+		return err
+	}
+	resp, err := c.request(req, c.signingKey)
+	if err != nil {
+		return err
+	}
+	if !resp.Ok {
+		return fmt.Errorf(resp.Message)
 	}
 	return nil
 }

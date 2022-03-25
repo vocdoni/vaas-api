@@ -203,7 +203,7 @@ func submitVoteSigned(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-	signedVoteTx.Signature, err = voterWallet.SignVocdoniTx(signedVoteTx.Tx)
+	signedVoteTx.Signature, err = voterWallet.SignVocdoniTx(signedVoteTx.Tx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +308,7 @@ func submitVoteBlind(t *testing.T, processID []byte,
 	if err != nil {
 		t.Fatal(err)
 	}
-	signedVoteTx.Signature, err = voterWallet.SignVocdoniTx(signedVoteTx.Tx)
+	signedVoteTx.Signature, err = voterWallet.SignVocdoniTx(signedVoteTx.Tx, "")
 	if err != nil {
 		t.Fatal(err)
 	}
