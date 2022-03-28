@@ -240,7 +240,7 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return fmt.Errorf("could not get faucet account: %w", err)
 	}
 
-	if balance < vocclient.DefaultFaucetAmount {
+	if balance < u.vocClient.AcctTxCost*vocclient.DefaultFaucetMultiplier {
 		return fmt.Errorf("faucet does not have enough tokens. Balance is %d", balance)
 	}
 
@@ -432,7 +432,7 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 
 	// If account balance is below threshold, allocate more tokens.
 	// This is for future uses, there should still be enough for this current process.
-	if balance < vocclient.BalanceRequestThreshold {
+	if balance < u.vocClient.AcctTxCost*vocclient.TxOperationsThreshold {
 		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
 			return err
 		}
@@ -641,9 +641,9 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 
 	// If account balance is below threshold, allocate more tokens.
 	// This is for future uses, there should still be enough for this current process.
-	if balance < vocclient.BalanceRequestThreshold {
+	if balance < u.vocClient.AcctTxCost*vocclient.TxOperationsThreshold {
 		log.Infof("account balance is %d, requesting %d more tokens",
-			balance, vocclient.DefaultFaucetAmount)
+			balance, u.vocClient.AcctTxCost*vocclient.DefaultFaucetMultiplier)
 		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
 			return err
 		}
@@ -888,7 +888,7 @@ func (u *URLAPI) setProcessStatusHandler(
 
 	// If account balance is below threshold, allocate more tokens.
 	// This is for future uses, there should still be enough for this current process.
-	if balance < vocclient.BalanceRequestThreshold {
+	if balance < u.vocClient.AcctTxCost*vocclient.TxOperationsThreshold {
 		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
 			return err
 		}

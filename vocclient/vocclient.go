@@ -36,12 +36,6 @@ const (
 	TxOperationsThreshold = 4
 )
 
-// Threshold at which an account should request more tokens
-var BalanceRequestThreshold uint64
-
-// Default number of tokens to request
-var DefaultFaucetAmount uint64
-
 type vocBlockHeight struct {
 	height    uint32
 	timestamp int32
@@ -50,7 +44,9 @@ type vocBlockHeight struct {
 }
 
 type Client struct {
-	ChainID     string
+	ChainID string
+	// AcctTxCost is the cost of account-related transactions
+	AcctTxCost  uint64
 	gw          *client.Client
 	signingKey  *ethereum.SignKeys
 	blockHeight *vocBlockHeight
@@ -74,19 +70,17 @@ func New(gatewayUrl string, signingKey *ethereum.SignKeys) (*Client, error) {
 		return nil, err
 	}
 
-	txCost, err := c.gw.GetTransactionCost(signingKey, models.TxType_SET_ACCOUNT_INFO)
-	if err != nil {
+	if c.AcctTxCost, err = c.gw.GetTransactionCost(signingKey,
+		models.TxType_SET_ACCOUNT_INFO); err != nil {
 		return nil, err
 	}
 	processCost, err := c.gw.GetTransactionCost(signingKey, models.TxType_NEW_PROCESS)
 	if err != nil {
 		return nil, err
 	}
-	if txCost < processCost {
-		txCost = processCost
+	if c.AcctTxCost < processCost {
+		c.AcctTxCost = processCost
 	}
-	BalanceRequestThreshold = txCost * TxOperationsThreshold
-	DefaultFaucetAmount = txCost * DefaultFaucetMultiplier
 
 	go func() {
 		for {
@@ -336,10 +330,7 @@ func (c *Client) SetProcessMetadata(meta types.ProcessMetadata,
 			return "", fmt.Errorf("could not marshal encrypted bytes: %v", err)
 		}
 	}
-	return c.AddFile(metaBytes, "ipfs",
-		fmt.Sprintf("%X process metadata",
-			processId),
-	)
+	return c.AddFile(metaBytes, "ipfs", fmt.Sprintf("%X process metadata", processId))
 }
 
 // SetProcessMetadataConfidential encrypts with metadataPrivKey and then pins
@@ -607,7 +598,7 @@ func (c *Client) SetAccountInfo(signer *ethereum.SignKeys,
 	var err error
 	if faucet != nil {
 		if tx.SetAccountInfo.FaucetPackage, err = vochain.GenerateFaucetPackage(faucet,
-			signer.Address(), DefaultFaucetAmount, rand.Uint64()); err != nil {
+			signer.Address(), c.AcctTxCost*DefaultFaucetMultiplier, rand.Uint64()); err != nil {
 			return fmt.Errorf("could not generate faucet package: %w", err)
 		}
 		faucetPayloadBytes, err := proto.Marshal(tx.SetAccountInfo.FaucetPackage.Payload)
@@ -721,26 +712,26 @@ func (c *Client) CollectFaucet(signer *ethereum.SignKeys,
 	faucet *ethereum.SignKeys) error {
 	req := api.APIrequest{Method: "submitRawTx"}
 
-	log.Infof("requesting %d tokens from %x to %x", DefaultFaucetAmount, faucet.Address().Bytes(), signer.Address().Bytes())
+	log.Infof("requesting %d tokens from %x to %x", c.AcctTxCost*DefaultFaucetMultiplier,
+		faucet.Address().Bytes(), signer.Address().Bytes())
 
 	// First check faucet balance and nonce
 	_, balance, nonce, err := c.GetAccount(faucet.Address().Bytes())
 	if err != nil {
 		return fmt.Errorf("collectFaucet: could not get faucet account: %v", err)
 	}
-	if balance < DefaultFaucetAmount {
+	if balance < c.AcctTxCost*DefaultFaucetMultiplier {
 		return fmt.Errorf("collectFaucet: faucet balance is %d, expect at least %d",
-			balance, DefaultFaucetAmount)
+			balance, c.AcctTxCost*DefaultFaucetMultiplier)
 	}
 
 	tx := models.Tx_CollectFaucet{CollectFaucet: &models.CollectFaucetTx{
-		TxType:        models.TxType_COLLECT_FAUCET,
-		FaucetPackage: &models.FaucetPackage{},
-		Nonce:         nonce,
+		TxType: models.TxType_COLLECT_FAUCET,
+		Nonce:  nonce,
 	}}
 	// If faucet is not nil, request VOC tokens with faucet package
 	if tx.CollectFaucet.FaucetPackage, err = vochain.GenerateFaucetPackage(faucet,
-		signer.Address(), DefaultFaucetAmount, rand.Uint64()); err != nil {
+		signer.Address(), c.AcctTxCost*DefaultFaucetMultiplier, rand.Uint64()); err != nil {
 		return fmt.Errorf("could not generate faucet package: %w", err)
 	}
 	faucetPayloadBytes, err := proto.Marshal(tx.CollectFaucet.FaucetPackage.Payload)
