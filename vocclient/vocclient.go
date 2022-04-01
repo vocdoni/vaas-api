@@ -70,11 +70,10 @@ func New(gatewayUrl string, signingKey *ethereum.SignKeys) (*Client, error) {
 		return nil, err
 	}
 
-	if c.AcctTxCost, err = c.gw.GetTransactionCost(signingKey,
-		models.TxType_SET_ACCOUNT_INFO); err != nil {
+	if c.AcctTxCost, err = c.gw.GetTransactionCost(models.TxType_SET_ACCOUNT_INFO); err != nil {
 		return nil, err
 	}
-	processCost, err := c.gw.GetTransactionCost(signingKey, models.TxType_NEW_PROCESS)
+	processCost, err := c.gw.GetTransactionCost(models.TxType_NEW_PROCESS)
 	if err != nil {
 		return nil, err
 	}
