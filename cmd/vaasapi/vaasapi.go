@@ -275,7 +275,7 @@ func main() {
 
 	faucet := ethereum.NewSignKeys()
 	if err := faucet.AddHexKey(cfg.API.FaucetPrivKey); err != nil {
-		log.Fatalf("could not set faucet account: %w", err)
+		log.Fatalf("could not set faucet account %s: %s", cfg.API.FaucetPrivKey, err.Error())
 	}
 	urlApi.SetFaucet(faucet)
 
