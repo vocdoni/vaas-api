@@ -28,14 +28,26 @@ func (t *TestAPI) startTestGateway() {
 		log.Fatal(err)
 	}
 
-	vc, err := vocone.NewVocone(storageDir, &oracle)
-	if err != nil {
+	var err error
+	if t.VC, err = vocone.NewVocone(storageDir, &oracle); err != nil {
 		log.Fatal(err)
 	}
-	vc.SetBlockTimeTarget(time.Second)
-	vc.SetBlockSize(500)
-	go vc.Start()
-	if err = vc.EnableAPI(TestHost, TestGWPort, TestGWPath); err != nil {
+	t.VC.SetBlockTimeTarget(time.Second)
+	t.VC.SetBlockSize(500)
+	// Set treasurer so we can mint tokens
+	treasurer := ethereum.NewSignKeys()
+	if err := treasurer.Generate(); err != nil {
+		log.Fatal(err)
+	}
+	if err := t.VC.SetTreasurer(treasurer.Address()); err != nil {
+		log.Fatal(err)
+	}
+	// Set transaction costs
+	if err := t.VC.SetBulkTxCosts(10); err != nil {
+		log.Fatal(err)
+	}
+	go t.VC.Start()
+	if err := t.VC.EnableAPI(TestHost, TestGWPort, TestGWPath); err != nil {
 		log.Fatal(err)
 	}
 	t.Gateway = "http://" + TestHost + ":" + strconv.Itoa(TestGWPort) + TestGWPath

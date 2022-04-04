@@ -60,6 +60,7 @@ func TestMain(m *testing.M) {
 		log.Infof("SKIPPING: could not connect to DB: %v", err)
 		return
 	}
+	setupFaucetAccount()
 	setupTestIntegrators()
 	setupTestOrganizations()
 	setupTestElections()
@@ -124,6 +125,17 @@ func DoRequest(t *testing.T, url, authToken,
 		}
 	}
 	return resp.StatusCode
+}
+
+func setupFaucetAccount() {
+	err := API.Vocclient.SetAccountInfo(API.FaucetAccount, nil, "faucetURI", 0)
+	if err != nil {
+		log.Fatalf("cannot set faucet account: %s", err.Error())
+	}
+	time.Sleep(time.Second * 10)
+	if err := API.VC.MintTokens(API.FaucetAccount.Address(), 10000000000); err != nil {
+		log.Fatalf("cannot mint tokens to faucet: %s", err.Error())
+	}
 }
 
 func setupTestIntegrators() {

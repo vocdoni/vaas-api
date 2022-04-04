@@ -12,6 +12,7 @@ import (
 	"go.vocdoni.io/api/database/transactions"
 	"go.vocdoni.io/api/types"
 	"go.vocdoni.io/api/vocclient"
+	"go.vocdoni.io/dvote/crypto/ethereum"
 	dvotedb "go.vocdoni.io/dvote/db"
 	"go.vocdoni.io/dvote/httprouter"
 	"go.vocdoni.io/dvote/httprouter/bearerstdapi"
@@ -38,6 +39,7 @@ type URLAPI struct {
 	db                    database.Database
 	kv                    *transactions.TxCacheDB
 	vocClient             *vocclient.Client
+	faucet                *ethereum.SignKeys
 }
 
 func NewURLAPI(router *httprouter.HTTProuter,
@@ -86,6 +88,10 @@ func NewURLAPI(router *httprouter.HTTProuter,
 	}
 
 	return &urlapi, nil
+}
+
+func (u *URLAPI) SetFaucet(faucet *ethereum.SignKeys) {
+	u.faucet = faucet
 }
 
 func (u *URLAPI) EnableVotingServiceHandlers(db database.Database,

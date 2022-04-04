@@ -235,8 +235,18 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return fmt.Errorf("could not set entity metadata: %w", err)
 	}
 
+	_, balance, _, err := u.vocClient.GetAccount(u.faucet.Address().Bytes())
+	if err != nil {
+		return fmt.Errorf("could not get faucet account: %w", err)
+	}
+
+	if balance < u.vocClient.AcctTxCost*vocclient.DefaultFaucetMultiplier {
+		return fmt.Errorf("faucet does not have enough tokens. Balance is %d", balance)
+	}
+
 	// Create the new account on the Vochain
-	if err = u.vocClient.SetAccountInfo(ethSignKeys, metaURI, 0); err != nil {
+	if err = u.vocClient.SetAccountInfo(ethSignKeys,
+		u.faucet, metaURI, 0); err != nil {
 		return fmt.Errorf("could not create account on the vochain: %w", err)
 	}
 
@@ -261,8 +271,11 @@ func (u *URLAPI) createOrganizationHandler(msg *bearerstdapi.BearerStandardAPIda
 		return err
 	}
 
-	resp := types.APIResponse{APIToken: orgApiToken,
-		OrganizationID: ethSignKeys.Address().Bytes(), TxHash: txHash}
+	resp := types.APIResponse{
+		APIToken:       orgApiToken,
+		OrganizationID: ethSignKeys.Address().Bytes(),
+		TxHash:         txHash,
+	}
 
 	return sendResponse(resp, ctx)
 }
@@ -412,12 +425,21 @@ func (u *URLAPI) setOrganizationMetadataHandler(msg *bearerstdapi.BearerStandard
 		return err
 	}
 
-	_, _, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
+	_, balance, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
 	if err != nil {
 		return fmt.Errorf("could not get account info: %w", err)
 	}
 
-	if err := u.vocClient.SetAccountInfo(entitySignKeys, metaURI, nonce); err != nil {
+	// If account balance is below threshold, allocate more tokens.
+	// This is for future uses, there should still be enough for this current process.
+	if balance < u.vocClient.AcctTxCost*vocclient.TxOperationsThreshold {
+		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
+			return err
+		}
+	}
+
+	if err := u.vocClient.SetAccountInfo(entitySignKeys, u.faucet, metaURI,
+		nonce); err != nil {
 		return fmt.Errorf("could not update account metadata uri: %w", err)
 	}
 
@@ -612,9 +634,19 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 	}
 
 	// Fetch account transaction nonce
-	_, _, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
+	_, balance, nonce, err := u.vocClient.GetAccount(orgInfo.entityID)
 	if err != nil {
 		return fmt.Errorf("could not get account info: %w", err)
+	}
+
+	// If account balance is below threshold, allocate more tokens.
+	// This is for future uses, there should still be enough for this current process.
+	if balance < u.vocClient.AcctTxCost*vocclient.TxOperationsThreshold {
+		log.Infof("account balance is %d, requesting %d more tokens",
+			balance, u.vocClient.AcctTxCost*vocclient.DefaultFaucetMultiplier)
+		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
+			return err
+		}
 	}
 
 	if err = u.vocClient.CreateProcess(&models.Process{
@@ -666,8 +698,12 @@ func (u *URLAPI) createProcessHandler(msg *bearerstdapi.BearerStandardAPIdata,
 		return err
 	}
 
-	return sendResponse(types.APIResponse{
-		ElectionID: processID, TxHash: txHash}, ctx)
+	return sendResponse(
+		types.APIResponse{
+			ElectionID: processID,
+			TxHash:     txHash,
+		},
+		ctx)
 }
 
 // GET https://server/v1/priv/organizations/<organizationId>/elections/signed
@@ -845,9 +881,17 @@ func (u *URLAPI) setProcessStatusHandler(
 	}
 
 	// Fetch account transaction nonce
-	_, _, nonce, err := u.vocClient.GetAccount(organization.EthAddress)
+	_, balance, nonce, err := u.vocClient.GetAccount(organization.EthAddress)
 	if err != nil {
 		return fmt.Errorf("could not get account info: %w", err)
+	}
+
+	// If account balance is below threshold, allocate more tokens.
+	// This is for future uses, there should still be enough for this current process.
+	if balance < u.vocClient.AcctTxCost*vocclient.TxOperationsThreshold {
+		if err := u.vocClient.CollectFaucet(entitySignKeys, u.faucet); err != nil {
+			return err
+		}
 	}
 
 	if err = u.vocClient.SetProcessStatus(processID, &status, entitySignKeys, nonce); err != nil {
